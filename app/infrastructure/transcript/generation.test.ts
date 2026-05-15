@@ -1,7 +1,11 @@
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import {
 	collectTranscriptDownloadTargets,
 	normalizeTranscriptContent,
+	writeGeneratedTranscripts,
 } from "./generation";
 
 describe("collectTranscriptDownloadTargets", () => {
@@ -41,5 +45,44 @@ describe("normalizeTranscriptContent", () => {
 		expect(() =>
 			normalizeTranscriptContent("TALK-1", "<html>invalid</html>"),
 		).toThrow("TALK-1");
+	});
+});
+
+describe("writeGeneratedTranscripts", () => {
+	test("取得に失敗したSRTは既存の生成ファイルを残す", async () => {
+		const outDir = await mkdtemp(join(tmpdir(), "gakurin-transcripts-"));
+		const existingSrt = `1
+00:00:00,000 --> 00:00:02,000
+既存の文字起こし`;
+
+		try {
+			await writeFile(join(outDir, "TALK-1.srt"), `${existingSrt}\n`, "utf8");
+
+			const result = await writeGeneratedTranscripts(
+				outDir,
+				[
+					{
+						id: "TALK-1",
+						srtLink: "https://example.com/talk-1.srt",
+					},
+				],
+				{
+					fetchTranscript: async () => {
+						throw new Error("503 Service Unavailable");
+					},
+					warn: () => {},
+				},
+			);
+
+			expect(result).toEqual({
+				writtenCount: 0,
+				retainedCount: 1,
+			});
+			expect(await readFile(join(outDir, "TALK-1.srt"), "utf8")).toBe(
+				`${existingSrt}\n`,
+			);
+		} finally {
+			await rm(outDir, { recursive: true, force: true });
+		}
 	});
 });
