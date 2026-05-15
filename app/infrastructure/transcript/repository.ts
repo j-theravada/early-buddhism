@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { parseSrt } from "../../domain/transcript/parser";
 import type { TranscriptCue } from "../../domain/transcript/types";
 
-const TRANSCRIPTS_DIR = resolve(process.cwd(), "app/transcripts");
+const TRANSCRIPTS_DIR = resolve(process.cwd(), "app/generated/transcripts");
 
 function isSafeTalkId(talkId: string) {
 	return /^[A-Za-z0-9_-]+$/.test(talkId);

@@ -24,6 +24,7 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		audioLink: "https://example.com/audio.mp3",
 		attachmentsLink: "https://example.com/notes.pdf",
 		youtubeLink: "https://youtu.be/ZZYaasluSAA?si=test",
+		srtLink: null,
 		...overrides,
 	};
 }

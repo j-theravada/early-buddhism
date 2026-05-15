@@ -21,6 +21,7 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		audioLink: null,
 		attachmentsLink: null,
 		youtubeLink: "https://youtu.be/ZZYaasluSAA?si=test",
+		srtLink: null,
 		...overrides,
 	};
 }

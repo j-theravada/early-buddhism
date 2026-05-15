@@ -314,6 +314,7 @@ export function parseCSVToTalks(text: string): Talk[] {
 			getValueFromHeaders(cells, ["YouTube", "YouTubeリンク", "youtube"]) ||
 				(cells[12] ? cells[12].trim() : ""),
 		);
+		const srtLink = sanitizeLink(getValueFromHeaders(cells, ["SRTリンク"]));
 
 		const fingerprint = [
 			`dvdId:${dvdIdKey}`,
@@ -375,6 +376,7 @@ export function parseCSVToTalks(text: string): Talk[] {
 			audioLink,
 			attachmentsLink,
 			youtubeLink,
+			srtLink,
 		});
 	}
 
