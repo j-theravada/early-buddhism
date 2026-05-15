@@ -11,6 +11,7 @@ function deserializeTalk(talk: SerializedTalk): Talk {
 	return {
 		...talk,
 		recordedOnDate: talk.recordedOnDate ? new Date(talk.recordedOnDate) : null,
+		srtLink: talk.srtLink ?? null,
 	};
 }
 

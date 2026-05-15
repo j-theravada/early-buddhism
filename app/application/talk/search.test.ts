@@ -52,6 +52,7 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		audioLink: null,
 		attachmentsLink: null,
 		youtubeLink: null,
+		srtLink: null,
 		...overrides,
 	};
 }

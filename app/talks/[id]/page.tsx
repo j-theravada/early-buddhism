@@ -70,19 +70,21 @@ export default async function TalkDetailPage({ params }: Props) {
 				</div>
 			</header>
 
-			<main className="mx-auto max-w-4xl px-6 py-12 sm:px-8 flex-1">
+			<main className="w-full mx-auto max-w-4xl px-6 py-12 sm:px-8 flex-1">
 				<div className="space-y-8">
 					{/* YouTube動画埋め込み */}
 					{pageData.talk.embedUrl && (
-						<div className="relative w-full aspect-video bg-gray-100 overflow-hidden rounded-lg">
-							<iframe
-								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-								allowFullScreen
-								className="absolute inset-0 h-full w-full"
-								name="talk-player"
-								src={pageData.talk.embedUrl}
-								title={pageData.talk.title}
-							/>
+						<div className="sticky top-0 z-20 -mx-6 bg-white/95 px-6 py-3 backdrop-blur sm:-mx-8 sm:px-8">
+							<div className="relative w-full aspect-video bg-gray-100 overflow-hidden rounded-lg shadow-sm">
+								<iframe
+									allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+									allowFullScreen
+									className="absolute inset-0 h-full w-full"
+									name="talk-player"
+									src={pageData.talk.embedUrl}
+									title={pageData.talk.title}
+								/>
+							</div>
 						</div>
 					)}
 

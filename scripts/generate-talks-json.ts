@@ -5,6 +5,7 @@ import {
 	parseCSVToTalks,
 	SHEET_URL,
 } from "../app/infrastructure/talk/csv";
+import { writeGeneratedTranscripts } from "../app/infrastructure/transcript/generation";
 
 type SerializedTalk = Omit<Talk, "recordedOnDate"> & {
 	recordedOnDate: string | null;
@@ -29,8 +30,7 @@ async function hasUsableGeneratedTalks(outPath: string): Promise<boolean> {
 	}
 }
 
-async function writeGeneratedTalks(outPath: string, csv: string) {
-	const talks = parseCSVToTalks(csv);
+async function writeGeneratedTalks(outPath: string, talks: Talk[]) {
 	const serialized = talks.map(serializeTalk);
 	await mkdir(dirname(outPath), { recursive: true });
 	await writeFile(
@@ -43,7 +43,8 @@ async function writeGeneratedTalks(outPath: string, csv: string) {
 }
 
 async function main() {
-	const outPath = resolve(process.cwd(), "app/generated/talks.json");
+	const talksOutPath = resolve(process.cwd(), "app/generated/talks.json");
+	const transcriptsOutDir = resolve(process.cwd(), "app/generated/transcripts");
 
 	try {
 		const response = await fetch(SHEET_URL, {
@@ -56,16 +57,28 @@ async function main() {
 		}
 
 		const csv = await response.text();
-		await writeGeneratedTalks(outPath, csv);
+		const talks = parseCSVToTalks(csv);
+		const transcriptResult = await writeGeneratedTranscripts(
+			transcriptsOutDir,
+			talks,
+		);
+		const retainedMessage =
+			transcriptResult.retainedCount > 0
+				? ` (retained ${transcriptResult.retainedCount} existing transcripts)`
+				: "";
+		console.log(
+			`Wrote ${transcriptResult.writtenCount} transcripts to ${transcriptsOutDir}${retainedMessage}`,
+		);
+		await writeGeneratedTalks(talksOutPath, talks);
 	} catch (error) {
-		const canUseExistingData = await hasUsableGeneratedTalks(outPath);
+		const canUseExistingData = await hasUsableGeneratedTalks(talksOutPath);
 		if (!canUseExistingData) {
 			throw error;
 		}
 
 		const message = error instanceof Error ? error.message : String(error);
 		console.warn(
-			`Falling back to existing generated talks at ${outPath}. Reason: ${message}`,
+			`Falling back to existing generated talks at ${talksOutPath}. Reason: ${message}`,
 		);
 	}
 }
