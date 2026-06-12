@@ -6,7 +6,10 @@ export const SHEET_URL =
 	"https://docs.google.com/spreadsheets/d/1QMyakqH1i-W_bbK3yJl7u_Q_Jb_AoM94W6F8Gg3y3CA/export?format=csv&gid=909287277";
 
 function parseChapterNumber(value: string): string {
-	const normalized = value.replace(/\uFEFF/g, "").normalize("NFKC").trim();
+	const normalized = value
+		.replace(/\uFEFF/g, "")
+		.normalize("NFKC")
+		.trim();
 	if (!normalized) {
 		return "";
 	}
@@ -80,7 +83,7 @@ function parseDate(value: string): Date | null {
 		return null;
 	}
 
-	const date = new Date(year, month - 1, day);
+	const date = new Date(Date.UTC(year, month - 1, day));
 	if (Number.isNaN(date.getTime())) {
 		return null;
 	}
@@ -193,6 +196,25 @@ export function parseCSVToTalks(text: string): Talk[] {
 			}
 		}
 		return "";
+	};
+
+	const getLinksFromHeaders = (
+		cells: string[],
+		headers: string[],
+	): string[] => {
+		const links: string[] = [];
+		const usedLinks = new Set<string>();
+
+		for (const header of headers) {
+			const link = sanitizeLink(getValue(cells, header));
+			if (!link || usedLinks.has(link)) {
+				continue;
+			}
+			usedLinks.add(link);
+			links.push(link);
+		}
+
+		return links;
 	};
 
 	const talks: Talk[] = [];
@@ -310,6 +332,19 @@ export function parseCSVToTalks(text: string): Talk[] {
 				"添付データ",
 			]),
 		);
+		const slideLinks = getLinksFromHeaders(cells, [
+			"PPTリンク1",
+			"PPTリンク2",
+			"PPTリンク 1",
+			"PPTリンク 2",
+			"ＰＰＴリンク１",
+			"ＰＰＴリンク２",
+			"スライドリンク1",
+			"スライドリンク2",
+			"スライドリンク 1",
+			"スライドリンク 2",
+			"スライド",
+		]);
 		const youtubeLink = sanitizeLink(
 			getValueFromHeaders(cells, ["YouTube", "YouTubeリンク", "youtube"]) ||
 				(cells[12] ? cells[12].trim() : ""),
@@ -375,6 +410,7 @@ export function parseCSVToTalks(text: string): Talk[] {
 			format,
 			audioLink,
 			attachmentsLink,
+			slideLinks,
 			youtubeLink,
 			srtLink,
 		});

@@ -20,6 +20,7 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		format: "ISO",
 		audioLink: null,
 		attachmentsLink: null,
+		slideLinks: [],
 		youtubeLink: "https://youtu.be/ZZYaasluSAA?si=test",
 		srtLink: null,
 		...overrides,

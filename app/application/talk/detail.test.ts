@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import {
-	buildTalkDetailPageData,
-	buildTalkMetadata,
-} from "./detail";
 import type { Talk } from "../../domain/talk/types";
+import { buildTalkDetailPageData, buildTalkMetadata } from "./detail";
 
 function createTalk(overrides: Partial<Talk> = {}): Talk {
 	return {
@@ -23,6 +20,7 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		format: "ISO",
 		audioLink: "https://example.com/audio.mp3",
 		attachmentsLink: "https://example.com/notes.pdf",
+		slideLinks: ["https://docs.google.com/presentation/d/slide-1/edit"],
 		youtubeLink: "https://youtu.be/ZZYaasluSAA?si=test",
 		srtLink: null,
 		...overrides,
@@ -62,6 +60,7 @@ describe("talk detail application helpers", () => {
 		]);
 		expect(result.resourceLinks.map((link) => link.label)).toEqual([
 			"音源を聞く",
+			"スライドを見る",
 			"添付データ",
 		]);
 		expect(result.videoJsonLd?.description).toBe(

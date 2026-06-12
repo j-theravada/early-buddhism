@@ -1,16 +1,18 @@
 import { cache } from "react";
-import talksJson from "../../generated/talks.json";
 import { normalizeTalkId } from "../../domain/talk/id";
 import type { Talk } from "../../domain/talk/types";
+import talksJson from "../../generated/talks.json";
 
-type SerializedTalk = Omit<Talk, "recordedOnDate"> & {
+type SerializedTalk = Omit<Talk, "recordedOnDate" | "slideLinks"> & {
 	recordedOnDate: string | null;
+	slideLinks?: string[];
 };
 
 function deserializeTalk(talk: SerializedTalk): Talk {
 	return {
 		...talk,
 		recordedOnDate: talk.recordedOnDate ? new Date(talk.recordedOnDate) : null,
+		slideLinks: talk.slideLinks ?? [],
 		srtLink: talk.srtLink ?? null,
 	};
 }

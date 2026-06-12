@@ -9,8 +9,8 @@ import BackToGalleryLink from "../../components/back-to-gallery-link";
 import ContentCard from "../../components/content-card";
 import Footer from "../../components/footer";
 import TranscriptSection from "../../components/transcript-section";
-import { getTranscriptByTalkId } from "../../infrastructure/transcript/repository";
 import { getTalkById } from "../../infrastructure/talk/repository";
+import { getTranscriptByTalkId } from "../../infrastructure/transcript/repository";
 
 type Props = {
 	params: Promise<{ id: string }>;
@@ -113,13 +113,6 @@ export default async function TalkDetailPage({ params }: Props) {
 							</div>
 						)}
 
-						{transcript && transcript.length > 0 && (
-							<TranscriptSection
-								embedUrlPrefix={pageData.embedUrlPrefix}
-								transcript={transcript}
-							/>
-						)}
-
 						{pageData.resourceLinks.length > 0 && (
 							<div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap gap-3">
 								{pageData.resourceLinks.map((link) => (
@@ -135,6 +128,13 @@ export default async function TalkDetailPage({ params }: Props) {
 									</a>
 								))}
 							</div>
+						)}
+
+						{transcript && transcript.length > 0 && (
+							<TranscriptSection
+								embedUrlPrefix={pageData.embedUrlPrefix}
+								transcript={transcript}
+							/>
 						)}
 						{pageData.talk.youtubeUrl && (
 							<div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">

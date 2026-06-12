@@ -14,6 +14,7 @@ export type Talk = {
 	format: string;
 	audioLink: string | null;
 	attachmentsLink: string | null;
+	slideLinks: string[];
 	youtubeLink: string | null;
 	srtLink: string | null;
 };

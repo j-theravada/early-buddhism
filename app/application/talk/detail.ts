@@ -1,11 +1,11 @@
-import { formatJapaneseDate } from "../../utils/date";
-import { toIsoDuration } from "../../utils/duration";
-import { extractYouTubeVideoId } from "../../utils/youtube";
 import {
 	getPrimaryTalkMediaUrl,
 	getTalkTitle,
 } from "../../domain/talk/display";
 import type { Talk } from "../../domain/talk/types";
+import { formatJapaneseDate } from "../../utils/date";
+import { toIsoDuration } from "../../utils/duration";
+import { extractYouTubeVideoId } from "../../utils/youtube";
 
 export type TalkDetailRow = {
 	label: string;
@@ -40,27 +40,28 @@ export type TalkDetailPageData = {
 		embedUrl: string | null;
 		audioLink: string | null;
 		attachmentsLink: string | null;
+		slideLinks: string[];
 	};
 	detailRows: TalkDetailRow[];
 	resourceLinks: TalkResourceLink[];
 	embedUrlPrefix: string | null;
-	videoJsonLd:
-		| {
-				"@context": string;
-				"@type": string;
-				name: string;
-				description: string;
-				thumbnailUrl: string;
-				uploadDate?: string;
-				contentUrl: string;
-				embedUrl: string;
-				duration?: string | null;
-		  }
-		| null;
+	videoJsonLd: {
+		"@context": string;
+		"@type": string;
+		name: string;
+		description: string;
+		thumbnailUrl: string;
+		uploadDate?: string;
+		contentUrl: string;
+		embedUrl: string;
+		duration?: string | null;
+	} | null;
 };
 
 const AUDIO_LINK_CLASS_NAME =
 	"inline-flex items-center gap-2 rounded-full bg-gray-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-gray-700";
+const SLIDE_LINK_CLASS_NAME =
+	"inline-flex items-center gap-2 rounded-full bg-amber-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-amber-700";
 const ATTACHMENT_LINK_CLASS_NAME =
 	"inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-700";
 
@@ -104,6 +105,7 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 		embedUrl,
 		audioLink: talk.audioLink,
 		attachmentsLink: talk.attachmentsLink,
+		slideLinks: talk.slideLinks,
 	};
 
 	const detailRows: TalkDetailRow[] = [
@@ -125,6 +127,14 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 					className: AUDIO_LINK_CLASS_NAME,
 				}
 			: null,
+		...talkData.slideLinks.map((href, index) => ({
+			label:
+				talkData.slideLinks.length === 1
+					? "スライドを見る"
+					: `スライド ${index + 1}`,
+			href,
+			className: SLIDE_LINK_CLASS_NAME,
+		})),
 		talkData.attachmentsLink
 			? {
 					label: "添付データ",
