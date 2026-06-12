@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	buildCueTimeHref,
-	buildTranscriptParagraphs,
-} from "./presentation";
+import { buildCueTimeHref, buildTranscriptParagraphs } from "./presentation";
 import type { TranscriptCue } from "../../domain/transcript/types";
 
 const cues: TranscriptCue[] = [

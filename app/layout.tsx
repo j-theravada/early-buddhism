@@ -42,7 +42,7 @@ export default function RootLayout({
 				{children}
 				{gaId ? <GoogleAnalytics gaId={gaId} /> : null}
 				<script
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data
+					// JSON-LD structured data
 					dangerouslySetInnerHTML={{
 						__html: JSON.stringify([
 							{

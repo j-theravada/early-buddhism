@@ -64,7 +64,9 @@ export function normalizeTranscriptContent(
 	return normalized;
 }
 
-async function fetchTranscript(target: TranscriptDownloadTarget): Promise<string> {
+async function fetchTranscript(
+	target: TranscriptDownloadTarget,
+): Promise<string> {
 	const response = await fetch(target.downloadUrl);
 	if (!response.ok) {
 		throw new Error(`${response.status} ${response.statusText}`);
@@ -81,7 +83,11 @@ async function retainExistingTranscript(
 	try {
 		const current = await readFile(resolve(outDir, `${talkId}.srt`), "utf8");
 		const normalized = normalizeTranscriptContent(talkId, current);
-		await writeFile(resolve(tempDir, `${talkId}.srt`), `${normalized}\n`, "utf8");
+		await writeFile(
+			resolve(tempDir, `${talkId}.srt`),
+			`${normalized}\n`,
+			"utf8",
+		);
 		return true;
 	} catch (error) {
 		if (error && typeof error === "object" && "code" in error) {
@@ -150,9 +156,7 @@ export async function writeGeneratedTranscripts(
 							return;
 						}
 
-						warn(
-							`Skipped transcript for ${target.talkId}. Reason: ${message}`,
-						);
+						warn(`Skipped transcript for ${target.talkId}. Reason: ${message}`);
 					}
 				}),
 			);

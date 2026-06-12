@@ -1,10 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { Talk } from "../app/domain/talk/types";
-import {
-	parseCSVToTalks,
-	SHEET_URL,
-} from "../app/infrastructure/talk/csv";
+import { parseCSVToTalks, SHEET_URL } from "../app/infrastructure/talk/csv";
 import { writeGeneratedTranscripts } from "../app/infrastructure/transcript/generation";
 
 type SerializedTalk = Omit<Talk, "recordedOnDate"> & {

@@ -3,9 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { shouldRestoreScrollOnRouteChange } from "../application/navigation/scroll-restoration";
-import {
-	isTalkGalleryRestorePending,
-} from "../infrastructure/browser/talk-gallery-storage";
+import { isTalkGalleryRestorePending } from "../infrastructure/browser/talk-gallery-storage";
 import {
 	loadScrollPosition,
 	saveScrollPosition,

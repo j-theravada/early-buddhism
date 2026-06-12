@@ -24,8 +24,7 @@ describe("collectTranscriptDownloadTargets", () => {
 		expect(result).toEqual([
 			{
 				talkId: "TALK-1",
-				sourceUrl:
-					"https://drive.google.com/file/d/FILE_ID/view?usp=sharing",
+				sourceUrl: "https://drive.google.com/file/d/FILE_ID/view?usp=sharing",
 				downloadUrl: "https://drive.google.com/uc?export=download&id=FILE_ID",
 			},
 		]);

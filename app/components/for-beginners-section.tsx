@@ -12,7 +12,10 @@ export default function ForBeginnersSection() {
 	return (
 		<section className="bg-amber-50">
 			<details className="group">
-				<summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+				<summary
+					aria-label="初めての方向け説明を開閉"
+					className="cursor-pointer list-none [&::-webkit-details-marker]:hidden"
+				>
 					<div className="mx-auto max-w-7xl px-6 py-3 sm:px-8">
 						<div className="flex flex-col items-center gap-4">
 							<a

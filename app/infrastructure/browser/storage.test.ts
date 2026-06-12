@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	parseScrollPositions,
-	parseVirtuosoRestoreSnapshot,
-} from "./storage";
+import { parseScrollPositions, parseVirtuosoRestoreSnapshot } from "./storage";
 
 describe("browser storage helpers", () => {
 	test("スクロール位置JSONを安全に解釈する", () => {
@@ -14,7 +11,9 @@ describe("browser storage helpers", () => {
 	});
 
 	test("復帰待ちでない場合はvirtuoso snapshotを返さない", () => {
-		expect(parseVirtuosoRestoreSnapshot('{"foo":"bar"}', false)).toBeUndefined();
+		expect(
+			parseVirtuosoRestoreSnapshot('{"foo":"bar"}', false),
+		).toBeUndefined();
 	});
 
 	test("復帰待ちなら JSON snapshot を返す", () => {

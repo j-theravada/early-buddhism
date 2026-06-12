@@ -1,6 +1,4 @@
-import {
-	transformTalkToDisplay,
-} from "../../domain/talk/display";
+import { transformTalkToDisplay } from "../../domain/talk/display";
 import type { Talk, TalkForDisplay } from "../../domain/talk/types";
 
 export function buildTalkGalleryTalks(talks: Talk[]): TalkForDisplay[] {

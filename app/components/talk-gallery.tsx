@@ -108,6 +108,7 @@ export default function TalkGallery({ talks }: Props) {
 				<div className="flex flex-col gap-2">
 					<div className="relative">
 						<input
+							aria-label="法話を検索"
 							className="search-cancel-none w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
 							onBlur={() => {
 								// Delay to allow tag click to fire before hiding

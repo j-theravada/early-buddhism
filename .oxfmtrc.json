@@ -1,0 +1,18 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"printWidth": 80,
+	"useTabs": true,
+	"tabWidth": 2,
+	"semi": true,
+	"trailingComma": "all",
+	"endOfLine": "lf",
+	"ignorePatterns": [
+		".next/**",
+		"build/**",
+		"node_modules/**",
+		"out/**",
+		"**/*.css",
+		"app/generated/talks.json",
+		"app/generated/transcripts/**"
+	]
+}

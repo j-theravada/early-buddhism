@@ -70,7 +70,10 @@ describe("talk grouping helpers", () => {
 	test("テーマセクションは未設定を末尾に回す", () => {
 		const talks = [
 			createTalk("theme-b", { themeLabel: "テーマB", recordedOnSortValue: 1 }),
-			createTalk("unset", { themeLabel: "テーマ未設定", recordedOnSortValue: 3 }),
+			createTalk("unset", {
+				themeLabel: "テーマ未設定",
+				recordedOnSortValue: 3,
+			}),
 			createTalk("theme-a", { themeLabel: "テーマA", recordedOnSortValue: 2 }),
 		];
 
@@ -89,11 +92,7 @@ describe("talk grouping helpers", () => {
 				label: "1990年代",
 				count: 3,
 				sortKey: 1,
-				talks: [
-					createTalk("1"),
-					createTalk("2"),
-					createTalk("3"),
-				],
+				talks: [createTalk("1"), createTalk("2"), createTalk("3")],
 			},
 		];
 
@@ -101,7 +100,10 @@ describe("talk grouping helpers", () => {
 
 		expect(result.groupCounts).toEqual([2]);
 		expect(result.groups[0]?.rows).toHaveLength(2);
-		expect(result.flatRows[0]?.talks.map((talk) => talk.id)).toEqual(["1", "2"]);
+		expect(result.flatRows[0]?.talks.map((talk) => talk.id)).toEqual([
+			"1",
+			"2",
+		]);
 		expect(result.flatRows[1]?.talks.map((talk) => talk.id)).toEqual(["3"]);
 	});
 });

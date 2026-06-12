@@ -1,0 +1,16 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["react", "jsx-a11y", "nextjs"],
+	"env": {
+		"browser": true,
+		"builtin": true,
+		"node": true
+	},
+	"ignorePatterns": [
+		".next/**",
+		"build/**",
+		"node_modules/**",
+		"out/**",
+		"app/generated/transcripts/**"
+	]
+}

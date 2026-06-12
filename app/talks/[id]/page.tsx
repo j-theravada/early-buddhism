@@ -158,7 +158,7 @@ export default async function TalkDetailPage({ params }: Props) {
 
 			{pageData.videoJsonLd && (
 				<script
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD structured data
+					// JSON-LD structured data
 					dangerouslySetInnerHTML={{
 						__html: JSON.stringify(pageData.videoJsonLd),
 					}}

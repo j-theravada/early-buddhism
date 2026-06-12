@@ -76,7 +76,9 @@ export default function DeferredTalkGallery({ talks }: Props) {
 						key={talk.id}
 					>
 						<div className="space-y-2">
-							<p className="text-xs text-gray-500">{talk.recordedOnFormatted}</p>
+							<p className="text-xs text-gray-500">
+								{talk.recordedOnFormatted}
+							</p>
 							<h2 className="text-base font-semibold text-gray-900">
 								{talk.title}
 							</h2>
