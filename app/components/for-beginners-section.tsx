@@ -1,5 +1,5 @@
-import { ChevronDown, ExternalLink } from "lucide-react";
-import { THERAVADA_ASSOCIATION_URL } from "../utils/site-links";
+import Image from "next/image";
+import { AssociationLink, HomeSectionTitle } from "./home-sections";
 
 const BEGINNER_GUIDE_PARAGRAPHS = [
 	"「仏教」と聞くと「宗教でしょ？」と感じる方もいらっしゃるかもしれません。しかし、2500年以上前にお釈迦様が説かれた教えは、「自分で確かめる」「権威ある人から言われたことでも盲信しない」という、いわゆる宗教とはほど遠い、理性的で現代的な教えです。",
@@ -10,43 +10,36 @@ const BEGINNER_GUIDE_PARAGRAPHS = [
 
 export default function ForBeginnersSection() {
 	return (
-		<section className="bg-amber-50">
-			<details className="group">
-				<summary
-					aria-label="初めての方向け説明を開閉"
-					className="cursor-pointer list-none [&::-webkit-details-marker]:hidden"
-				>
-					<div className="mx-auto max-w-7xl px-6 py-3 sm:px-8">
-						<div className="flex flex-col items-center gap-4">
-							<a
-								className="inline-flex items-center gap-1 text-xs whitespace-nowrap text-amber-900 underline transition hover:text-amber-700"
-								href={THERAVADA_ASSOCIATION_URL}
-								rel="noopener noreferrer"
-								target="_blank"
-							>
-								日本テーラワーダ仏教協会
-								<ExternalLink className="h-3 w-3" />
-							</a>
-							<div className="flex items-center justify-center gap-2 text-center">
-								<h2 className="text-amber-900">初めての方へ</h2>
-								<div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-700">
-									<ChevronDown className="h-4 w-4 text-amber-50 transition-transform group-open:rotate-180" />
-								</div>
-							</div>
-						</div>
+		<section
+			className="relative overflow-hidden bg-[#fffbeb] px-5 py-16 sm:px-8 md:py-20 lg:py-28"
+			id="for-beginners"
+		>
+			<div className="pointer-events-none absolute left-0 top-4 w-[105px] opacity-90 sm:w-[140px] md:top-8 md:w-[220px] lg:w-[310px] xl:w-[360px]">
+				<Image
+					alt=""
+					className="h-auto w-full"
+					height={1222}
+					quality={75}
+					src="/khanti/top/bodaijyu_02.png"
+					width={663}
+				/>
+			</div>
+			<div className="relative z-10 mx-auto max-w-[960px]">
+				<HomeSectionTitle>はじめに</HomeSectionTitle>
+				<div className="mx-auto max-w-[760px] space-y-6">
+					<h2 className="font-serif-display text-[22px] font-semibold leading-relaxed text-[#303030]">
+						初期仏教塾とは
+					</h2>
+					<div className="space-y-5 text-[15px] leading-[2] text-[#303030] md:text-base md:leading-[2.15]">
+						{BEGINNER_GUIDE_PARAGRAPHS.map((paragraph) => (
+							<p key={paragraph}>{paragraph}</p>
+						))}
 					</div>
-				</summary>
-
-				<div className="bg-amber-50 py-10 text-sm leading-relaxed text-amber-900 sm:text-base">
-					<div className="mx-auto max-w-7xl px-12 sm:px-16">
-						<div className="space-y-6">
-							{BEGINNER_GUIDE_PARAGRAPHS.map((paragraph) => (
-								<p key={paragraph}>{paragraph}</p>
-							))}
-						</div>
+					<div>
+						<AssociationLink />
 					</div>
 				</div>
-			</details>
+			</div>
 		</section>
 	);
 }

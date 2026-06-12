@@ -9,6 +9,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "BIZ UDPGothic", sans-serif;
+  --font-display: var(--font-inter), "Jost", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --font-serif-display: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Shippori Mincho B1", "Baskerville", serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,6 +53,111 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-serif-display {
+  font-family: var(--font-serif-display);
+}
+
+.home-hero-copy {
+  text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.58), 0 0 14px rgba(0, 0, 0, 0.35);
+}
+
+.home-section-title {
+  position: relative;
+  padding-bottom: 0.7rem;
+}
+
+.home-section-title::after {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 68px;
+  height: 1px;
+  content: "";
+  background: #303030;
+  transform: translateX(-50%);
+}
+
+.home-outline-button {
+  display: inline-flex;
+  min-width: min(90vw, 270px);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #9d7e4c;
+  background: #fff;
+  color: #303030;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 1.15rem 3rem;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.home-outline-button:hover,
+.home-outline-button:focus-visible {
+  border-color: #9d7e4c;
+  background: #9d7e4c;
+  color: #fff;
+}
+
+.home-recommend-bg {
+  background-color: #fcfbf9;
+  background-image: url("/khanti/top/recommendation_bg_02_smp.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.home-profile-bg {
+  background-image: url("/khanti/common/bg_profile.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.home-popular-bg {
+  background-image: url("/khanti/common/bg_new.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.home-gallery-bg {
+  background-color: #fdfdfd;
+  background-image:
+    linear-gradient(90deg, rgba(214, 198, 173, 0.14) 1px, transparent 1px),
+    linear-gradient(rgba(214, 198, 173, 0.14) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.home-profile-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+@media (min-width: 768px) {
+  .home-recommend-bg {
+    background-image: url("/khanti/top/recommendation_bg_01_tab.jpg");
+  }
+
+  .home-vertical-heading {
+    writing-mode: vertical-rl;
+    text-combine-upright: digits 2;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1025px) {
+  .home-recommend-bg {
+    background-image: url("/khanti/top/recommendation_bg_01_pc.jpg");
+  }
 }
 
 .scrollbar-none {

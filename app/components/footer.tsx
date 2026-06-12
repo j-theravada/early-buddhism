@@ -8,15 +8,15 @@ export default function Footer({ maxWidth = "7xl" }: Props) {
 	const maxWidthClass = maxWidth === "4xl" ? "max-w-4xl" : "max-w-7xl";
 
 	return (
-		<footer className="border-t border-gray-200 bg-amber-50">
+		<footer className="border-t border-[#d6c6ad] bg-white">
 			<div
-				className={`mx-auto ${maxWidthClass} px-6 py-6 text-center text-xs text-gray-500 sm:px-8`}
+				className={`mx-auto ${maxWidthClass} px-6 py-8 text-center text-xs text-[#888] sm:px-8`}
 			>
 				<div className="space-y-2">
 					<div>© {new Date().getFullYear()} 初期仏教塾</div>
 					<div>
 						<a
-							className="text-amber-700 hover:text-amber-900 underline transition"
+							className="text-[#dc6209] underline transition hover:text-[#9d7e4c]"
 							href={THERAVADA_ASSOCIATION_URL}
 							rel="noopener noreferrer"
 							target="_blank"

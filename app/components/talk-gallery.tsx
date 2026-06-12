@@ -104,12 +104,12 @@ export default function TalkGallery({ talks }: Props) {
 
 	return (
 		<div className="flex flex-col gap-10">
-			<div className="sticky top-0 z-10 -mx-6 bg-white/95 px-6 py-4 backdrop-blur sm:-mx-8 sm:px-8">
+			<div className="sticky top-16 z-10 -mx-5 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:top-20">
 				<div className="flex flex-col gap-2">
 					<div className="relative">
 						<input
 							aria-label="法話を検索"
-							className="search-cancel-none w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
+							className="search-cancel-none w-full rounded-sm border border-[#d6c6ad] bg-white py-3 pl-4 pr-10 text-sm text-[#303030] placeholder:text-[#888] focus:border-[#9d7e4c] focus:outline-none focus:ring-2 focus:ring-[#9d7e4c]/15"
 							onBlur={() => {
 								// Delay to allow tag click to fire before hiding
 								setTimeout(
@@ -169,7 +169,7 @@ export default function TalkGallery({ talks }: Props) {
 			</div>
 
 			{sections.length === 0 ? (
-				<div className="rounded-lg border border-gray-200 bg-gray-50 p-10 text-center text-sm text-gray-600">
+				<div className="rounded-lg border border-[#d6c6ad] bg-white p-10 text-center text-sm text-[#888]">
 					{hasActiveQuery
 						? "検索条件に一致するデータが見つかりませんでした。条件を変えてお試しください。"
 						: "現在表示できるデータがありません。"}

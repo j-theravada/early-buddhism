@@ -1,133 +1,132 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const navLinks = [
+	{ href: "#talks", label: "動画一覧" },
 	{ href: "/about/early-buddhism", label: "初期仏教とは" },
-	{ href: "/about/vipassana", label: "ヴィパッサナーとは" },
-	{ href: "/about/sumanasara", label: "スマナサーラ長老について" },
+	{ href: "/about/vipassana", label: "ヴィパッサナー瞑想とは" },
+	{ href: "/about/sumanasara", label: "A.スマナサーラ長老について" },
+	{ href: "#info", label: "お知らせ" },
 ];
 
 export default function Header() {
-	return (
-		<header className="w-full">
-			<div className="w-full px-6 py-5 sm:px-8">
-				<div className="mx-auto flex max-w-7xl items-start justify-between">
-					<Link className="shrink-0" href="/">
-						<div className="sm:hidden">
-							<Image
-								alt="初期仏教塾"
-								className="h-auto w-[min(140px,38vw)]"
-								height={168}
-								priority
-								quality={72}
-								sizes="(max-width: 640px) 38vw, 300px"
-								src="/logo_smp.png"
-								width={429}
-							/>
-						</div>
-						<div className="hidden sm:block">
-							<Image
-								alt="初期仏教塾"
-								className="h-auto w-[220px]"
-								height={206}
-								priority
-								quality={72}
-								sizes="220px"
-								src="/logo_pc.png"
-								width={536}
-							/>
-						</div>
-					</Link>
+	const [isScrolled, setIsScrolled] = useState(false);
 
+	useEffect(() => {
+		const updateHeaderState = () => setIsScrolled(window.scrollY > 12);
+		updateHeaderState();
+		window.addEventListener("scroll", updateHeaderState, { passive: true });
+
+		return () => window.removeEventListener("scroll", updateHeaderState);
+	}, []);
+
+	return (
+		<header
+			className={`fixed inset-x-0 top-0 z-50 h-16 border-b backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-300 lg:h-20 ${
+				isScrolled
+					? "border-white/30 bg-white/90 shadow-[0_1px_18px_rgba(0,0,0,0.06)]"
+					: "border-transparent bg-transparent shadow-none"
+			}`}
+		>
+			<div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-5 sm:px-8">
+				<Link
+					className="shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/50"
+					href="/"
+				>
+					<Image
+						alt="初期仏教塾"
+						className="h-auto w-[104px] lg:w-[122px]"
+						height={168}
+						priority
+						quality={75}
+						sizes="(max-width: 1024px) 104px, 122px"
+						src="/khanti/common/logo.png"
+						width={429}
+					/>
+				</Link>
+
+				<nav
+					aria-label="初期仏教塾の基本情報"
+					className="hidden items-center gap-7 lg:flex"
+				>
+					{navLinks.map((link) => (
+						<Link
+							className="font-display text-[15px] font-semibold text-[#303030] transition-colors hover:text-[#9d7e4c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/50"
+							href={link.href}
+							key={link.href}
+						>
+							{link.label}
+						</Link>
+					))}
+					<a
+						aria-label="Xで初期仏教塾を見る"
+						className="font-display flex h-8 w-8 items-center justify-center rounded-sm bg-[#303030] text-sm font-semibold text-white transition-colors hover:bg-[#9d7e4c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/50"
+						href="https://x.com/EarlyBuddhism"
+						rel="noopener noreferrer"
+						target="_blank"
+					>
+						X
+					</a>
+				</nav>
+
+				<details className="group lg:hidden">
+					<summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-sm text-[#303030] transition-colors hover:text-[#9d7e4c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/50 [&::-webkit-details-marker]:hidden">
+						<span className="sr-only">メニューを開く</span>
+						<svg
+							aria-hidden="true"
+							className="h-7 w-7 group-open:hidden"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth={1.6}
+							viewBox="0 0 24 24"
+						>
+							<path
+								d="M4 7h16M4 12h16M4 17h16"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							/>
+						</svg>
+						<svg
+							aria-hidden="true"
+							className="hidden h-7 w-7 group-open:block"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth={1.6}
+							viewBox="0 0 24 24"
+						>
+							<path
+								d="M6 18L18 6M6 6l12 12"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							/>
+						</svg>
+					</summary>
 					<nav
 						aria-label="初期仏教塾の基本情報"
-						className="hidden items-center gap-8 sm:flex"
+						className="absolute inset-x-0 top-16 flex flex-col gap-5 bg-[#9d7e4c] px-8 py-10 shadow-2xl lg:hidden"
 					>
 						{navLinks.map((link) => (
 							<Link
-								className="relative text-base font-medium text-gray-600 transition-colors after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0 after:bg-amber-500 after:transition-all hover:text-gray-900 hover:after:w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 focus-visible:ring-offset-2"
+								className="font-display text-base font-semibold text-white transition-colors hover:text-[#fffbeb]"
 								href={link.href}
 								key={link.href}
 							>
 								{link.label}
 							</Link>
 						))}
-					</nav>
-
-					<details className="group sm:hidden">
-						<summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-md text-gray-600 transition-colors hover:text-gray-900 [&::-webkit-details-marker]:hidden">
-							<span className="sr-only">メニューを開く</span>
-							<svg
-								className="h-6 w-6 group-open:hidden"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth={1.5}
-								viewBox="0 0 24 24"
-							>
-								<path
-									d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-							<svg
-								className="hidden h-6 w-6 group-open:block"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth={1.5}
-								viewBox="0 0 24 24"
-							>
-								<path
-									d="M6 18L18 6M6 6l12 12"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-						</summary>
-						<nav
-							aria-label="初期仏教塾の基本情報"
-							className="absolute right-6 mt-2 flex min-w-56 flex-col gap-3 rounded-lg border border-gray-100 bg-white p-4 shadow-lg sm:hidden"
+						<a
+							className="font-display text-base font-semibold text-white transition-colors hover:text-[#fffbeb]"
+							href="https://x.com/EarlyBuddhism"
+							rel="noopener noreferrer"
+							target="_blank"
 						>
-							{navLinks.map((link) => (
-								<Link
-									className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
-									href={link.href}
-									key={link.href}
-								>
-									{link.label}
-								</Link>
-							))}
-						</nav>
-					</details>
-				</div>
-			</div>
-
-			<div className="w-full">
-				<div className="relative w-full sm:hidden">
-					<Image
-						alt="初期仏教塾 音声アーカイブ"
-						className="h-auto w-full object-contain"
-						height={1395}
-						priority
-						quality={68}
-						sizes="100vw"
-						src="/hero_smp.jpg"
-						width={1170}
-					/>
-				</div>
-				<div className="hidden w-full sm:block">
-					<div className="relative aspect-[16/9] w-full overflow-hidden">
-						<Image
-							alt="初期仏教塾 音声アーカイブ"
-							className="object-cover object-top"
-							fill
-							priority
-							quality={72}
-							sizes="100vw"
-							src="/hero_pc.jpg"
-						/>
-					</div>
-				</div>
+							X
+						</a>
+					</nav>
+				</details>
 			</div>
 		</header>
 	);

@@ -68,22 +68,20 @@ export default function DeferredTalkGallery({ talks }: Props) {
 
 	return (
 		<div className="space-y-6">
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 				{previewTalks.map((talk) => (
 					<Link
-						className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-amber-300 hover:shadow-md"
+						className="rounded-lg border border-[#d6c6ad] bg-white p-5 shadow-sm transition hover:border-[#9d7e4c] hover:shadow-md"
 						href={`/talks/${encodeURIComponent(talk.id)}`}
 						key={talk.id}
 					>
 						<div className="space-y-2">
-							<p className="text-xs text-gray-500">
-								{talk.recordedOnFormatted}
-							</p>
-							<h2 className="text-base font-semibold text-gray-900">
+							<p className="text-xs text-[#888]">{talk.recordedOnFormatted}</p>
+							<h2 className="text-base font-semibold text-[#303030]">
 								{talk.title}
 							</h2>
 							{talk.subtitle && (
-								<p className="text-sm leading-relaxed text-gray-600">
+								<p className="text-sm leading-relaxed text-[#666]">
 									{talk.subtitle}
 								</p>
 							)}
@@ -92,7 +90,7 @@ export default function DeferredTalkGallery({ talks }: Props) {
 				))}
 			</div>
 
-			<div className="rounded-lg border border-dashed border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
+			<div className="rounded-lg border border-dashed border-[#d6c6ad] bg-[#fffbeb]/70 px-4 py-3 text-sm text-[#9d7e4c]">
 				検索と全件表示を読み込み中です。
 			</div>
 
