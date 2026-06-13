@@ -6,6 +6,7 @@ const BASE = "https://early-buddhism.j-theravada.com";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const staticPages: MetadataRoute.Sitemap = [
 		{ url: BASE, changeFrequency: "weekly", priority: 1 },
+		{ url: `${BASE}/talks`, changeFrequency: "weekly", priority: 0.8 },
 		{ url: `${BASE}/about`, changeFrequency: "monthly", priority: 0.7 },
 		{
 			url: `${BASE}/about/sumanasara`,

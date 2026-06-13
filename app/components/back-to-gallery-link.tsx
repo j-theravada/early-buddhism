@@ -14,7 +14,7 @@ export default function BackToGalleryLink({ className, children }: Props) {
 	return (
 		<Link
 			className={className}
-			href="/"
+			href="/talks"
 			onClick={(event) => {
 				if (event.defaultPrevented) return;
 				if (event.button !== 0) return;
@@ -33,7 +33,6 @@ export default function BackToGalleryLink({ className, children }: Props) {
 					// Fall back to normal navigation.
 				}
 			}}
-			scroll={false}
 		>
 			{children}
 		</Link>
