@@ -169,13 +169,13 @@ export function PopularVideosSection() {
 				<div className="grid gap-5 sm:grid-cols-3">
 					{popularImages.map((src, index) => (
 						<a
-							className="group block overflow-hidden rounded-[3px] bg-white shadow-sm transition hover:opacity-80"
+							className="block transition hover:opacity-80"
 							href="#talks"
 							key={src}
 						>
 							<Image
 								alt={`人気の動画 ${index + 1}`}
-								className="h-auto w-full"
+								className="h-auto w-full rounded-[3px]"
 								height={938}
 								quality={75}
 								sizes="(max-width: 640px) 100vw, 33vw"
