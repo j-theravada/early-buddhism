@@ -142,12 +142,29 @@ html {
   text-orientation: mixed;
 }
 
+.about-profile-bg {
+  background-image: url("/khanti/common/bg_profile_02.jpg");
+  background-position: center;
+  background-size: cover;
+}
+
+.about-profile-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
 @media (min-width: 768px) {
   .home-recommend-bg {
     background-image: url("/khanti/top/recommendation_bg_01_tab.jpg");
   }
 
   .home-vertical-heading {
+    writing-mode: vertical-rl;
+    text-combine-upright: digits 2;
+    white-space: nowrap;
+  }
+
+  .about-vertical-heading {
     writing-mode: vertical-rl;
     text-combine-upright: digits 2;
     white-space: nowrap;

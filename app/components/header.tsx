@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const navLinks = [
-	{ href: "#talks", label: "動画一覧" },
+	{ href: "/#talks", label: "動画一覧" },
 	{ href: "/about/early-buddhism", label: "初期仏教とは" },
 	{ href: "/about/vipassana", label: "ヴィパッサナー瞑想とは" },
 	{ href: "/about/sumanasara", label: "A.スマナサーラ長老について" },
-	{ href: "#info", label: "お知らせ" },
+	{ href: "/#info", label: "お知らせ" },
 ];
 
 export default function Header() {
