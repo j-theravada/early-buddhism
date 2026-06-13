@@ -36,7 +36,7 @@ export default function RootLayout({
 }>) {
 	const gaId = process.env.NEXT_PUBLIC_GA_ID;
 	return (
-		<html lang="ja">
+		<html data-scroll-behavior="smooth" lang="ja">
 			<body className={`${inter.variable} antialiased`}>
 				<ClientPageChrome />
 				{children}

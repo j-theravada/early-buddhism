@@ -148,12 +148,22 @@ html {
   background-size: cover;
 }
 
+.about-title-bg {
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: 1120px auto;
+}
+
 .about-profile-vertical {
   writing-mode: vertical-rl;
   text-orientation: mixed;
 }
 
 @media (min-width: 768px) {
+  .about-title-bg {
+    background-size: 1480px auto;
+  }
+
   .home-recommend-bg {
     background-image: url("/khanti/top/recommendation_bg_01_tab.jpg");
   }
@@ -172,6 +182,10 @@ html {
 }
 
 @media (min-width: 1025px) {
+  .about-title-bg {
+    background-size: 1800px auto;
+  }
+
   .home-recommend-bg {
     background-image: url("/khanti/top/recommendation_bg_01_pc.jpg");
   }
