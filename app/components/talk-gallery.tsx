@@ -26,14 +26,16 @@ const SEARCH_BLUR_DELAY_MS = 150;
 export default function TalkGallery({ talks }: Props) {
 	const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
 
-	const [searchQuery, setSearchQuery] = useState(() =>
-		readTalkGallerySearchQuery(),
-	);
+	const [searchQuery, setSearchQuery] = useState("");
 	const [isSearchFocused, setIsSearchFocused] = useState(false);
 	const restoreStateFrom = useMemo(
 		() => readAndConsumeTalkGalleryRestoreSnapshot(),
 		[],
 	);
+
+	useEffect(() => {
+		setSearchQuery(readTalkGallerySearchQuery());
+	}, []);
 
 	useEffect(() => {
 		const handleScrollToTop = () => {

@@ -13,10 +13,10 @@ describe("shouldRestoreScrollOnRouteChange", () => {
 		).toBe(true);
 	});
 
-	test("トーク詳細からホームに戻ると復元する", () => {
+	test("トーク詳細から動画一覧に戻ると復元する", () => {
 		expect(
 			shouldRestoreScrollOnRouteChange({
-				pathname: "/",
+				pathname: "/talks",
 				previousPathname: "/talks/abc",
 				restoreOnNextRoute: false,
 				isTalkGalleryRestorePending: false,
@@ -24,10 +24,10 @@ describe("shouldRestoreScrollOnRouteChange", () => {
 		).toBe(true);
 	});
 
-	test("ギャラリー復帰待ちのときホームでは復元しない", () => {
+	test("ギャラリー復帰待ちのとき動画一覧では復元しない", () => {
 		expect(
 			shouldRestoreScrollOnRouteChange({
-				pathname: "/",
+				pathname: "/talks",
 				previousPathname: "/talks/abc",
 				restoreOnNextRoute: false,
 				isTalkGalleryRestorePending: true,

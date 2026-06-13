@@ -12,15 +12,15 @@ export function shouldRestoreScrollOnRouteChange({
 	isTalkGalleryRestorePending,
 }: Params): boolean {
 	const cameFromTalkDetail = Boolean(previousPathname?.startsWith("/talks/"));
-	const goingToHome = pathname === "/";
+	const goingToTalkGallery = pathname === "/talks";
 	const shouldRestore =
-		restoreOnNextRoute || (cameFromTalkDetail && goingToHome);
+		restoreOnNextRoute || (cameFromTalkDetail && goingToTalkGallery);
 
 	if (!shouldRestore) {
 		return false;
 	}
 
-	if (pathname === "/" && isTalkGalleryRestorePending) {
+	if (pathname === "/talks" && isTalkGalleryRestorePending) {
 		return false;
 	}
 

@@ -198,28 +198,10 @@ export function PopularVideosSection() {
 					))}
 				</div>
 				<div className="mt-12 text-center">
-					<a className="home-outline-button" href="#talks">
+					<Link className="home-outline-button" href="/talks">
 						動画一覧
-					</a>
+					</Link>
 				</div>
-			</div>
-		</section>
-	);
-}
-
-export function GalleryIntroSection({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
-	return (
-		<section
-			className="home-gallery-bg scroll-mt-20 px-5 py-16 sm:px-8 lg:py-24"
-			id="talks"
-		>
-			<div className="mx-auto max-w-7xl">
-				<HomeSectionTitle>動画を探す</HomeSectionTitle>
-				{children}
 			</div>
 		</section>
 	);
