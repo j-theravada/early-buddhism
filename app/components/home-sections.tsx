@@ -36,10 +36,22 @@ const recommendations = [
 	},
 ];
 
-const popularImages = [
-	"/khanti/top/new_contents_01.png",
-	"/khanti/top/new_contents_02.png",
-	"/khanti/top/new_contents_03.png",
+const popularVideos = [
+	{
+		image: "/khanti/top/new_contents_01.png",
+		talkId: "TALK-V-159-4-4F5E53BFA4DF",
+		title: "「自信過剰」の危機 〜あなたは自分を信じる？ 自分を疑う？ 〜 4",
+	},
+	{
+		image: "/khanti/top/new_contents_02.png",
+		talkId: "TALK-V-160-1-4739BF160E79",
+		title: "「世間知らず」からの脱却 〜ブッダが称賛する社会人とは？ 〜 1",
+	},
+	{
+		image: "/khanti/top/new_contents_03.png",
+		talkId: "TALK-V-160-2-303B3687DE32",
+		title: "「世間知らず」からの脱却 〜ブッダが称賛する社会人とは？ 〜 2",
+	},
 ];
 
 export function RecommendationsSection() {
@@ -167,22 +179,22 @@ export function PopularVideosSection() {
 			<div className="mx-auto max-w-[1200px]">
 				<HomeSectionTitle>人気の動画</HomeSectionTitle>
 				<div className="grid gap-5 sm:grid-cols-3">
-					{popularImages.map((src, index) => (
-						<a
+					{popularVideos.map((video) => (
+						<Link
 							className="block transition hover:opacity-80"
-							href="#talks"
-							key={src}
+							href={`/talks/${encodeURIComponent(video.talkId)}`}
+							key={video.talkId}
 						>
 							<Image
-								alt={`人気の動画 ${index + 1}`}
+								alt={video.title}
 								className="h-auto w-full rounded-[3px]"
 								height={938}
 								quality={75}
 								sizes="(max-width: 640px) 100vw, 33vw"
-								src={src}
+								src={video.image}
 								width={794}
 							/>
-						</a>
+						</Link>
 					))}
 				</div>
 				<div className="mt-12 text-center">
