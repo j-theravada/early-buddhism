@@ -108,7 +108,7 @@ export function TeacherProfileSection() {
 				<div className="flex flex-col gap-10 lg:flex-row-reverse lg:items-end lg:gap-16">
 					<div className="relative mx-auto flex max-w-[430px] items-end gap-5 lg:mx-0 lg:flex-[0_0_42%]">
 						<div className="font-serif-display home-profile-vertical text-xl text-[#9d7e4c] lg:text-[28px]">
-							Rev.Alubomulle Sumanasara Thero
+							Ven. Alubomulle Sumanasara
 						</div>
 						<Image
 							alt="アルボムッレ・スマナサーラ長老"
