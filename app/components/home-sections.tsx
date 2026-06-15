@@ -1,10 +1,13 @@
 import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment, type ReactNode } from "react";
+import type { PopularVideo } from "../application/analytics/popular-videos";
+import type { NewsItem } from "../domain/news/types";
 import { THERAVADA_ASSOCIATION_URL } from "../utils/site-links";
 
 type SectionTitleProps = {
-	children: React.ReactNode;
+	children: ReactNode;
 };
 
 export function HomeSectionTitle({ children }: SectionTitleProps) {
@@ -33,24 +36,6 @@ const recommendations = [
 		name: "藤本 晃",
 		title: "山口県下松市・浄土真宗（単立）誓教寺住職。仏教学者",
 		type: "b",
-	},
-];
-
-const popularVideos = [
-	{
-		image: "/khanti/top/new_contents_01.png",
-		talkId: "TALK-V-159-4-4F5E53BFA4DF",
-		title: "「自信過剰」の危機 〜あなたは自分を信じる？ 自分を疑う？ 〜 4",
-	},
-	{
-		image: "/khanti/top/new_contents_02.png",
-		talkId: "TALK-V-160-1-4739BF160E79",
-		title: "「世間知らず」からの脱却 〜ブッダが称賛する社会人とは？ 〜 1",
-	},
-	{
-		image: "/khanti/top/new_contents_03.png",
-		talkId: "TALK-V-160-2-303B3687DE32",
-		title: "「世間知らず」からの脱却 〜ブッダが称賛する社会人とは？ 〜 2",
 	},
 ];
 
@@ -154,32 +139,46 @@ export function TeacherProfileSection() {
 	);
 }
 
-export function NewsSection() {
+export function NewsSection({ items }: { items: NewsItem[] }) {
 	return (
 		<section className="scroll-mt-24 px-5 py-16 sm:px-8 lg:py-24" id="info">
 			<div className="mx-auto max-w-[900px]">
 				<HomeSectionTitle>お知らせ</HomeSectionTitle>
-				<dl className="grid text-[15px] leading-[1.9] text-[#303030] md:grid-cols-[150px_1fr]">
-					<dt className="border-[#d6c6ad] py-4 font-light md:border-b">
-						2025.12.31
-					</dt>
-					<dd className="border-b border-[#d6c6ad] py-4">
-						日本テーラワーダ仏教協会は、新しく当ウェブサイト「初期仏教塾」をオープンいたしました。
-						第一弾として、スマナサーラ長老の講演会動画300本を無料公開！
-					</dd>
-				</dl>
+				{items.length > 0 ? (
+					<dl className="grid text-[15px] leading-[1.9] text-[#303030] md:grid-cols-[150px_1fr]">
+						{items.map((item) => (
+							<Fragment key={item.slug}>
+								<dt className="border-[#d6c6ad] py-4 font-light md:border-b">
+									{formatNewsDate(item.date)}
+								</dt>
+								<dd className="border-b border-[#d6c6ad] py-4">
+									<p className="font-semibold">{item.title}</p>
+									<p className="mt-1">{item.excerpt}</p>
+								</dd>
+							</Fragment>
+						))}
+					</dl>
+				) : (
+					<p className="text-center text-[15px] leading-[1.9] text-[#303030]">
+						現在、お知らせはありません。
+					</p>
+				)}
 			</div>
 		</section>
 	);
 }
 
-export function PopularVideosSection() {
+function formatNewsDate(date: string): string {
+	return date.replaceAll("-", ".");
+}
+
+export function PopularVideosSection({ videos }: { videos: PopularVideo[] }) {
 	return (
 		<section className="home-popular-bg px-5 py-16 sm:px-8 lg:py-24">
 			<div className="mx-auto max-w-[1200px]">
 				<HomeSectionTitle>人気の動画</HomeSectionTitle>
 				<div className="grid gap-5 sm:grid-cols-3">
-					{popularVideos.map((video) => (
+					{videos.map((video) => (
 						<Link
 							className="block transition hover:opacity-80"
 							href={`/talks/${encodeURIComponent(video.talkId)}`}
@@ -187,12 +186,16 @@ export function PopularVideosSection() {
 						>
 							<Image
 								alt={video.title}
-								className="h-auto w-full rounded-[3px]"
-								height={938}
+								className={
+									video.imageKind === "thumbnail"
+										? "aspect-video w-full rounded-[3px] object-cover"
+										: "h-auto w-full rounded-[3px]"
+								}
+								height={video.imageHeight}
 								quality={75}
 								sizes="(max-width: 640px) 100vw, 33vw"
 								src={video.image}
-								width={794}
+								width={video.imageWidth}
 							/>
 						</Link>
 					))}

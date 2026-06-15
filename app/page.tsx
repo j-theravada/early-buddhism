@@ -1,3 +1,5 @@
+import { getPopularVideos } from "./application/analytics/popular-videos";
+import { buildTalkGalleryTalks } from "./application/talk/gallery";
 import ClientHomeActions from "./components/client-home-actions";
 import Footer from "./components/footer";
 import ForBeginnersSection from "./components/for-beginners-section";
@@ -9,8 +11,14 @@ import {
 	RecommendationsSection,
 	TeacherProfileSection,
 } from "./components/home-sections";
+import { getNewsItems } from "./infrastructure/news/repository";
+import { getTalks } from "./infrastructure/talk/repository";
 
-export default function Home() {
+export default async function Home() {
+	const talks = await getTalks();
+	const newsItems = await getNewsItems();
+	const popularVideos = getPopularVideos(buildTalkGalleryTalks(talks));
+
 	return (
 		<div className="min-h-screen flex flex-col bg-white text-[#303030]">
 			<div className="flex-1">
@@ -20,8 +28,8 @@ export default function Home() {
 					<ForBeginnersSection />
 					<RecommendationsSection />
 					<TeacherProfileSection />
-					<NewsSection />
-					<PopularVideosSection />
+					<NewsSection items={newsItems} />
+					<PopularVideosSection videos={popularVideos} />
 				</main>
 			</div>
 

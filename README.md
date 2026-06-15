@@ -18,6 +18,43 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Environment Variables
+
+Google Analytics is loaded from `app/layout.tsx` when this variable is set:
+
+```bash
+NEXT_PUBLIC_GA_ID=G-STEXVRMHCW
+```
+
+The Vercel project also needs `NEXT_PUBLIC_GA_ID` set for Production, Preview, and Development.
+
+Popular videos can be loaded from the GA4 Data API when these server-side variables are set:
+
+```bash
+GA4_PROPERTY_ID=517469983
+GA4_POPULAR_VIDEO_LOOKBACK_DAYS=90
+```
+
+For authentication, use one of these options:
+
+```bash
+# OAuth user credentials for organizations that block service-account key creation.
+GA4_OAUTH_CLIENT_ID=...
+GA4_OAUTH_CLIENT_SECRET=...
+GA4_OAUTH_REFRESH_TOKEN=...
+
+# Or a service account key, when key creation is allowed.
+GA4_SERVICE_ACCOUNT_JSON='{"client_email":"...","private_key":"..."}'
+```
+
+Instead of inline variables, `GOOGLE_APPLICATION_CREDENTIALS_JSON` or `GOOGLE_APPLICATION_CREDENTIALS` can point to Google `service_account` or `authorized_user` JSON credentials. You can also set `GA4_CLIENT_EMAIL` with `GA4_PRIVATE_KEY` for service-account credentials.
+
+Update the generated popular-video ranking with:
+
+```bash
+bun run update-popular-videos
+```
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
