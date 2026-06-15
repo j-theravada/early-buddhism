@@ -71,5 +71,6 @@ export function transformTalkToDisplay(
 		recordedOnSortValue,
 		decadeLabel,
 		themeLabel,
+		tags: talk.tags,
 	};
 }

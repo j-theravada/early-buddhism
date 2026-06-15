@@ -3,19 +3,9 @@ import {
 	tokenizeSearchQuery,
 	type IndexedTalk,
 } from "../../application/talk/search";
+import { TALK_TAGS } from "../../domain/talk/tags";
 
-const PRESET_TAGS = [
-	"怒り",
-	"瞑想",
-	"慈悲",
-	"四聖諦",
-	"八正道",
-	"無常",
-	"苦",
-	"無我",
-	"ヴィパッサナー",
-	"サティ",
-] as const;
+const PRESET_TAGS = TALK_TAGS;
 
 type Props = {
 	indexedTalks: IndexedTalk[];

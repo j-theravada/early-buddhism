@@ -54,6 +54,19 @@ export default function TalkGalleryCard({
 				</div>
 			</Link>
 
+			{talk.tags.length > 0 && (
+				<div className="px-6 pb-4 flex flex-wrap gap-1.5">
+					{talk.tags.slice(0, 5).map((tag) => (
+						<span
+							className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800"
+							key={tag}
+						>
+							#{highlightMatches(tag, searchTokens)}
+						</span>
+					))}
+				</div>
+			)}
+
 			<div className="px-6 pb-6 flex items-center justify-between gap-3">
 				<div className="flex items-baseline gap-2">
 					<span className="text-xs text-[#888]">

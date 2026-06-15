@@ -29,6 +29,7 @@ function createDisplayTalk(
 		recordedOnSortValue: 810604800000,
 		decadeLabel: "1990年代",
 		themeLabel: "心と病気",
+		tags: [],
 		...overrides,
 	};
 }
@@ -53,6 +54,7 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		slideLinks: [],
 		youtubeLink: null,
 		srtLink: null,
+		tags: [],
 		...overrides,
 	};
 }
@@ -77,6 +79,21 @@ describe("talk search helpers", () => {
 
 		expect(result).toHaveLength(1);
 		expect(result[0]?.id).toBe("TALK-1");
+	});
+
+	test("タグも検索対象に含める", () => {
+		const talks = [
+			createDisplayTalk({ id: "TALK-1", tags: ["慈悲"] }),
+			createDisplayTalk({ id: "TALK-2", tags: ["無常"] }),
+		];
+
+		const indexedTalks = buildSearchIndex(talks);
+		const result = filterTalksByQuery(
+			indexedTalks,
+			tokenizeSearchQuery("慈悲"),
+		);
+
+		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);
 	});
 
 	test("ギャラリー表示用トークを日付降順で並べる", () => {

@@ -17,6 +17,7 @@ export type Talk = {
 	slideLinks: string[];
 	youtubeLink: string | null;
 	srtLink: string | null;
+	tags: string[];
 };
 
 export type TalkForDisplay = {
@@ -38,4 +39,5 @@ export type TalkForDisplay = {
 	recordedOnSortValue: number;
 	decadeLabel: string;
 	themeLabel: string;
+	tags: string[];
 };

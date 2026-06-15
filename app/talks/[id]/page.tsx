@@ -113,6 +113,19 @@ export default async function TalkDetailPage({ params }: Props) {
 							</div>
 						)}
 
+						{pageData.talk.tags.length > 0 && (
+							<div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap gap-2">
+								{pageData.talk.tags.map((tag) => (
+									<span
+										className="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800"
+										key={tag}
+									>
+										#{tag}
+									</span>
+								))}
+							</div>
+						)}
+
 						{pageData.resourceLinks.length > 0 && (
 							<div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap gap-3">
 								{pageData.resourceLinks.map((link) => (
