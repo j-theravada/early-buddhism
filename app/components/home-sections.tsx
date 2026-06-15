@@ -1,10 +1,12 @@
 import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Fragment, type ReactNode } from "react";
+import type { NewsItem } from "../domain/news/types";
 import { THERAVADA_ASSOCIATION_URL } from "../utils/site-links";
 
 type SectionTitleProps = {
-	children: React.ReactNode;
+	children: ReactNode;
 };
 
 export function HomeSectionTitle({ children }: SectionTitleProps) {
@@ -154,23 +156,37 @@ export function TeacherProfileSection() {
 	);
 }
 
-export function NewsSection() {
+export function NewsSection({ items }: { items: NewsItem[] }) {
 	return (
 		<section className="scroll-mt-24 px-5 py-16 sm:px-8 lg:py-24" id="info">
 			<div className="mx-auto max-w-[900px]">
 				<HomeSectionTitle>お知らせ</HomeSectionTitle>
-				<dl className="grid text-[15px] leading-[1.9] text-[#303030] md:grid-cols-[150px_1fr]">
-					<dt className="border-[#d6c6ad] py-4 font-light md:border-b">
-						2025.12.31
-					</dt>
-					<dd className="border-b border-[#d6c6ad] py-4">
-						日本テーラワーダ仏教協会は、新しく当ウェブサイト「初期仏教塾」をオープンいたしました。
-						第一弾として、スマナサーラ長老の講演会動画300本を無料公開！
-					</dd>
-				</dl>
+				{items.length > 0 ? (
+					<dl className="grid text-[15px] leading-[1.9] text-[#303030] md:grid-cols-[150px_1fr]">
+						{items.map((item) => (
+							<Fragment key={item.slug}>
+								<dt className="border-[#d6c6ad] py-4 font-light md:border-b">
+									{formatNewsDate(item.date)}
+								</dt>
+								<dd className="border-b border-[#d6c6ad] py-4">
+									<p className="font-semibold">{item.title}</p>
+									<p className="mt-1">{item.excerpt}</p>
+								</dd>
+							</Fragment>
+						))}
+					</dl>
+				) : (
+					<p className="text-center text-[15px] leading-[1.9] text-[#303030]">
+						現在、お知らせはありません。
+					</p>
+				)}
 			</div>
 		</section>
 	);
+}
+
+function formatNewsDate(date: string): string {
+	return date.replaceAll("-", ".");
 }
 
 export function PopularVideosSection() {

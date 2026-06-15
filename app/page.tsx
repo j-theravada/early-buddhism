@@ -9,8 +9,11 @@ import {
 	RecommendationsSection,
 	TeacherProfileSection,
 } from "./components/home-sections";
+import { getNewsItems } from "./infrastructure/news/repository";
 
-export default function Home() {
+export default async function Home() {
+	const newsItems = await getNewsItems();
+
 	return (
 		<div className="min-h-screen flex flex-col bg-white text-[#303030]">
 			<div className="flex-1">
@@ -20,7 +23,7 @@ export default function Home() {
 					<ForBeginnersSection />
 					<RecommendationsSection />
 					<TeacherProfileSection />
-					<NewsSection />
+					<NewsSection items={newsItems} />
 					<PopularVideosSection />
 				</main>
 			</div>
