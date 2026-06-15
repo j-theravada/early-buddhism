@@ -12,78 +12,46 @@ type GeneratedPopularVideos = {
 	}[];
 };
 
-export type PopularVideo = {
-	image: string;
-	imageHeight: number;
-	imageKind: "feature" | "thumbnail";
-	imageWidth: number;
-	talkId: string;
-	title: string;
-	views?: number;
-};
+const fallbackPopularVideoIds = [
+	"TALK-V-159-4-4F5E53BFA4DF",
+	"TALK-V-160-1-4739BF160E79",
+	"TALK-V-160-2-303B3687DE32",
+] as const;
 
-const fallbackPopularVideos: PopularVideo[] = [
-	{
-		image: "/khanti/top/new_contents_01.png",
-		imageHeight: 938,
-		imageKind: "feature",
-		imageWidth: 794,
-		talkId: "TALK-V-159-4-4F5E53BFA4DF",
-		title: "「自信過剰」の危機 〜あなたは自分を信じる？ 自分を疑う？ 〜 4",
-	},
-	{
-		image: "/khanti/top/new_contents_02.png",
-		imageHeight: 938,
-		imageKind: "feature",
-		imageWidth: 794,
-		talkId: "TALK-V-160-1-4739BF160E79",
-		title: "「世間知らず」からの脱却 〜ブッダが称賛する社会人とは？ 〜 1",
-	},
-	{
-		image: "/khanti/top/new_contents_03.png",
-		imageHeight: 938,
-		imageKind: "feature",
-		imageWidth: 794,
-		talkId: "TALK-V-160-2-303B3687DE32",
-		title: "「世間知らず」からの脱却 〜ブッダが称賛する社会人とは？ 〜 2",
-	},
-];
-
-export function getPopularVideos(talks: TalkForDisplay[]): PopularVideo[] {
+export function getPopularVideos(talks: TalkForDisplay[]): TalkForDisplay[] {
 	const pageViews = generatedPopularVideosJson as GeneratedPopularVideos;
 	const talksById = new Map(talks.map((talk) => [normalizeTalkId(talk.id), talk]));
-	const videos: PopularVideo[] = [];
+	const videos: TalkForDisplay[] = [];
 
 	for (const pageView of pageViews.entries ?? []) {
 		const talk = talksById.get(normalizeTalkId(pageView.talkId));
 		if (!talk?.youtubeUrl || !talk.thumbnailUrl) continue;
 
-		videos.push({
-			image: talk.thumbnailUrl,
-			imageHeight: 360,
-			imageKind: "thumbnail",
-			imageWidth: 480,
-			talkId: talk.id,
-			title: talk.title,
-			views: pageView.views,
-		});
+		videos.push(talk);
 
 		if (videos.length >= POPULAR_VIDEO_LIMIT) break;
 	}
 
-	return fillWithFallbackVideos(videos);
+	return fillWithFallbackVideos(videos, talksById);
 }
 
-function fillWithFallbackVideos(videos: PopularVideo[]): PopularVideo[] {
+function fillWithFallbackVideos(
+	videos: TalkForDisplay[],
+	talksById: Map<string, TalkForDisplay>,
+): TalkForDisplay[] {
 	const result = [...videos];
-	const seen = new Set(result.map((video) => normalizeTalkId(video.talkId)));
+	const seen = new Set(result.map((video) => normalizeTalkId(video.id)));
 
-	for (const fallbackVideo of fallbackPopularVideos) {
+	for (const fallbackVideoId of fallbackPopularVideoIds) {
 		if (result.length >= POPULAR_VIDEO_LIMIT) break;
-		if (seen.has(normalizeTalkId(fallbackVideo.talkId))) continue;
+		const lookupKey = normalizeTalkId(fallbackVideoId);
+		if (seen.has(lookupKey)) continue;
 
-		result.push(fallbackVideo);
-		seen.add(normalizeTalkId(fallbackVideo.talkId));
+		const fallbackTalk = talksById.get(lookupKey);
+		if (!fallbackTalk?.youtubeUrl || !fallbackTalk.thumbnailUrl) continue;
+
+		result.push(fallbackTalk);
+		seen.add(lookupKey);
 	}
 
 	return result;

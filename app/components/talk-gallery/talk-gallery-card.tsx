@@ -7,14 +7,19 @@ import { highlightMatches } from "./highlight";
 type Props = {
 	talk: TalkForDisplay;
 	searchTokens: string[];
-	onNavigateToTalk: () => void;
+	onNavigateToTalk?: () => void;
+	onSelectTag?: (tag: string) => void;
 };
 
 export default function TalkGalleryCard({
 	talk,
 	searchTokens,
 	onNavigateToTalk,
+	onSelectTag,
 }: Props) {
+	const tagClass =
+		"rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 transition hover:bg-amber-100 hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25";
+
 	return (
 		<div className="group relative flex flex-col overflow-hidden rounded-lg border border-[#d6c6ad] bg-white shadow-sm transition duration-200 ease-out hover:border-[#9d7e4c] hover:shadow-md">
 			{talk.dvdId && (
@@ -25,7 +30,7 @@ export default function TalkGalleryCard({
 			<Link
 				className="flex flex-col flex-1"
 				href={`/talks/${encodeURIComponent(talk.id)}`}
-				onClick={onNavigateToTalk}
+				{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
 			>
 				{/* 上半分: サムネイル */}
 				{talk.thumbnailUrl && (
@@ -56,14 +61,28 @@ export default function TalkGalleryCard({
 
 			{talk.tags.length > 0 && (
 				<div className="px-6 pb-4 flex flex-wrap gap-1.5">
-					{talk.tags.slice(0, 5).map((tag) => (
-						<span
-							className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800"
-							key={tag}
-						>
-							#{highlightMatches(tag, searchTokens)}
-						</span>
-					))}
+					{talk.tags.slice(0, 5).map((tag) =>
+						onSelectTag ? (
+							<button
+								aria-label={`${tag}で検索`}
+								className={tagClass}
+								key={tag}
+								onClick={() => onSelectTag(tag)}
+								type="button"
+							>
+								#{highlightMatches(tag, searchTokens)}
+							</button>
+						) : (
+							<Link
+								aria-label={`${tag}の動画を探す`}
+								className={tagClass}
+								href={`/talks?query=${encodeURIComponent(tag)}`}
+								key={tag}
+							>
+								#{highlightMatches(tag, searchTokens)}
+							</Link>
+						),
+					)}
 				</div>
 			)}
 

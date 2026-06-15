@@ -13,6 +13,7 @@ type Props = {
 	columns: number;
 	searchTokens: string[];
 	onNavigateToTalk: () => void;
+	onSelectTag: (tag: string) => void;
 };
 
 export default function TalkGalleryRow({
@@ -21,6 +22,7 @@ export default function TalkGalleryRow({
 	columns,
 	searchTokens,
 	onNavigateToTalk,
+	onSelectTag,
 }: Props) {
 	const gridClass = GRID_CLASS_BY_COLUMNS[columns] ?? GRID_CLASS_BY_COLUMNS[1];
 
@@ -31,6 +33,7 @@ export default function TalkGalleryRow({
 					<TalkGalleryCard
 						key={talk.id}
 						onNavigateToTalk={onNavigateToTalk}
+						onSelectTag={onSelectTag}
 						searchTokens={searchTokens}
 						talk={talk}
 					/>

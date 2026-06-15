@@ -22,6 +22,7 @@ type Props = {
 };
 
 const SEARCH_BLUR_DELAY_MS = 150;
+const SEARCH_QUERY_PARAM = "query";
 
 export default function TalkGallery({ talks }: Props) {
 	const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
@@ -34,6 +35,16 @@ export default function TalkGallery({ talks }: Props) {
 	);
 
 	useEffect(() => {
+		const urlQuery =
+			new URLSearchParams(window.location.search)
+				.get(SEARCH_QUERY_PARAM)
+				?.trim() ?? "";
+		if (urlQuery) {
+			setSearchQuery(urlQuery);
+			writeTalkGallerySearchQuery(urlQuery);
+			return;
+		}
+
 		setSearchQuery(readTalkGallerySearchQuery());
 	}, []);
 
@@ -61,8 +72,22 @@ export default function TalkGallery({ talks }: Props) {
 	} = useTalkGalleryData(talks, "date", searchQuery);
 
 	const updateSearchQuery = useCallback((nextQuery: string) => {
+		const normalizedQuery = nextQuery.trim();
+
 		setSearchQuery(nextQuery);
-		writeTalkGallerySearchQuery(nextQuery);
+		writeTalkGallerySearchQuery(normalizedQuery);
+
+		const nextUrl = new URL(window.location.href);
+		if (normalizedQuery) {
+			nextUrl.searchParams.set(SEARCH_QUERY_PARAM, normalizedQuery);
+		} else {
+			nextUrl.searchParams.delete(SEARCH_QUERY_PARAM);
+		}
+		window.history.replaceState(
+			null,
+			"",
+			`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
+		);
 	}, []);
 
 	const handleNavigateToTalk = useCallback(() => {
@@ -203,6 +228,7 @@ export default function TalkGallery({ talks }: Props) {
 								columns={columns}
 								isFirstRow={row.rowIndex === 0}
 								onNavigateToTalk={handleNavigateToTalk}
+								onSelectTag={handleSelectTag}
 								searchTokens={searchTokens}
 								talks={row.talks}
 							/>

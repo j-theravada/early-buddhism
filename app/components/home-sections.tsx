@@ -2,9 +2,10 @@ import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
-import type { PopularVideo } from "../application/analytics/popular-videos";
 import type { NewsItem } from "../domain/news/types";
+import type { TalkForDisplay } from "../domain/talk/types";
 import { THERAVADA_ASSOCIATION_URL } from "../utils/site-links";
+import TalkGalleryCard from "./talk-gallery/talk-gallery-card";
 
 type SectionTitleProps = {
 	children: ReactNode;
@@ -38,6 +39,25 @@ const recommendations = [
 		type: "b",
 	},
 ];
+
+const talkSearchTagGroups = [
+	{
+		title: "心の悩み・セルフケア",
+		tags: ["怒り", "不安", "ストレス", "孤独", "後悔"],
+	},
+	{
+		title: "人間関係・社会生活",
+		tags: ["競争", "付き合い方", "親子", "仕事", "夫婦"],
+	},
+	{
+		title: "生老病死・人生の真理",
+		tags: ["病気", "死", "無常"],
+	},
+	{
+		title: "仏教の核心・実践",
+		tags: ["瞑想", "悟り", "八正道", "サティ"],
+	},
+] as const;
 
 export function RecommendationsSection() {
 	return (
@@ -172,38 +192,54 @@ function formatNewsDate(date: string): string {
 	return date.replaceAll("-", ".");
 }
 
-export function PopularVideosSection({ videos }: { videos: PopularVideo[] }) {
+export function PopularVideosSection({ videos }: { videos: TalkForDisplay[] }) {
 	return (
-		<section className="home-popular-bg px-5 py-16 sm:px-8 lg:py-24">
+		<section className="home-popular-bg px-5 py-16 sm:px-8 lg:py-24" id="popular">
 			<div className="mx-auto max-w-[1200px]">
 				<HomeSectionTitle>人気の動画</HomeSectionTitle>
-				<div className="grid gap-5 sm:grid-cols-3">
+				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 					{videos.map((video) => (
-						<Link
-							className="block transition hover:opacity-80"
-							href={`/talks/${encodeURIComponent(video.talkId)}`}
-							key={video.talkId}
-						>
-							<Image
-								alt={video.title}
-								className={
-									video.imageKind === "thumbnail"
-										? "aspect-video w-full rounded-[3px] object-cover"
-										: "h-auto w-full rounded-[3px]"
-								}
-								height={video.imageHeight}
-								quality={75}
-								sizes="(max-width: 640px) 100vw, 33vw"
-								src={video.image}
-								width={video.imageWidth}
-							/>
-						</Link>
+						<TalkGalleryCard key={video.id} searchTokens={[]} talk={video} />
 					))}
 				</div>
 				<div className="mt-12 text-center">
 					<Link className="home-outline-button" href="/talks">
 						動画一覧
 					</Link>
+				</div>
+			</div>
+		</section>
+	);
+}
+
+export function TalkSearchTagsSection() {
+	return (
+		<section
+			className="home-gallery-bg px-5 py-16 sm:px-8 lg:py-24"
+			id="category-search"
+		>
+			<div className="mx-auto max-w-[1000px]">
+				<HomeSectionTitle>動画を探す</HomeSectionTitle>
+				<div className="space-y-10 lg:space-y-12">
+					{talkSearchTagGroups.map((group) => (
+						<div key={group.title}>
+							<h3 className="mb-5 inline-block border-l-4 border-[#9d7e4c] bg-[#fdfdfd] py-1 pl-4 pr-5 text-[18px] font-semibold leading-tight text-[#303030] lg:mb-6 lg:text-[22px]">
+								{group.title}
+							</h3>
+							<div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
+								{group.tags.map((tag) => (
+									<Link
+										aria-label={`${tag}の動画を探す`}
+										className="flex h-[60px] items-center justify-center rounded-[2px] border border-[#d6c6ad] bg-white/90 px-3 text-center text-[15px] font-semibold text-[#303030] transition hover:-translate-y-0.5 hover:border-[#9d7e4c] hover:bg-[#9d7e4c] hover:text-white hover:shadow-[0_4px_10px_rgba(48,48,48,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25 lg:h-20 lg:text-[18px]"
+										href={`/talks?query=${encodeURIComponent(tag)}`}
+										key={tag}
+									>
+										{tag}
+									</Link>
+								))}
+							</div>
+						</div>
+					))}
 				</div>
 			</div>
 		</section>
