@@ -53,6 +53,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 17px;
 }
 
 html {
@@ -110,6 +111,50 @@ html {
   color: #fff;
 }
 
+.js-scroll-trigger {
+  opacity: 0;
+  transition: opacity 1s ease, transform 1s ease;
+}
+
+.js-scroll-trigger.is-animated {
+  opacity: 1;
+  transform: translate(0) !important;
+}
+
+.js-scroll-trigger.downup {
+  transform: translateY(50px);
+}
+
+.js-scroll-trigger.updown {
+  transform: translateY(-50px);
+}
+
+.js-scroll-trigger.slide-left {
+  transform: translateX(-50px);
+}
+
+.js-scroll-trigger.slide-right {
+  transform: translateX(50px);
+}
+
+.home-page-top-label {
+  writing-mode: vertical-rl;
+  text-combine-upright: digits 2;
+}
+
+.home-page-top-wheel {
+  animation: home-rotate-wheel 8s linear infinite;
+}
+
+@keyframes home-rotate-wheel {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .home-recommend-bg {
   background-color: #fcfbf9;
   background-image: url("/khanti/top/recommendation_bg_02_smp.jpg");
@@ -118,6 +163,7 @@ html {
 }
 
 .home-profile-bg {
+  background-color: #e2d3ba;
   background-image: url("/khanti/common/bg_profile.jpg");
   background-position: center;
   background-size: cover;
@@ -203,6 +249,22 @@ html {
 .search-cancel-none::-webkit-search-cancel-button {
   -webkit-appearance: none;
   appearance: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js-scroll-trigger,
+  .js-scroll-trigger.downup,
+  .js-scroll-trigger.updown,
+  .js-scroll-trigger.slide-left,
+  .js-scroll-trigger.slide-right {
+    opacity: 1;
+    transform: none !important;
+    transition: none;
+  }
+
+  .home-page-top-wheel {
+    animation: none;
+  }
 }
 
 :root {

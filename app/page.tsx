@@ -5,6 +5,7 @@ import Footer from "./components/footer";
 import ForBeginnersSection from "./components/for-beginners-section";
 import Header from "./components/header";
 import HomeHero from "./components/home-hero";
+import HomeScrollReveal from "./components/home-scroll-reveal";
 import {
 	NewsSection,
 	PopularVideosSection,
@@ -24,6 +25,7 @@ export default async function Home() {
 		<div className="min-h-screen flex flex-col bg-white text-[#303030]">
 			<div className="flex-1">
 				<Header />
+				<HomeScrollReveal />
 				<main>
 					<HomeHero />
 					<ForBeginnersSection />

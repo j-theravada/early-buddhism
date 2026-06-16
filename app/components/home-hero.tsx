@@ -30,7 +30,7 @@ const slides = [
 	},
 ];
 
-const SLIDE_INTERVAL_MS = 10000;
+const SLIDE_INTERVAL_MS = 3000;
 
 export default function HomeHero() {
 	const [activeIndex, setActiveIndex] = useState(0);
@@ -63,7 +63,7 @@ export default function HomeHero() {
 							fill
 							priority={index === 0}
 							quality={75}
-							sizes="100vw"
+							sizes="(min-width: 768px) 100vw, 1px"
 							src={slide.desktop}
 						/>
 						<Image
@@ -72,7 +72,7 @@ export default function HomeHero() {
 							fill
 							priority={index === 0}
 							quality={75}
-							sizes="100vw"
+							sizes="(max-width: 767px) 100vw, 1px"
 							src={slide.mobile}
 						/>
 					</div>
@@ -83,10 +83,10 @@ export default function HomeHero() {
 
 			<div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1440px] items-end px-7 pb-28 pt-24 md:items-center md:px-[10vw] md:pb-16 lg:pt-28">
 				<div className="home-hero-copy max-w-[620px]">
-					<h1 className="font-serif-display whitespace-pre-line text-[34px] font-semibold leading-[1.42] sm:text-[40px] md:text-[44px] lg:text-[50px]">
+					<h1 className="font-serif-display whitespace-pre-line text-[36px] font-semibold leading-[1.38] sm:text-[42px] md:text-[48px] lg:text-[56px]">
 						{activeSlide.main}
 					</h1>
-					<p className="font-serif-display mt-5 whitespace-pre-line text-base font-medium leading-[1.9] sm:text-lg md:text-xl">
+					<p className="font-serif-display mt-5 whitespace-pre-line text-[17px] font-medium leading-[1.9] sm:text-xl md:text-[22px]">
 						{activeSlide.sub}
 					</p>
 				</div>

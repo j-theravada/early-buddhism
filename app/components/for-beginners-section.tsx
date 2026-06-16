@@ -14,7 +14,7 @@ export default function ForBeginnersSection() {
 			className="relative overflow-hidden bg-[#fffbeb] px-5 py-16 sm:px-8 md:py-20 lg:py-28"
 			id="for-beginners"
 		>
-			<div className="pointer-events-none absolute left-0 top-4 w-[105px] opacity-90 sm:w-[140px] md:top-8 md:w-[220px] lg:w-[310px] xl:w-[360px]">
+			<div className="js-scroll-trigger slide-left pointer-events-none absolute left-0 top-4 w-[105px] opacity-90 sm:w-[140px] md:top-8 md:w-[220px] lg:w-[310px] xl:w-[360px]">
 				<Image
 					alt=""
 					className="h-auto w-full"
@@ -26,11 +26,11 @@ export default function ForBeginnersSection() {
 			</div>
 			<div className="relative z-10 mx-auto max-w-[960px]">
 				<HomeSectionTitle>はじめに</HomeSectionTitle>
-				<div className="mx-auto max-w-[760px] space-y-6">
-					<h2 className="font-serif-display text-[22px] font-semibold leading-relaxed text-[#303030]">
+				<div className="js-scroll-trigger downup mx-auto max-w-[780px] space-y-6">
+					<h2 className="font-serif-display text-[24px] font-semibold leading-relaxed text-[#303030] md:text-[28px]">
 						初期仏教塾とは
 					</h2>
-					<div className="space-y-5 text-[15px] leading-[2] text-[#303030] md:text-base md:leading-[2.15]">
+					<div className="space-y-5 text-[16px] leading-[2.05] text-[#303030] md:text-[17px] md:leading-[2.15]">
 						{BEGINNER_GUIDE_PARAGRAPHS.map((paragraph) => (
 							<p key={paragraph}>{paragraph}</p>
 						))}
