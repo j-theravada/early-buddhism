@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+app/generated/.transcripts-*/
 
 # production
 /build

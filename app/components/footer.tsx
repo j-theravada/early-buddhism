@@ -1,4 +1,7 @@
-import { THERAVADA_ASSOCIATION_URL } from "../utils/site-links";
+import {
+	FEEDBACK_FORM_URL,
+	THERAVADA_ASSOCIATION_URL,
+} from "../utils/site-links";
 
 type Props = {
 	maxWidth?: "4xl" | "7xl";
@@ -22,6 +25,16 @@ export default function Footer({ maxWidth = "7xl" }: Props) {
 							target="_blank"
 						>
 							日本テーラワーダ仏教協会
+						</a>
+					</div>
+					<div>
+						<a
+							className="text-[#dc6209] underline transition hover:text-[#9d7e4c]"
+							href={FEEDBACK_FORM_URL}
+							rel="noopener noreferrer"
+							target="_blank"
+						>
+							ご意見・不具合はこちら
 						</a>
 					</div>
 				</div>

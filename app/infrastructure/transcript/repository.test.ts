@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { getTranscriptByTalkId } from "./repository";
+import { buildTranscriptSearchText, getTranscriptByTalkId } from "./repository";
 
 const GENERATED_TRANSCRIPTS_DIR = resolve(
 	process.cwd(),
@@ -28,5 +28,18 @@ describe("getTranscriptByTalkId", () => {
 
 		expect(result).toHaveLength(1);
 		expect(result?.[0]?.text).toBe("最初の行");
+	});
+
+	test("SRTから検索用の本文テキストを取り出す", () => {
+		const result = buildTranscriptSearchText(`1
+00:00:00,000 --> 00:00:02,000
+最初の行
+
+2
+00:00:02,000 --> 00:00:04,000
+次の行`);
+
+		expect(result).toBe("最初の行 次の行");
+		expect(result).not.toContain("00:00");
 	});
 });

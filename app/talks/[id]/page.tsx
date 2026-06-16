@@ -14,7 +14,37 @@ import { getTranscriptByTalkId } from "../../infrastructure/transcript/repositor
 
 type Props = {
 	params: Promise<{ id: string }>;
+	searchParams?: Promise<{
+		galleryQuery?: string | string[];
+		transcriptQuery?: string | string[];
+		transcriptCue?: string | string[];
+	}>;
 };
+
+function getSingleSearchParam(value: string | string[] | undefined): string {
+	if (Array.isArray(value)) {
+		return value[0] ?? "";
+	}
+	return value ?? "";
+}
+
+function parseCueIndex(value: string): number | null {
+	if (!value) {
+		return null;
+	}
+	const cueIndex = Number(value);
+	return Number.isInteger(cueIndex) && cueIndex > 0 ? cueIndex : null;
+}
+
+function buildGalleryHref(query: string): string {
+	const trimmedQuery = query.trim();
+	if (!trimmedQuery) {
+		return "/talks";
+	}
+
+	const params = new URLSearchParams({ query: trimmedQuery });
+	return `/talks?${params.toString()}`;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { id } = await params;
@@ -48,8 +78,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	};
 }
 
-export default async function TalkDetailPage({ params }: Props) {
+export default async function TalkDetailPage({ params, searchParams }: Props) {
 	const { id } = await params;
+	const resolvedSearchParams = await searchParams;
+	const transcriptHighlightQuery = getSingleSearchParam(
+		resolvedSearchParams?.transcriptQuery,
+	);
+	const galleryQuery =
+		getSingleSearchParam(resolvedSearchParams?.galleryQuery) ||
+		transcriptHighlightQuery;
+	const galleryHref = buildGalleryHref(galleryQuery);
+	const targetCueIndex = parseCueIndex(
+		getSingleSearchParam(resolvedSearchParams?.transcriptCue),
+	);
 
 	const talk = await getTalkById(id);
 
@@ -64,7 +105,10 @@ export default async function TalkDetailPage({ params }: Props) {
 		<div className="min-h-screen bg-white text-gray-900 flex flex-col">
 			<header className="bg-amber-50 px-6 py-8 sm:px-8">
 				<div className="mx-auto max-w-4xl">
-					<BackToGalleryLink className="text-sm text-slate-600 hover:text-slate-800 transition">
+					<BackToGalleryLink
+						className="text-sm text-slate-600 hover:text-slate-800 transition"
+						href={galleryHref}
+					>
 						← トークギャラリーに戻る
 					</BackToGalleryLink>
 				</div>
@@ -113,19 +157,6 @@ export default async function TalkDetailPage({ params }: Props) {
 							</div>
 						)}
 
-						{pageData.talk.tags.length > 0 && (
-							<div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap gap-2">
-								{pageData.talk.tags.map((tag) => (
-									<span
-										className="rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800"
-										key={tag}
-									>
-										#{tag}
-									</span>
-								))}
-							</div>
-						)}
-
 						{pageData.resourceLinks.length > 0 && (
 							<div className="mt-6 pt-6 border-t border-gray-100 flex flex-wrap gap-3">
 								{pageData.resourceLinks.map((link) => (
@@ -146,7 +177,10 @@ export default async function TalkDetailPage({ params }: Props) {
 						{transcript && transcript.length > 0 && (
 							<TranscriptSection
 								embedUrlPrefix={pageData.embedUrlPrefix}
+								hasStickyPlayer={Boolean(pageData.talk.embedUrl)}
+								targetCueIndex={targetCueIndex}
 								transcript={transcript}
+								transcriptHighlightQuery={transcriptHighlightQuery}
 							/>
 						)}
 						{pageData.talk.youtubeUrl && (

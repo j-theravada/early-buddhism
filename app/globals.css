@@ -60,6 +60,10 @@ html {
   scroll-behavior: smooth;
 }
 
+.transcript-toolbar-sticky {
+  top: calc(((min(100vw, 56rem) - 4rem) * 9 / 16) + 1.5rem);
+}
+
 .font-display {
   font-family: var(--font-display);
 }

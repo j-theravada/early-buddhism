@@ -17,8 +17,11 @@ describe("browser storage helpers", () => {
 	});
 
 	test("復帰待ちなら JSON snapshot を返す", () => {
-		expect(parseVirtuosoRestoreSnapshot('{"foo":"bar"}', true)).toEqual({
-			foo: "bar",
+		expect(
+			parseVirtuosoRestoreSnapshot('{"ranges":[],"scrollTop":120}', true),
+		).toEqual({
+			ranges: [],
+			scrollTop: 120,
 		});
 		expect(parseVirtuosoRestoreSnapshot("invalid", true)).toBeUndefined();
 	});

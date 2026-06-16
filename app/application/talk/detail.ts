@@ -41,7 +41,6 @@ export type TalkDetailPageData = {
 		audioLink: string | null;
 		attachmentsLink: string | null;
 		slideLinks: string[];
-		tags: string[];
 	};
 	detailRows: TalkDetailRow[];
 	resourceLinks: TalkResourceLink[];
@@ -107,7 +106,6 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 		audioLink: talk.audioLink,
 		attachmentsLink: talk.attachmentsLink,
 		slideLinks: talk.slideLinks,
-		tags: talk.tags,
 	};
 
 	const detailRows: TalkDetailRow[] = [

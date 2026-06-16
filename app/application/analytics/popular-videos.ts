@@ -20,7 +20,9 @@ const fallbackPopularVideoIds = [
 
 export function getPopularVideos(talks: TalkForDisplay[]): TalkForDisplay[] {
 	const pageViews = generatedPopularVideosJson as GeneratedPopularVideos;
-	const talksById = new Map(talks.map((talk) => [normalizeTalkId(talk.id), talk]));
+	const talksById = new Map(
+		talks.map((talk) => [normalizeTalkId(talk.id), talk]),
+	);
 	const videos: TalkForDisplay[] = [];
 
 	for (const pageView of pageViews.entries ?? []) {

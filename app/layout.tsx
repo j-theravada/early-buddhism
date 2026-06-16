@@ -1,6 +1,7 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import ClientPageChrome from "./components/client-page-chrome";
 import "./globals.css";
 
@@ -11,6 +12,7 @@ const inter = Inter({
 });
 
 const siteUrl = "https://early-buddhism.j-theravada.com";
+const clarityProjectId = "x7vb96xmqu";
 
 export const metadata: Metadata = {
 	metadataBase: new URL(siteUrl),
@@ -41,6 +43,19 @@ export default function RootLayout({
 				<ClientPageChrome />
 				{children}
 				{gaId ? <GoogleAnalytics gaId={gaId} /> : null}
+				<Script
+					dangerouslySetInnerHTML={{
+						__html: `
+							(function(c,l,a,r,i,t,y){
+								c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+								t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+								y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+							})(window, document, "clarity", "script", "${clarityProjectId}");
+						`,
+					}}
+					id="microsoft-clarity"
+					strategy="afterInteractive"
+				/>
 				<script
 					// JSON-LD structured data
 					dangerouslySetInnerHTML={{

@@ -1,18 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { GroupedVirtuosoHandle } from "react-virtuoso";
 import { GroupedVirtuoso } from "react-virtuoso";
 import type { TalkForDisplay } from "../domain/talk/types";
-import {
-	markTalkGalleryRestorePending,
-	readAndConsumeTalkGalleryRestoreSnapshot,
-	readTalkGallerySearchQuery,
-	writeTalkGallerySearchQuery,
-	writeTalkGalleryVirtuosoState,
-} from "../infrastructure/browser/talk-gallery-storage";
 import DecadeJumpNav from "./talk-gallery/decade-jump-nav";
-import PresetSearchTags from "./talk-gallery/preset-search-tags";
 import TalkGalleryRow from "./talk-gallery/talk-gallery-row";
 import TalkGallerySectionHeader from "./talk-gallery/talk-gallery-section-header";
 import { useTalkGalleryData } from "./talk-gallery/use-talk-gallery-data";
@@ -21,18 +13,12 @@ type Props = {
 	talks: TalkForDisplay[];
 };
 
-const SEARCH_BLUR_DELAY_MS = 150;
 const SEARCH_QUERY_PARAM = "query";
 
 export default function TalkGallery({ talks }: Props) {
 	const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
-	const [isSearchFocused, setIsSearchFocused] = useState(false);
-	const restoreStateFrom = useMemo(
-		() => readAndConsumeTalkGalleryRestoreSnapshot(),
-		[],
-	);
 
 	useEffect(() => {
 		const urlQuery =
@@ -41,11 +27,10 @@ export default function TalkGallery({ talks }: Props) {
 				?.trim() ?? "";
 		if (urlQuery) {
 			setSearchQuery(urlQuery);
-			writeTalkGallerySearchQuery(urlQuery);
 			return;
 		}
 
-		setSearchQuery(readTalkGallerySearchQuery());
+		setSearchQuery("");
 	}, []);
 
 	useEffect(() => {
@@ -63,19 +48,18 @@ export default function TalkGallery({ talks }: Props) {
 	const {
 		columns,
 		filteredTalks,
-		indexedTalks,
 		sections,
 		groups,
 		groupCounts,
 		flatRows,
 		searchTokens,
+		transcriptSnippetsByTalkId,
 	} = useTalkGalleryData(talks, "date", searchQuery);
 
 	const updateSearchQuery = useCallback((nextQuery: string) => {
 		const normalizedQuery = nextQuery.trim();
 
 		setSearchQuery(nextQuery);
-		writeTalkGallerySearchQuery(normalizedQuery);
 
 		const nextUrl = new URL(window.location.href);
 		if (normalizedQuery) {
@@ -90,13 +74,7 @@ export default function TalkGallery({ talks }: Props) {
 		);
 	}, []);
 
-	const handleNavigateToTalk = useCallback(() => {
-		markTalkGalleryRestorePending();
-		writeTalkGallerySearchQuery(searchQuery);
-		virtuosoRef.current?.getState((snapshot) => {
-			writeTalkGalleryVirtuosoState(snapshot);
-		});
-	}, [searchQuery]);
+	const handleNavigateToTalk = useCallback(() => {}, []);
 
 	const handleJumpToGroup = useCallback((groupIndex: number) => {
 		if (groupIndex === 0) {
@@ -110,16 +88,8 @@ export default function TalkGallery({ talks }: Props) {
 		});
 	}, []);
 
-	const handleSelectTag = useCallback(
-		(keyword: string) => {
-			updateSearchQuery(keyword);
-		},
-		[updateSearchQuery],
-	);
-
 	const hasActiveQuery = searchQuery.trim().length > 0;
 	const totalMatched = filteredTalks.length;
-	const showPresetTags = isSearchFocused && !hasActiveQuery;
 
 	if (talks.length === 0) {
 		return (
@@ -137,18 +107,10 @@ export default function TalkGallery({ talks }: Props) {
 						<input
 							aria-label="法話を検索"
 							className="search-cancel-none w-full rounded-sm border border-[#d6c6ad] bg-white py-3 pl-4 pr-10 text-sm text-[#303030] placeholder:text-[#888] focus:border-[#9d7e4c] focus:outline-none focus:ring-2 focus:ring-[#9d7e4c]/15"
-							onBlur={() => {
-								// Delay to allow tag click to fire before hiding
-								setTimeout(
-									() => setIsSearchFocused(false),
-									SEARCH_BLUR_DELAY_MS,
-								);
-							}}
 							onChange={(event) => {
 								updateSearchQuery(event.target.value);
 							}}
-							onFocus={() => setIsSearchFocused(true)}
-							placeholder="キーワードで検索"
+							placeholder="キーワード・文字起こしで検索"
 							type="search"
 							value={searchQuery}
 						/>
@@ -182,12 +144,6 @@ export default function TalkGallery({ talks }: Props) {
 						<span className="text-xs text-gray-500">
 							検索結果 {totalMatched} 件
 						</span>
-					)}
-					{showPresetTags && (
-						<PresetSearchTags
-							indexedTalks={indexedTalks}
-							onSelectTag={handleSelectTag}
-						/>
 					)}
 					{!hasActiveQuery && (
 						<DecadeJumpNav groups={groups} onJumpToGroup={handleJumpToGroup} />
@@ -228,14 +184,14 @@ export default function TalkGallery({ talks }: Props) {
 								columns={columns}
 								isFirstRow={row.rowIndex === 0}
 								onNavigateToTalk={handleNavigateToTalk}
-								onSelectTag={handleSelectTag}
+								searchQuery={searchQuery}
 								searchTokens={searchTokens}
 								talks={row.talks}
+								transcriptSnippetsByTalkId={transcriptSnippetsByTalkId}
 							/>
 						);
 					}}
 					ref={virtuosoRef}
-					restoreStateFrom={restoreStateFrom}
 					useWindowScroll
 				/>
 			)}

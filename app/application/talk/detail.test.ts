@@ -23,7 +23,6 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		slideLinks: ["https://docs.google.com/presentation/d/slide-1/edit"],
 		youtubeLink: "https://youtu.be/ZZYaasluSAA?si=test",
 		srtLink: null,
-		tags: ["心", "病気"],
 		...overrides,
 	};
 }
@@ -49,7 +48,6 @@ describe("talk detail application helpers", () => {
 		const result = buildTalkDetailPageData(talk);
 
 		expect(result.talk.title).toBe("心と病気の関係");
-		expect(result.talk.tags).toEqual(["心", "病気"]);
 		expect(result.detailRows.map((row) => row.label)).toEqual([
 			"DVD番号",
 			"タイトル",

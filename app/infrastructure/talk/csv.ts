@@ -413,7 +413,6 @@ export function parseCSVToTalks(text: string): Talk[] {
 			slideLinks,
 			youtubeLink,
 			srtLink,
-			tags: [],
 		});
 	}
 

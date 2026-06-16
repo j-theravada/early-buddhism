@@ -29,7 +29,6 @@ function createTalk(
 		recordedOnSortValue: 1,
 		decadeLabel: "1990年代",
 		themeLabel: "テーマA",
-		tags: [],
 		...overrides,
 	};
 }

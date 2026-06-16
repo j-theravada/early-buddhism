@@ -36,5 +36,19 @@ describe("TalkDetailPage", () => {
 
 		expect(html).toContain("sticky top-0 z-20");
 		expect(html).toContain("aspect-video");
+		expect(html).toContain("transcript-toolbar-sticky");
+	});
+
+	test("検索結果から来た詳細画面は検索条件付きでギャラリーへ戻る", async () => {
+		const { default: TalkDetailPage } = await import("./page");
+
+		const html = renderToStaticMarkup(
+			await TalkDetailPage({
+				params: Promise.resolve({ id: "TALK-V-013-1-ADC344BF78FB" }),
+				searchParams: Promise.resolve({ galleryQuery: "預流果" }),
+			}),
+		);
+
+		expect(html).toContain('href="/talks?query=%E9%A0%90%E6%B5%81%E6%9E%9C"');
 	});
 });

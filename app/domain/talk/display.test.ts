@@ -23,7 +23,6 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		slideLinks: [],
 		youtubeLink: "https://youtu.be/ZZYaasluSAA?si=test",
 		srtLink: null,
-		tags: ["心", "病気"],
 		...overrides,
 	};
 }
@@ -43,7 +42,6 @@ describe("transformTalkToDisplay", () => {
 		expect(result.themeLabel).toBe(
 			"病気は決して肉体だけの問題ではない。心のあり方が病気を作り出す。",
 		);
-		expect(result.tags).toEqual(["心", "病気"]);
 		expect(result.youtubeUrl).toBe("https://youtu.be/ZZYaasluSAA?si=test");
 		expect(result.thumbnailUrl).toBe(
 			"https://img.youtube.com/vi/ZZYaasluSAA/hqdefault.jpg",

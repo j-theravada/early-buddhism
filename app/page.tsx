@@ -10,7 +10,7 @@ import {
 	NewsSection,
 	PopularVideosSection,
 	RecommendationsSection,
-	TalkSearchTagsSection,
+	TalkSearchSection,
 	TeacherProfileSection,
 } from "./components/home-sections";
 import { getNewsItems } from "./infrastructure/news/repository";
@@ -33,7 +33,7 @@ export default async function Home() {
 					<TeacherProfileSection />
 					<NewsSection items={newsItems} />
 					<PopularVideosSection videos={popularVideos} />
-					<TalkSearchTagsSection />
+					<TalkSearchSection />
 				</main>
 			</div>
 

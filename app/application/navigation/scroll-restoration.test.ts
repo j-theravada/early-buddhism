@@ -1,36 +1,30 @@
 import { describe, expect, test } from "bun:test";
-import { shouldRestoreScrollOnRouteChange } from "./scroll-restoration";
+import { shouldResetScrollOnRouteChange } from "./scroll-restoration";
 
-describe("shouldRestoreScrollOnRouteChange", () => {
-	test("popstate 復帰フラグがあれば復元する", () => {
+describe("shouldResetScrollOnRouteChange", () => {
+	test("初回表示ではスクロールを動かさない", () => {
 		expect(
-			shouldRestoreScrollOnRouteChange({
+			shouldResetScrollOnRouteChange({
 				pathname: "/about",
+				previousPathname: null,
+			}),
+		).toBe(false);
+	});
+
+	test("pathname が変わったらトップへ戻す", () => {
+		expect(
+			shouldResetScrollOnRouteChange({
+				pathname: "/talks",
 				previousPathname: "/talks/abc",
-				restoreOnNextRoute: true,
-				isTalkGalleryRestorePending: false,
 			}),
 		).toBe(true);
 	});
 
-	test("トーク詳細から動画一覧に戻ると復元する", () => {
+	test("query だけの変更ではスクロールを動かさない", () => {
 		expect(
-			shouldRestoreScrollOnRouteChange({
+			shouldResetScrollOnRouteChange({
 				pathname: "/talks",
-				previousPathname: "/talks/abc",
-				restoreOnNextRoute: false,
-				isTalkGalleryRestorePending: false,
-			}),
-		).toBe(true);
-	});
-
-	test("ギャラリー復帰待ちのとき動画一覧では復元しない", () => {
-		expect(
-			shouldRestoreScrollOnRouteChange({
-				pathname: "/talks",
-				previousPathname: "/talks/abc",
-				restoreOnNextRoute: false,
-				isTalkGalleryRestorePending: true,
+				previousPathname: "/talks",
 			}),
 		).toBe(false);
 	});

@@ -1,4 +1,5 @@
 import type { TalkForDisplay } from "../../domain/talk/types";
+import type { TranscriptSnippet } from "./use-talk-gallery-data";
 import TalkGalleryCard from "./talk-gallery-card";
 
 const GRID_CLASS_BY_COLUMNS: Record<number, string> = {
@@ -12,8 +13,9 @@ type Props = {
 	isFirstRow: boolean;
 	columns: number;
 	searchTokens: string[];
+	searchQuery: string;
+	transcriptSnippetsByTalkId: ReadonlyMap<string, TranscriptSnippet[]>;
 	onNavigateToTalk: () => void;
-	onSelectTag: (tag: string) => void;
 };
 
 export default function TalkGalleryRow({
@@ -21,8 +23,9 @@ export default function TalkGalleryRow({
 	isFirstRow,
 	columns,
 	searchTokens,
+	searchQuery,
+	transcriptSnippetsByTalkId,
 	onNavigateToTalk,
-	onSelectTag,
 }: Props) {
 	const gridClass = GRID_CLASS_BY_COLUMNS[columns] ?? GRID_CLASS_BY_COLUMNS[1];
 
@@ -33,9 +36,10 @@ export default function TalkGalleryRow({
 					<TalkGalleryCard
 						key={talk.id}
 						onNavigateToTalk={onNavigateToTalk}
-						onSelectTag={onSelectTag}
+						searchQuery={searchQuery}
 						searchTokens={searchTokens}
 						talk={talk}
+						transcriptSnippets={transcriptSnippetsByTalkId.get(talk.id) ?? []}
 					/>
 				))}
 			</div>

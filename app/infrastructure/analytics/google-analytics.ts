@@ -50,11 +50,11 @@ type PopularTalkPageViewsOptions = {
 export function hasGoogleAnalyticsDataApiConfig(): boolean {
 	return Boolean(
 		getPropertyId() &&
-			(process.env.GA4_SERVICE_ACCOUNT_JSON ||
-				process.env.GA4_OAUTH_REFRESH_TOKEN ||
-				process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON ||
-				process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-				(process.env.GA4_CLIENT_EMAIL && process.env.GA4_PRIVATE_KEY)),
+		(process.env.GA4_SERVICE_ACCOUNT_JSON ||
+			process.env.GA4_OAUTH_REFRESH_TOKEN ||
+			process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON ||
+			process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+			(process.env.GA4_CLIENT_EMAIL && process.env.GA4_PRIVATE_KEY)),
 	);
 }
 
@@ -115,7 +115,9 @@ export async function getPopularTalkPageViews({
 	return aggregateTalkPageViews(data).slice(0, limit);
 }
 
-function aggregateTalkPageViews(data: RunReportResponse): PopularTalkPageView[] {
+function aggregateTalkPageViews(
+	data: RunReportResponse,
+): PopularTalkPageView[] {
 	const totals = new Map<string, PopularTalkPageView>();
 
 	for (const row of data.rows ?? []) {
@@ -328,9 +330,9 @@ function isAuthorizedUserCredentials(
 ): credentials is AuthorizedUserCredentials {
 	return Boolean(
 		typeof credentials.client_id === "string" &&
-			credentials.client_id.trim() &&
-			typeof credentials.refresh_token === "string" &&
-			credentials.refresh_token.trim(),
+		credentials.client_id.trim() &&
+		typeof credentials.refresh_token === "string" &&
+		credentials.refresh_token.trim(),
 	);
 }
 

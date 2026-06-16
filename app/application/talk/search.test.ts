@@ -3,6 +3,8 @@ import type { Talk, TalkForDisplay } from "../../domain/talk/types";
 import { buildTalkGalleryTalks } from "./gallery";
 import {
 	buildSearchIndex,
+	buildSearchSnippets,
+	buildTranscriptSearchSnippets,
 	filterTalksByQuery,
 	tokenizeSearchQuery,
 } from "./search";
@@ -29,7 +31,6 @@ function createDisplayTalk(
 		recordedOnSortValue: 810604800000,
 		decadeLabel: "1990年代",
 		themeLabel: "心と病気",
-		tags: [],
 		...overrides,
 	};
 }
@@ -54,7 +55,6 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		slideLinks: [],
 		youtubeLink: null,
 		srtLink: null,
-		tags: [],
 		...overrides,
 	};
 }
@@ -81,19 +81,80 @@ describe("talk search helpers", () => {
 		expect(result[0]?.id).toBe("TALK-1");
 	});
 
-	test("タグも検索対象に含める", () => {
+	test("追加の文字起こしテキストも検索対象に含める", () => {
 		const talks = [
-			createDisplayTalk({ id: "TALK-1", tags: ["慈悲"] }),
-			createDisplayTalk({ id: "TALK-2", tags: ["無常"] }),
+			createDisplayTalk({
+				id: "TALK-1",
+				title: "東京の瞑想会",
+				subtitle: "",
+			}),
+			createDisplayTalk({
+				id: "TALK-2",
+				title: "大阪の講演会",
+				subtitle: "",
+			}),
 		];
+		const extraSearchTextByTalkId = new Map([
+			["TALK-1", "ヴィパッサナー実践の説明"],
+			["TALK-2", "慈悲の瞑想の説明"],
+		]);
 
-		const indexedTalks = buildSearchIndex(talks);
+		const indexedTalks = buildSearchIndex(talks, { extraSearchTextByTalkId });
 		const result = filterTalksByQuery(
 			indexedTalks,
-			tokenizeSearchQuery("慈悲"),
+			tokenizeSearchQuery("東京 ヴィパッサナー"),
 		);
 
 		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);
+	});
+
+	test("文字起こしの一致箇所からスニペットを作る", () => {
+		const transcriptText =
+			"これは前置きです。心を落ち着けてからヴィパッサナー実践に入ります。終わりの説明です。";
+
+		const snippets = buildSearchSnippets(
+			transcriptText,
+			tokenizeSearchQuery("ヴィパッサナー"),
+			{ contextLength: 8, maxSnippets: 1 },
+		);
+
+		expect(snippets).toEqual([
+			"…を落ち着けてからヴィパッサナー実践に入ります。…",
+		]);
+	});
+
+	test("文字起こしに一致しない語はスニペットを返さない", () => {
+		const snippets = buildSearchSnippets(
+			"これは前置きです。",
+			tokenizeSearchQuery("預流果"),
+		);
+
+		expect(snippets).toEqual([]);
+	});
+
+	test("文字起こしスニペットに遷移先cue情報を含める", () => {
+		const snippets = buildTranscriptSearchSnippets(
+			[
+				{
+					index: 12,
+					start: 34,
+					end: 40,
+					startLabel: "00:00:34",
+					endLabel: "00:00:40",
+					text: "ここで預流果について説明します。",
+				},
+			],
+			tokenizeSearchQuery("預流果"),
+		);
+
+		expect(snippets).toEqual([
+			{
+				text: "ここで預流果について説明します。",
+				cueIndex: 12,
+				start: 34,
+				startLabel: "00:00:34",
+			},
+		]);
 	});
 
 	test("ギャラリー表示用トークを日付降順で並べる", () => {

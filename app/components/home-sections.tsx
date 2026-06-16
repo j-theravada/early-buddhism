@@ -48,22 +48,22 @@ const recommendations = [
 	},
 ];
 
-const talkSearchTagGroups = [
+const talkSearchKeywordGroups = [
 	{
 		title: "心の悩み・セルフケア",
-		tags: ["怒り", "不安", "ストレス", "孤独", "後悔"],
+		keywords: ["怒り", "不安", "ストレス", "孤独", "後悔"],
 	},
 	{
 		title: "人間関係・社会生活",
-		tags: ["競争", "付き合い方", "親子", "仕事", "夫婦"],
+		keywords: ["競争", "付き合い方", "親子", "仕事", "夫婦"],
 	},
 	{
 		title: "生老病死・人生の真理",
-		tags: ["病気", "死", "無常"],
+		keywords: ["病気", "死", "無常"],
 	},
 	{
 		title: "仏教の核心・実践",
-		tags: ["瞑想", "悟り", "八正道", "サティ"],
+		keywords: ["瞑想", "悟り", "八正道", "サティ"],
 	},
 ] as const;
 
@@ -222,29 +222,29 @@ export function PopularVideosSection({ videos }: { videos: TalkForDisplay[] }) {
 	);
 }
 
-export function TalkSearchTagsSection() {
+export function TalkSearchSection() {
 	return (
 		<section
 			className="home-gallery-bg px-5 py-16 sm:px-8 lg:py-24"
-			id="category-search"
+			id="talk-search"
 		>
 			<div className="mx-auto max-w-[1000px]">
 				<HomeSectionTitle animate={false}>動画を探す</HomeSectionTitle>
 				<form
 					action="/talks"
-					className="home-category-search-form mx-auto mb-10 w-[90%] md:w-[70%] lg:mb-12 lg:w-[60%]"
+					className="home-talk-search-form mx-auto mb-10 w-[90%] md:w-[70%] lg:mb-12 lg:w-[60%]"
 					method="get"
 				>
-					<label className="sr-only" htmlFor="home-category-search">
+					<label className="sr-only" htmlFor="home-talk-search">
 						キーワードで検索
 					</label>
 					<input
 						aria-label="キーワードで検索"
 						autoComplete="off"
 						className="search-cancel-none w-full rounded-[30px] border border-[#9d7e4c] bg-white px-5 py-[15px] text-[16px] leading-8 text-[#303030] outline-none placeholder:text-[#888] focus:border-[#d6c6ad] focus:ring-2 focus:ring-[#9d7e4c]/15"
-						id="home-category-search"
+						id="home-talk-search"
 						name="query"
-						placeholder="キーワードで検索"
+						placeholder="キーワード・文字起こしで検索"
 						type="search"
 					/>
 					<button className="sr-only" type="submit">
@@ -252,20 +252,20 @@ export function TalkSearchTagsSection() {
 					</button>
 				</form>
 				<div className="space-y-10 lg:space-y-12">
-					{talkSearchTagGroups.map((group) => (
+					{talkSearchKeywordGroups.map((group) => (
 						<div key={group.title}>
 							<h3 className="mb-5 inline-block border-l-4 border-[#9d7e4c] bg-[#fdfdfd] py-1 pl-4 pr-5 text-[18px] font-semibold leading-tight text-[#303030] lg:mb-6 lg:text-[22px]">
 								{group.title}
 							</h3>
 							<div className="grid grid-cols-2 gap-2.5 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
-								{group.tags.map((tag) => (
+								{group.keywords.map((keyword) => (
 									<Link
-										aria-label={`${tag}の動画を探す`}
+										aria-label={`${keyword}をキーワードに検索`}
 										className="flex h-[62px] items-center justify-center rounded-[2px] border border-[#d6c6ad] bg-white/90 px-3 text-center text-[16px] font-semibold text-[#303030] transition hover:-translate-y-0.5 hover:border-[#9d7e4c] hover:bg-[#9d7e4c] hover:text-white hover:shadow-[0_4px_10px_rgba(48,48,48,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25 lg:h-20 lg:text-[19px]"
-										href={`/talks?query=${encodeURIComponent(tag)}`}
-										key={tag}
+										href={`/talks?query=${encodeURIComponent(keyword)}`}
+										key={keyword}
 									>
-										{tag}
+										{keyword}
 									</Link>
 								))}
 							</div>

@@ -3,23 +3,52 @@ import Image from "next/image";
 import Link from "next/link";
 import type { TalkForDisplay } from "../../domain/talk/types";
 import { highlightMatches } from "./highlight";
+import type { TranscriptSnippet } from "./use-talk-gallery-data";
 
 type Props = {
 	talk: TalkForDisplay;
 	searchTokens: string[];
+	searchQuery?: string;
+	transcriptSnippets?: TranscriptSnippet[];
 	onNavigateToTalk?: () => void;
-	onSelectTag?: (tag: string) => void;
 };
+
+function buildTranscriptSnippetHref(
+	talkId: string,
+	snippet: TranscriptSnippet,
+	searchQuery: string | undefined,
+): string {
+	const params = new URLSearchParams();
+	const trimmedSearchQuery = searchQuery?.trim() ?? "";
+	if (trimmedSearchQuery) {
+		params.set("transcriptQuery", trimmedSearchQuery);
+		params.set("galleryQuery", trimmedSearchQuery);
+	}
+	params.set("transcriptCue", String(snippet.cueIndex));
+
+	return `/talks/${encodeURIComponent(talkId)}?${params.toString()}#transcript-cue-${snippet.cueIndex}`;
+}
+
+function buildTalkDetailHref(
+	talkId: string,
+	searchQuery: string | undefined,
+): string {
+	const trimmedSearchQuery = searchQuery?.trim() ?? "";
+	if (!trimmedSearchQuery) {
+		return `/talks/${encodeURIComponent(talkId)}`;
+	}
+
+	const params = new URLSearchParams({ galleryQuery: trimmedSearchQuery });
+	return `/talks/${encodeURIComponent(talkId)}?${params.toString()}`;
+}
 
 export default function TalkGalleryCard({
 	talk,
 	searchTokens,
+	searchQuery,
+	transcriptSnippets = [],
 	onNavigateToTalk,
-	onSelectTag,
 }: Props) {
-	const tagClass =
-		"rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 transition hover:bg-amber-100 hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25";
-
 	return (
 		<div className="group relative flex flex-col overflow-hidden rounded-lg border border-[#d6c6ad] bg-white shadow-sm transition duration-200 ease-out hover:border-[#9d7e4c] hover:shadow-md">
 			{talk.dvdId && (
@@ -29,7 +58,7 @@ export default function TalkGalleryCard({
 			)}
 			<Link
 				className="flex flex-col flex-1"
-				href={`/talks/${encodeURIComponent(talk.id)}`}
+				href={buildTalkDetailHref(talk.id, searchQuery)}
 				{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
 			>
 				{/* 上半分: サムネイル */}
@@ -59,30 +88,35 @@ export default function TalkGalleryCard({
 				</div>
 			</Link>
 
-			{talk.tags.length > 0 && (
-				<div className="px-6 pb-4 flex flex-wrap gap-1.5">
-					{talk.tags.slice(0, 5).map((tag) =>
-						onSelectTag ? (
-							<button
-								aria-label={`${tag}で検索`}
-								className={tagClass}
-								key={tag}
-								onClick={() => onSelectTag(tag)}
-								type="button"
-							>
-								#{highlightMatches(tag, searchTokens)}
-							</button>
-						) : (
-							<Link
-								aria-label={`${tag}の動画を探す`}
-								className={tagClass}
-								href={`/talks?query=${encodeURIComponent(tag)}`}
-								key={tag}
-							>
-								#{highlightMatches(tag, searchTokens)}
-							</Link>
-						),
-					)}
+			{transcriptSnippets.length > 0 && (
+				<div className="px-6 pb-4">
+					<div className="border-l-2 border-amber-300 bg-amber-50/70 px-3 py-2.5">
+						<p className="text-[11px] font-semibold text-amber-900">
+							文字起こし
+						</p>
+						<div className="mt-1.5 space-y-1.5">
+							{transcriptSnippets.map((snippet) => (
+								<Link
+									aria-label={`${snippet.startLabel ?? "該当箇所"}の文字起こしへ移動`}
+									className="block rounded-sm text-xs leading-relaxed text-[#5f5144] transition hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25"
+									href={buildTranscriptSnippetHref(
+										talk.id,
+										snippet,
+										searchQuery,
+									)}
+									key={`${snippet.cueIndex}-${snippet.text}`}
+									onClick={onNavigateToTalk}
+								>
+									{snippet.startLabel && (
+										<span className="mr-1 font-medium text-amber-700">
+											{snippet.startLabel}
+										</span>
+									)}
+									{highlightMatches(snippet.text, searchTokens)}
+								</Link>
+							))}
+						</div>
+					</div>
 				</div>
 			)}
 
