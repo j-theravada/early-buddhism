@@ -8,13 +8,21 @@ import { THERAVADA_ASSOCIATION_URL } from "../utils/site-links";
 import TalkGalleryCard from "./talk-gallery/talk-gallery-card";
 
 type SectionTitleProps = {
+	animate?: boolean;
 	children: ReactNode;
 };
 
-export function HomeSectionTitle({ children }: SectionTitleProps) {
+export function HomeSectionTitle({
+	animate = true,
+	children,
+}: SectionTitleProps) {
 	return (
-		<div className="mb-12 text-center">
-			<h2 className="home-section-title font-display inline-block text-[28px] font-semibold leading-tight text-[#303030]">
+		<div
+			className={`mb-12 text-center ${
+				animate ? "home-section-title-reveal js-scroll-trigger downup" : ""
+			}`}
+		>
+			<h2 className="home-section-title font-display inline-block text-[30px] font-semibold leading-tight text-[#303030] md:text-[34px]">
 				{children}
 			</h2>
 		</div>
@@ -66,7 +74,7 @@ export function RecommendationsSection() {
 				<div className="flex flex-col gap-10 lg:flex-row-reverse lg:items-start">
 					{recommendations.map((recommendation) => (
 						<article
-							className={`rounded-lg bg-white/80 p-6 shadow-[0_20px_60px_rgba(48,48,48,0.08)] backdrop-blur-sm sm:p-8 lg:flex-1 ${
+							className={`js-scroll-trigger downup rounded-lg bg-white/80 p-6 shadow-[0_20px_60px_rgba(48,48,48,0.08)] backdrop-blur-sm sm:p-8 lg:flex-1 ${
 								recommendation.type === "b" ? "lg:mt-48" : ""
 							}`}
 							key={recommendation.name}
@@ -76,33 +84,32 @@ export function RecommendationsSection() {
 									recommendation.type === "a" ? "md:flex-row-reverse" : ""
 								}`}
 							>
-								<h2 className="home-vertical-heading font-serif-display text-[32px] font-semibold leading-[1.45] text-[#303030] md:shrink-0">
+								<h2 className="home-vertical-heading font-serif-display text-[34px] font-semibold leading-[1.45] text-[#303030] md:shrink-0 lg:text-[38px]">
 									{recommendation.catchLines.map((line) => (
 										<span className="block" key={line}>
 											{line}
 										</span>
 									))}
 								</h2>
-								<p className="whitespace-pre-line text-[15px] leading-[1.9] text-[#303030]">
+								<p className="whitespace-pre-line text-[16px] leading-[1.95] text-[#303030] md:text-[17px]">
 									{recommendation.text}
 								</p>
 							</div>
 							<div className="flex items-center gap-4">
-								<div className="relative h-[120px] w-[120px] shrink-0 overflow-hidden rounded-full">
+								<div className="relative h-[120px] w-[120px] shrink-0 overflow-hidden rounded-full ring-1 ring-[#9d7e4c] ring-offset-2 ring-offset-white/70">
 									<Image
 										alt={recommendation.name}
-										className="object-cover"
+										className="rounded-full object-cover"
 										fill
 										sizes="120px"
 										src={recommendation.image}
 									/>
-									<div className="pointer-events-none absolute inset-1 rounded-full border border-[#9d7e4c]" />
 								</div>
 								<div className="space-y-1">
-									<p className="text-xs leading-relaxed text-[#888]">
+									<p className="text-[13px] leading-relaxed text-[#888]">
 										{recommendation.title}
 									</p>
-									<p className="font-serif-display text-[22px] font-semibold text-[#303030]">
+									<p className="font-serif-display text-[23px] font-semibold text-[#303030]">
 										{recommendation.name}
 									</p>
 								</div>
@@ -126,7 +133,7 @@ export function TeacherProfileSection() {
 			<div className="mx-auto max-w-[1200px]">
 				<HomeSectionTitle>講師紹介</HomeSectionTitle>
 				<div className="flex flex-col gap-10 lg:flex-row-reverse lg:items-end lg:gap-16">
-					<div className="relative mx-auto flex max-w-[430px] items-end gap-5 lg:mx-0 lg:flex-[0_0_42%]">
+					<div className="js-scroll-trigger downup relative mx-auto flex max-w-[430px] items-end gap-5 lg:mx-0 lg:flex-[0_0_42%]">
 						<div className="font-serif-display home-profile-vertical text-xl text-[#9d7e4c] lg:text-[28px]">
 							Ven. Alubomulle Sumanasara
 						</div>
@@ -140,11 +147,11 @@ export function TeacherProfileSection() {
 							width={990}
 						/>
 					</div>
-					<div className="flex-1">
-						<h2 className="font-serif-display mb-5 text-[22px] font-semibold text-[#303030] md:text-[28px]">
+					<div className="js-scroll-trigger downup flex-1">
+						<h2 className="font-serif-display mb-5 text-[24px] font-semibold text-[#303030] md:text-[32px]">
 							アルボムッレ・スマナサーラ長老
 						</h2>
-						<p className="text-[15px] leading-[1.9] text-[#303030] md:text-base">
+						<p className="text-[16px] leading-[1.95] text-[#303030] md:text-[18px]">
 							スリランカ上座仏教（テーラワーダ仏教）長老。1945年4月、スリランカ生まれ。13歳で出家得度。国立ケラニヤ大学で仏教哲学の教鞭をとる。1980年に来日。駒澤大学大学院博士課程を経て、現在は（宗）日本テーラワーダ仏教協会で初期仏教の伝道と冥想指導に従事し、ブッダの根本の教えを説き続けている。
 						</p>
 						<div className="mt-10 text-center">
@@ -163,9 +170,9 @@ export function NewsSection({ items }: { items: NewsItem[] }) {
 	return (
 		<section className="scroll-mt-24 px-5 py-16 sm:px-8 lg:py-24" id="info">
 			<div className="mx-auto max-w-[900px]">
-				<HomeSectionTitle>お知らせ</HomeSectionTitle>
+				<HomeSectionTitle animate={false}>お知らせ</HomeSectionTitle>
 				{items.length > 0 ? (
-					<dl className="grid text-[15px] leading-[1.9] text-[#303030] md:grid-cols-[150px_1fr]">
+					<dl className="grid text-[16px] leading-[1.95] text-[#303030] md:grid-cols-[150px_1fr]">
 						{items.map((item) => (
 							<Fragment key={item.slug}>
 								<dt className="border-[#d6c6ad] py-4 font-light md:border-b">
@@ -179,7 +186,7 @@ export function NewsSection({ items }: { items: NewsItem[] }) {
 						))}
 					</dl>
 				) : (
-					<p className="text-center text-[15px] leading-[1.9] text-[#303030]">
+					<p className="text-center text-[16px] leading-[1.95] text-[#303030]">
 						現在、お知らせはありません。
 					</p>
 				)}
@@ -194,9 +201,12 @@ function formatNewsDate(date: string): string {
 
 export function PopularVideosSection({ videos }: { videos: TalkForDisplay[] }) {
 	return (
-		<section className="home-popular-bg px-5 py-16 sm:px-8 lg:py-24" id="popular">
+		<section
+			className="home-popular-bg px-5 py-16 sm:px-8 lg:py-24"
+			id="popular"
+		>
 			<div className="mx-auto max-w-[1200px]">
-				<HomeSectionTitle>人気の動画</HomeSectionTitle>
+				<HomeSectionTitle animate={false}>人気の動画</HomeSectionTitle>
 				<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 					{videos.map((video) => (
 						<TalkGalleryCard key={video.id} searchTokens={[]} talk={video} />
@@ -219,7 +229,28 @@ export function TalkSearchTagsSection() {
 			id="category-search"
 		>
 			<div className="mx-auto max-w-[1000px]">
-				<HomeSectionTitle>動画を探す</HomeSectionTitle>
+				<HomeSectionTitle animate={false}>動画を探す</HomeSectionTitle>
+				<form
+					action="/talks"
+					className="home-category-search-form mx-auto mb-10 w-[90%] md:w-[70%] lg:mb-12 lg:w-[60%]"
+					method="get"
+				>
+					<label className="sr-only" htmlFor="home-category-search">
+						キーワードで検索
+					</label>
+					<input
+						aria-label="キーワードで検索"
+						autoComplete="off"
+						className="search-cancel-none w-full rounded-[30px] border border-[#9d7e4c] bg-white px-5 py-[15px] text-[16px] leading-8 text-[#303030] outline-none placeholder:text-[#888] focus:border-[#d6c6ad] focus:ring-2 focus:ring-[#9d7e4c]/15"
+						id="home-category-search"
+						name="query"
+						placeholder="キーワードで検索"
+						type="search"
+					/>
+					<button className="sr-only" type="submit">
+						検索する
+					</button>
+				</form>
 				<div className="space-y-10 lg:space-y-12">
 					{talkSearchTagGroups.map((group) => (
 						<div key={group.title}>
@@ -230,7 +261,7 @@ export function TalkSearchTagsSection() {
 								{group.tags.map((tag) => (
 									<Link
 										aria-label={`${tag}の動画を探す`}
-										className="flex h-[60px] items-center justify-center rounded-[2px] border border-[#d6c6ad] bg-white/90 px-3 text-center text-[15px] font-semibold text-[#303030] transition hover:-translate-y-0.5 hover:border-[#9d7e4c] hover:bg-[#9d7e4c] hover:text-white hover:shadow-[0_4px_10px_rgba(48,48,48,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25 lg:h-20 lg:text-[18px]"
+										className="flex h-[62px] items-center justify-center rounded-[2px] border border-[#d6c6ad] bg-white/90 px-3 text-center text-[16px] font-semibold text-[#303030] transition hover:-translate-y-0.5 hover:border-[#9d7e4c] hover:bg-[#9d7e4c] hover:text-white hover:shadow-[0_4px_10px_rgba(48,48,48,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25 lg:h-20 lg:text-[19px]"
 										href={`/talks?query=${encodeURIComponent(tag)}`}
 										key={tag}
 									>
