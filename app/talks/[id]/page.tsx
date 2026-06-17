@@ -5,6 +5,14 @@ import {
 	buildTalkDetailPageData,
 	buildTalkMetadata,
 } from "../../application/talk/detail";
+import {
+	buildTalksHref,
+	getFirstSearchParam,
+	parseTranscriptCueIndex,
+	TALK_DETAIL_GALLERY_QUERY_PARAM,
+	TALK_DETAIL_TRANSCRIPT_CUE_PARAM,
+	TALK_DETAIL_TRANSCRIPT_QUERY_PARAM,
+} from "../../application/talk/links";
 import BackToGalleryLink from "../../components/back-to-gallery-link";
 import ContentCard from "../../components/content-card";
 import Footer from "../../components/footer";
@@ -12,39 +20,19 @@ import TranscriptSection from "../../components/transcript-section";
 import { getTalkById } from "../../infrastructure/talk/repository";
 import { getTranscriptByTalkId } from "../../infrastructure/transcript/repository";
 
+type TalkDetailSearchParamName =
+	| typeof TALK_DETAIL_GALLERY_QUERY_PARAM
+	| typeof TALK_DETAIL_TRANSCRIPT_QUERY_PARAM
+	| typeof TALK_DETAIL_TRANSCRIPT_CUE_PARAM;
+
+type TalkDetailSearchParams = Partial<
+	Record<TalkDetailSearchParamName, string | string[]>
+>;
+
 type Props = {
 	params: Promise<{ id: string }>;
-	searchParams?: Promise<{
-		galleryQuery?: string | string[];
-		transcriptQuery?: string | string[];
-		transcriptCue?: string | string[];
-	}>;
+	searchParams?: Promise<TalkDetailSearchParams>;
 };
-
-function getSingleSearchParam(value: string | string[] | undefined): string {
-	if (Array.isArray(value)) {
-		return value[0] ?? "";
-	}
-	return value ?? "";
-}
-
-function parseCueIndex(value: string): number | null {
-	if (!value) {
-		return null;
-	}
-	const cueIndex = Number(value);
-	return Number.isInteger(cueIndex) && cueIndex > 0 ? cueIndex : null;
-}
-
-function buildGalleryHref(query: string): string {
-	const trimmedQuery = query.trim();
-	if (!trimmedQuery) {
-		return "/talks";
-	}
-
-	const params = new URLSearchParams({ query: trimmedQuery });
-	return `/talks?${params.toString()}`;
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { id } = await params;
@@ -81,15 +69,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TalkDetailPage({ params, searchParams }: Props) {
 	const { id } = await params;
 	const resolvedSearchParams = await searchParams;
-	const transcriptHighlightQuery = getSingleSearchParam(
-		resolvedSearchParams?.transcriptQuery,
+	const transcriptHighlightQuery = getFirstSearchParam(
+		resolvedSearchParams?.[TALK_DETAIL_TRANSCRIPT_QUERY_PARAM],
 	);
 	const galleryQuery =
-		getSingleSearchParam(resolvedSearchParams?.galleryQuery) ||
-		transcriptHighlightQuery;
-	const galleryHref = buildGalleryHref(galleryQuery);
-	const targetCueIndex = parseCueIndex(
-		getSingleSearchParam(resolvedSearchParams?.transcriptCue),
+		getFirstSearchParam(
+			resolvedSearchParams?.[TALK_DETAIL_GALLERY_QUERY_PARAM],
+		) || transcriptHighlightQuery;
+	const galleryHref = buildTalksHref(galleryQuery);
+	const targetCueIndex = parseTranscriptCueIndex(
+		getFirstSearchParam(
+			resolvedSearchParams?.[TALK_DETAIL_TRANSCRIPT_CUE_PARAM],
+		),
 	);
 
 	const talk = await getTalkById(id);

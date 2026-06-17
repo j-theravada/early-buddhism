@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { buildTalkDetailHref } from "./application/talk/links";
 import { getTalks } from "./infrastructure/talk/repository";
 
 const BASE = "https://early-buddhism.j-theravada.com";
@@ -27,7 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 	const talks = await getTalks();
 	const talkPages: MetadataRoute.Sitemap = talks.map((talk) => ({
-		url: `${BASE}/talks/${talk.id}`,
+		url: `${BASE}${buildTalkDetailHref(talk.id)}`,
 		...(talk.recordedOnDate && { lastModified: talk.recordedOnDate }),
 		changeFrequency: "monthly",
 		priority: 0.6,

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GroupedVirtuosoHandle } from "react-virtuoso";
 import { GroupedVirtuoso } from "react-virtuoso";
+import { TALK_GALLERY_QUERY_PARAM } from "../application/talk/links";
 import type { TalkForDisplay } from "../domain/talk/types";
 import DecadeJumpNav from "./talk-gallery/decade-jump-nav";
 import TalkGalleryRow from "./talk-gallery/talk-gallery-row";
@@ -13,8 +14,6 @@ type Props = {
 	talks: TalkForDisplay[];
 };
 
-const SEARCH_QUERY_PARAM = "query";
-
 export default function TalkGallery({ talks }: Props) {
 	const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
 
@@ -23,7 +22,7 @@ export default function TalkGallery({ talks }: Props) {
 	useEffect(() => {
 		const urlQuery =
 			new URLSearchParams(window.location.search)
-				.get(SEARCH_QUERY_PARAM)
+				.get(TALK_GALLERY_QUERY_PARAM)
 				?.trim() ?? "";
 		if (urlQuery) {
 			setSearchQuery(urlQuery);
@@ -63,9 +62,9 @@ export default function TalkGallery({ talks }: Props) {
 
 		const nextUrl = new URL(window.location.href);
 		if (normalizedQuery) {
-			nextUrl.searchParams.set(SEARCH_QUERY_PARAM, normalizedQuery);
+			nextUrl.searchParams.set(TALK_GALLERY_QUERY_PARAM, normalizedQuery);
 		} else {
-			nextUrl.searchParams.delete(SEARCH_QUERY_PARAM);
+			nextUrl.searchParams.delete(TALK_GALLERY_QUERY_PARAM);
 		}
 		window.history.replaceState(
 			null,

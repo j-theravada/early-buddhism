@@ -2,6 +2,7 @@ import { ExternalLink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
+import { buildTalksHref } from "../application/talk/links";
 import type { NewsItem } from "../domain/news/types";
 import type { TalkForDisplay } from "../domain/talk/types";
 import { THERAVADA_ASSOCIATION_URL } from "../utils/site-links";
@@ -262,7 +263,7 @@ export function TalkSearchSection() {
 									<Link
 										aria-label={`${keyword}をキーワードに検索`}
 										className="flex h-[62px] items-center justify-center rounded-[2px] border border-[#d6c6ad] bg-white/90 px-3 text-center text-[16px] font-semibold text-[#303030] transition hover:-translate-y-0.5 hover:border-[#9d7e4c] hover:bg-[#9d7e4c] hover:text-white hover:shadow-[0_4px_10px_rgba(48,48,48,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25 lg:h-20 lg:text-[19px]"
-										href={`/talks?query=${encodeURIComponent(keyword)}`}
+										href={buildTalksHref(keyword)}
 										key={keyword}
 									>
 										{keyword}

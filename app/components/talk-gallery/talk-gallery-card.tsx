@@ -1,6 +1,10 @@
 import { ExternalLink, Youtube } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+	buildTalkDetailHref,
+	buildTranscriptCueHref,
+} from "../../application/talk/links";
 import type { TalkForDisplay } from "../../domain/talk/types";
 import { highlightMatches } from "./highlight";
 import type { TranscriptSnippet } from "./use-talk-gallery-data";
@@ -12,35 +16,6 @@ type Props = {
 	transcriptSnippets?: TranscriptSnippet[];
 	onNavigateToTalk?: () => void;
 };
-
-function buildTranscriptSnippetHref(
-	talkId: string,
-	snippet: TranscriptSnippet,
-	searchQuery: string | undefined,
-): string {
-	const params = new URLSearchParams();
-	const trimmedSearchQuery = searchQuery?.trim() ?? "";
-	if (trimmedSearchQuery) {
-		params.set("transcriptQuery", trimmedSearchQuery);
-		params.set("galleryQuery", trimmedSearchQuery);
-	}
-	params.set("transcriptCue", String(snippet.cueIndex));
-
-	return `/talks/${encodeURIComponent(talkId)}?${params.toString()}#transcript-cue-${snippet.cueIndex}`;
-}
-
-function buildTalkDetailHref(
-	talkId: string,
-	searchQuery: string | undefined,
-): string {
-	const trimmedSearchQuery = searchQuery?.trim() ?? "";
-	if (!trimmedSearchQuery) {
-		return `/talks/${encodeURIComponent(talkId)}`;
-	}
-
-	const params = new URLSearchParams({ galleryQuery: trimmedSearchQuery });
-	return `/talks/${encodeURIComponent(talkId)}?${params.toString()}`;
-}
 
 export default function TalkGalleryCard({
 	talk,
@@ -99,9 +74,9 @@ export default function TalkGalleryCard({
 								<Link
 									aria-label={`${snippet.startLabel ?? "該当箇所"}の文字起こしへ移動`}
 									className="block rounded-sm text-xs leading-relaxed text-[#5f5144] transition hover:text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/25"
-									href={buildTranscriptSnippetHref(
+									href={buildTranscriptCueHref(
 										talk.id,
-										snippet,
+										snippet.cueIndex,
 										searchQuery,
 									)}
 									key={`${snippet.cueIndex}-${snippet.text}`}

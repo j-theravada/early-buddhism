@@ -10,29 +10,27 @@ import {
 	tokenizeSearchQuery,
 	type IndexedTalk,
 } from "../../application/talk/search";
+import {
+	buildTalkSearchApiUrl,
+	parseTalkSearchApiResponse,
+	type ParsedTalkSearchApiResponse,
+	type TalkSearchTranscriptSnippet,
+} from "../../application/talk/search-api";
 import type { TalkForDisplay } from "../../domain/talk/types";
 type ViewMode = "date" | "theme";
 
 const MEDIA_QUERY_SM = "(min-width: 640px)";
 const MEDIA_QUERY_LG = "(min-width: 1024px)";
 const SEARCH_DEBOUNCE_MS = 150;
+export type TranscriptSnippet = TalkSearchTranscriptSnippet;
 
-type ServerSearchResponse = {
-	talkIds?: unknown;
-	results?: unknown;
-};
+const EMPTY_TRANSCRIPT_SNIPPETS_BY_TALK_ID = new Map<
+	string,
+	TranscriptSnippet[]
+>();
 
-export type TranscriptSnippet = {
-	text: string;
-	cueIndex: number;
-	start?: number;
-	startLabel?: string;
-};
-
-type ServerSearchResult = {
+type ServerSearchResult = ParsedTalkSearchApiResponse & {
 	query: string;
-	talkIds: Set<string>;
-	transcriptSnippetsByTalkId: Map<string, TranscriptSnippet[]>;
 };
 
 function resolveColumnsByViewport(): number {
@@ -69,77 +67,6 @@ function useResponsiveColumns() {
 	return columns;
 }
 
-function parseServerSearchTalkIds(response: ServerSearchResponse): string[] {
-	if (!Array.isArray(response.talkIds)) {
-		return [];
-	}
-
-	return response.talkIds.filter(
-		(talkId): talkId is string => typeof talkId === "string",
-	);
-}
-
-function parseServerSearchSnippets(
-	response: ServerSearchResponse,
-): Map<string, TranscriptSnippet[]> {
-	const snippetsByTalkId = new Map<string, TranscriptSnippet[]>();
-	if (!Array.isArray(response.results)) {
-		return snippetsByTalkId;
-	}
-
-	for (const item of response.results) {
-		if (!item || typeof item !== "object") {
-			continue;
-		}
-		const result = item as {
-			talkId?: unknown;
-			transcriptSnippets?: unknown;
-		};
-		if (
-			typeof result.talkId !== "string" ||
-			!Array.isArray(result.transcriptSnippets)
-		) {
-			continue;
-		}
-
-		const snippets = result.transcriptSnippets.flatMap((snippet) => {
-			if (!snippet || typeof snippet !== "object") {
-				return [];
-			}
-			const value = snippet as {
-				text?: unknown;
-				cueIndex?: unknown;
-				start?: unknown;
-				startLabel?: unknown;
-			};
-			if (
-				typeof value.text !== "string" ||
-				typeof value.cueIndex !== "number" ||
-				!Number.isFinite(value.cueIndex)
-			) {
-				return [];
-			}
-
-			return [
-				{
-					text: value.text,
-					cueIndex: value.cueIndex,
-					...(typeof value.start === "number" &&
-						Number.isFinite(value.start) && { start: value.start }),
-					...(typeof value.startLabel === "string" && {
-						startLabel: value.startLabel,
-					}),
-				},
-			];
-		});
-		if (snippets.length > 0) {
-			snippetsByTalkId.set(result.talkId, snippets);
-		}
-	}
-
-	return snippetsByTalkId;
-}
-
 function useServerSearchResult(searchQuery: string): ServerSearchResult | null {
 	const normalizedSearchQuery = searchQuery.trim();
 	const [serverSearchResult, setServerSearchResult] =
@@ -155,19 +82,20 @@ function useServerSearchResult(searchQuery: string): ServerSearchResult | null {
 		const timeoutId = window.setTimeout(async () => {
 			try {
 				const response = await fetch(
-					`/api/talk-search?query=${encodeURIComponent(normalizedSearchQuery)}`,
-					{ signal: controller.signal },
+					buildTalkSearchApiUrl(normalizedSearchQuery),
+					{
+						signal: controller.signal,
+					},
 				);
 				if (!response.ok) {
 					setServerSearchResult(null);
 					return;
 				}
 
-				const data = (await response.json()) as ServerSearchResponse;
+				const data = await response.json();
 				setServerSearchResult({
 					query: normalizedSearchQuery,
-					talkIds: new Set(parseServerSearchTalkIds(data)),
-					transcriptSnippetsByTalkId: parseServerSearchSnippets(data),
+					...parseTalkSearchApiResponse(data),
 				});
 			} catch (error) {
 				if (error instanceof DOMException && error.name === "AbortError") {
@@ -221,7 +149,7 @@ export function useTalkGalleryData(
 	const transcriptSnippetsByTalkId = useMemo(
 		() =>
 			serverSearchResult?.transcriptSnippetsByTalkId ??
-			new Map<string, TranscriptSnippet[]>(),
+			EMPTY_TRANSCRIPT_SNIPPETS_BY_TALK_ID,
 		[serverSearchResult],
 	);
 
