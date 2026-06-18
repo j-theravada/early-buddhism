@@ -1,0 +1,282 @@
+import type { Client, InStatement, InValue, Transaction } from "@libsql/client";
+import { mkdir } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { buildTalkGalleryTalks } from "../app/application/talk/gallery";
+import {
+	buildSearchIndex,
+	normalizeForSearch,
+} from "../app/application/talk/search";
+import {
+	closeLibsqlClientForScript,
+	getLibsqlClient,
+	getLibsqlDatabaseConfig,
+} from "../app/infrastructure/database/libsql";
+import { getTalks } from "../app/infrastructure/talk/repository";
+import { getTranscriptSearchDocuments } from "../app/infrastructure/transcript/repository";
+import { buildTranscriptSearchTextFromCues } from "../app/infrastructure/transcript/search-document";
+
+const SCHEMA_SQL = `
+	DROP TABLE IF EXISTS talk_search_fts;
+	DROP TABLE IF EXISTS transcript_search_fts;
+	DROP TABLE IF EXISTS transcript_cues;
+	DROP TABLE IF EXISTS talks;
+	DROP TABLE IF EXISTS search_database_meta;
+
+CREATE TABLE talks (
+	id TEXT PRIMARY KEY,
+	display_json TEXT NOT NULL,
+	search_text TEXT NOT NULL,
+	sort_index INTEGER NOT NULL,
+	recorded_on_sort_value INTEGER NOT NULL,
+	collection_id TEXT NOT NULL,
+	series_id TEXT NOT NULL
+);
+
+CREATE VIRTUAL TABLE talk_search_fts USING fts5(
+	talk_id UNINDEXED,
+	search_text,
+	tokenize = 'trigram'
+);
+
+	CREATE TABLE transcript_cues (
+		talk_id TEXT NOT NULL,
+		cue_index INTEGER NOT NULL,
+		start_seconds REAL NOT NULL,
+		start_label TEXT NOT NULL,
+		text TEXT NOT NULL,
+		search_text TEXT NOT NULL,
+		PRIMARY KEY (talk_id, cue_index)
+	);
+
+	CREATE INDEX transcript_cues_talk_id_index
+		ON transcript_cues (talk_id, cue_index);
+
+	CREATE VIRTUAL TABLE transcript_search_fts USING fts5(
+		talk_id UNINDEXED,
+	search_text,
+	tokenize = 'trigram'
+);
+
+CREATE TABLE search_database_meta (
+	key TEXT PRIMARY KEY,
+	value TEXT NOT NULL
+);
+`;
+
+function getLocalDatabasePath(databaseUrl: string): string | null {
+	if (!databaseUrl.startsWith("file:")) {
+		return null;
+	}
+
+	return resolve(process.cwd(), databaseUrl.slice("file:".length));
+}
+
+async function ensureLocalDatabaseDirectory(databaseUrl: string) {
+	const databasePath = getLocalDatabasePath(databaseUrl);
+	if (!databasePath) {
+		return;
+	}
+	await mkdir(dirname(databasePath), { recursive: true });
+}
+
+function chunkStatements(
+	statements: InStatement[],
+	chunkSize: number,
+): InStatement[][] {
+	const chunks: InStatement[][] = [];
+	for (let start = 0; start < statements.length; start += chunkSize) {
+		chunks.push(statements.slice(start, start + chunkSize));
+	}
+	return chunks;
+}
+
+async function batchStatements(
+	db: Client | Transaction,
+	statements: InStatement[],
+	chunkSize: number,
+) {
+	for (const chunk of chunkStatements(statements, chunkSize)) {
+		await db.batch(chunk);
+	}
+}
+
+function buildBulkInsertStatement(
+	tableName: string,
+	columns: string[],
+	rows: InValue[][],
+): InStatement | null {
+	if (rows.length === 0) {
+		return null;
+	}
+
+	const rowPlaceholder = `(${columns.map(() => "?").join(", ")})`;
+	return {
+		sql: `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES ${rows.map(() => rowPlaceholder).join(", ")}`,
+		args: rows.flat(),
+	};
+}
+
+async function batchTranscriptCueStatements(
+	db: Client | Transaction,
+	transcriptDocuments: Awaited<ReturnType<typeof getTranscriptSearchDocuments>>,
+) {
+	const rowChunkSize = 500;
+	const statementBatchSize = 20;
+	const columns = [
+		"talk_id",
+		"cue_index",
+		"start_seconds",
+		"start_label",
+		"text",
+		"search_text",
+	];
+	let rows: InValue[][] = [];
+	let statements: InStatement[] = [];
+	let cueCount = 0;
+
+	async function flushRows() {
+		const statement = buildBulkInsertStatement(
+			"transcript_cues",
+			columns,
+			rows,
+		);
+		rows = [];
+		if (!statement) {
+			return;
+		}
+
+		statements.push(statement);
+		if (statements.length >= statementBatchSize) {
+			await db.batch(statements);
+			statements = [];
+		}
+	}
+
+	for (const document of transcriptDocuments) {
+		for (const cue of document.cues) {
+			cueCount += 1;
+			rows.push([
+				document.talkId,
+				cue.index,
+				cue.start,
+				cue.startLabel,
+				cue.text,
+				normalizeForSearch(cue.text),
+			]);
+			if (rows.length >= rowChunkSize) {
+				await flushRows();
+			}
+		}
+	}
+
+	await flushRows();
+	if (statements.length > 0) {
+		await db.batch(statements);
+	}
+
+	return cueCount;
+}
+
+async function seedDatabase() {
+	const config = getLibsqlDatabaseConfig();
+	await ensureLocalDatabaseDirectory(config.url);
+
+	const db = getLibsqlClient();
+	const talks = await getTalks();
+	const talksForDisplay = buildTalkGalleryTalks(talks);
+	const indexedTalks = buildSearchIndex(talksForDisplay);
+	const transcriptDocuments = await getTranscriptSearchDocuments();
+
+	const talkStatements: InStatement[] = indexedTalks.map(
+		({ data, searchText }, sortIndex) => ({
+			sql: `
+				INSERT INTO talks (
+					id,
+					display_json,
+					search_text,
+					sort_index,
+					recorded_on_sort_value,
+					collection_id,
+					series_id
+				)
+				VALUES (?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: [
+				data.id,
+				JSON.stringify(data),
+				searchText,
+				sortIndex,
+				data.recordedOnSortValue,
+				data.collectionId,
+				data.seriesId,
+			],
+		}),
+	);
+	const talkSearchStatements: InStatement[] = indexedTalks.map(
+		({ data, searchText }) => ({
+			sql: "INSERT INTO talk_search_fts (talk_id, search_text) VALUES (?, ?)",
+			args: [data.id, searchText],
+		}),
+	);
+	const transcriptSearchStatements: InStatement[] = transcriptDocuments.map(
+		(document) => ({
+			sql: "INSERT INTO transcript_search_fts (talk_id, search_text) VALUES (?, ?)",
+			args: [
+				document.talkId,
+				normalizeForSearch(buildTranscriptSearchTextFromCues(document.cues)),
+			],
+		}),
+	);
+	const metaStatements: InStatement[] = [
+		{
+			sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
+			args: ["seededAt", new Date().toISOString()],
+		},
+		{
+			sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
+			args: ["talkCount", String(indexedTalks.length)],
+		},
+		{
+			sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
+			args: ["transcriptDocumentCount", String(transcriptDocuments.length)],
+		},
+	];
+
+	const transaction = await db.transaction("write");
+	let transcriptCueCount = 0;
+	try {
+		await transaction.executeMultiple(SCHEMA_SQL);
+		await batchStatements(transaction, talkStatements, 100);
+		await batchStatements(transaction, talkSearchStatements, 100);
+		transcriptCueCount = await batchTranscriptCueStatements(
+			transaction,
+			transcriptDocuments,
+		);
+		await batchStatements(transaction, transcriptSearchStatements, 20);
+		await batchStatements(
+			transaction,
+			[
+				...metaStatements,
+				{
+					sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
+					args: ["transcriptCueCount", String(transcriptCueCount)],
+				},
+			],
+			20,
+		);
+		await transaction.commit();
+	} catch (error) {
+		await transaction.rollback();
+		throw error;
+	}
+
+	console.log(
+		`Seeded ${indexedTalks.length} talks, ${transcriptDocuments.length} transcript documents, and ${transcriptCueCount} transcript cues into ${config.target} database (${config.url}).`,
+	);
+}
+
+try {
+	await seedDatabase();
+} finally {
+	closeLibsqlClientForScript();
+}

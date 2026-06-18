@@ -28,6 +28,27 @@ NEXT_PUBLIC_GA_ID=G-STEXVRMHCW
 
 The Vercel project also needs `NEXT_PUBLIC_GA_ID` set for Production, Preview, and Development.
 
+Transcript search uses libSQL. Local development defaults to a SQLite file at
+`app/generated/gakurin.db`, which is created by:
+
+```bash
+bun run db:seed:local
+```
+
+Production uses Turso when these server-side variables are set in Vercel
+Production:
+
+```bash
+TURSO_DATABASE_URL=libsql://...
+TURSO_AUTH_TOKEN=...
+```
+
+To seed Turso from the generated talks and transcripts, run:
+
+```bash
+bun run db:seed:turso
+```
+
 Popular videos can be loaded from the GA4 Data API when these server-side variables are set:
 
 ```bash

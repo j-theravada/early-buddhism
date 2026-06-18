@@ -1,40 +1,44 @@
 import { NextResponse } from "next/server";
 import { buildEmptyTalkSearchApiResponse } from "../../application/talk/search-api";
-import {
-	buildTranscriptAwareSearchData,
-	hasTranscriptAwareSearchQuery,
-	searchTranscriptAwareTalks,
-	type TranscriptAwareSearchData,
-} from "../../application/talk/transcript-search";
-import { getTalks } from "../../infrastructure/talk/repository";
-import { getTranscriptSearchDocuments } from "../../infrastructure/transcript/repository";
+import { tokenizeSearchQuery } from "../../application/talk/search";
+import { searchTalkDatabase } from "../../infrastructure/search/talk-search-database";
 
 const MAX_QUERY_LENGTH = 120;
 
-let searchDataPromise: Promise<TranscriptAwareSearchData> | null = null;
-
 export const runtime = "nodejs";
 
-async function getTranscriptAwareSearchData(): Promise<TranscriptAwareSearchData> {
-	searchDataPromise ??= (async () => {
-		const [talks, transcriptDocuments] = await Promise.all([
-			getTalks(),
-			getTranscriptSearchDocuments(),
-		]);
-		return buildTranscriptAwareSearchData(talks, transcriptDocuments);
-	})();
-
-	return searchDataPromise;
+async function searchGeneratedTranscriptData(query: string) {
+	const [
+		{ buildTranscriptAwareSearchData, searchTranscriptAwareTalks },
+		{ getTalks },
+		{ getTranscriptSearchDocuments },
+	] = await Promise.all([
+		import("../../application/talk/transcript-search"),
+		import("../../infrastructure/talk/repository"),
+		import("../../infrastructure/transcript/repository"),
+	]);
+	const [talks, transcriptDocuments] = await Promise.all([
+		getTalks(),
+		getTranscriptSearchDocuments(),
+	]);
+	return searchTranscriptAwareTalks(
+		buildTranscriptAwareSearchData(talks, transcriptDocuments),
+		query,
+	);
 }
 
 export async function GET(request: Request) {
 	const { searchParams } = new URL(request.url);
 	const query = (searchParams.get("query") ?? "").slice(0, MAX_QUERY_LENGTH);
 
-	if (!hasTranscriptAwareSearchQuery(query)) {
+	if (tokenizeSearchQuery(query).length === 0) {
 		return NextResponse.json(buildEmptyTalkSearchApiResponse());
 	}
 
-	const searchData = await getTranscriptAwareSearchData();
-	return NextResponse.json(searchTranscriptAwareTalks(searchData, query));
+	try {
+		return NextResponse.json(await searchTalkDatabase(query));
+	} catch (error) {
+		console.warn("Falling back to generated transcript search data.", error);
+		return NextResponse.json(await searchGeneratedTranscriptData(query));
+	}
 }

@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
 	reactCompiler: true,
+	outputFileTracingIncludes: {
+		"/api/talk-search": ["./app/generated/gakurin.db"],
+	},
 	images: {
 		remotePatterns: [
 			{

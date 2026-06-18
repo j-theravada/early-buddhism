@@ -17,6 +17,8 @@
 /.next/
 /out/
 app/generated/.transcripts-*/
+app/generated/*.db
+app/generated/*.db-*
 
 # production
 /build
