@@ -1,10 +1,11 @@
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import {
 	collectTranscriptDownloadTargets,
 	normalizeTranscriptContent,
+	writeGeneratedTranscriptSearchDocuments,
 	writeGeneratedTranscripts,
 } from "./generation";
 
@@ -82,6 +83,54 @@ describe("writeGeneratedTranscripts", () => {
 			);
 		} finally {
 			await rm(outDir, { recursive: true, force: true });
+		}
+	});
+});
+
+describe("writeGeneratedTranscriptSearchDocuments", () => {
+	test("生成済みSRTから検索用JSONを安定した順序で書き出す", async () => {
+		const rootDir = await mkdtemp(join(tmpdir(), "gakurin-transcript-index-"));
+		const transcriptsDir = join(rootDir, "transcripts");
+		const outPath = join(rootDir, "transcript-search-documents.json");
+
+		try {
+			await mkdir(transcriptsDir, { recursive: true });
+			await writeFile(
+				join(transcriptsDir, "TALK-2.srt"),
+				`1
+00:00:00,000 --> 00:00:02,000
+二番目`,
+				"utf8",
+			);
+			await writeFile(
+				join(transcriptsDir, "TALK-1.srt"),
+				`1
+00:00:01,000 --> 00:00:03,000
+一番目`,
+				"utf8",
+			);
+
+			const count = await writeGeneratedTranscriptSearchDocuments(
+				outPath,
+				transcriptsDir,
+			);
+			const documents = JSON.parse(await readFile(outPath, "utf8")) as [
+				string,
+				unknown[],
+			][];
+
+			expect(count).toBe(2);
+			expect(documents.map(([talkId]) => talkId)).toEqual(["TALK-1", "TALK-2"]);
+			expect(documents[0][1][0]).toEqual([
+				1,
+				1,
+				3,
+				"00:00:01",
+				"00:00:03",
+				"一番目",
+			]);
+		} finally {
+			await rm(rootDir, { recursive: true, force: true });
 		}
 	});
 });

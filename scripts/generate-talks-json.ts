@@ -5,7 +5,10 @@ import {
 	parseCSVToTalks,
 	TALK_SHEET_SOURCES,
 } from "../app/infrastructure/talk/csv";
-import { writeGeneratedTranscripts } from "../app/infrastructure/transcript/generation";
+import {
+	writeGeneratedTranscriptSearchDocuments,
+	writeGeneratedTranscripts,
+} from "../app/infrastructure/transcript/generation";
 
 type SerializedTalk = Omit<Talk, "recordedOnDate"> & {
 	recordedOnDate: string | null;
@@ -63,6 +66,10 @@ async function fetchTalksFromSheetSource(
 async function main() {
 	const talksOutPath = resolve(process.cwd(), "app/generated/talks.json");
 	const transcriptsOutDir = resolve(process.cwd(), "app/generated/transcripts");
+	const transcriptSearchOutPath = resolve(
+		process.cwd(),
+		"app/generated/transcript-search-documents.json",
+	);
 
 	try {
 		const talks = (
@@ -81,6 +88,14 @@ async function main() {
 				: "";
 		console.log(
 			`Wrote ${transcriptResult.writtenCount} transcripts from ${transcriptTalks.length} monthly talks to ${transcriptsOutDir}${retainedMessage}`,
+		);
+		const transcriptSearchDocumentCount =
+			await writeGeneratedTranscriptSearchDocuments(
+				transcriptSearchOutPath,
+				transcriptsOutDir,
+			);
+		console.log(
+			`Wrote ${transcriptSearchDocumentCount} transcript search documents to ${transcriptSearchOutPath}`,
 		);
 		await writeGeneratedTalks(talksOutPath, talks);
 	} catch (error) {

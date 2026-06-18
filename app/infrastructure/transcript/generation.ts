@@ -1,14 +1,19 @@
 import {
 	mkdir,
 	mkdtemp,
+	readdir,
 	readFile,
 	rename,
 	rm,
 	writeFile,
 } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { parseSrt } from "../../domain/transcript/parser";
 import { buildTranscriptDownloadUrl } from "./download";
+import {
+	serializeTranscriptSearchDocument,
+	type SerializedTranscriptSearchDocument,
+} from "./search-document";
 
 const TRANSCRIPT_DOWNLOAD_CONCURRENCY = 8;
 
@@ -179,4 +184,45 @@ export async function writeGeneratedTranscripts(
 		writtenCount,
 		retainedCount,
 	};
+}
+
+export async function writeGeneratedTranscriptSearchDocuments(
+	outPath: string,
+	transcriptsDir: string,
+): Promise<number> {
+	let fileNames: string[];
+
+	try {
+		fileNames = await readdir(transcriptsDir);
+	} catch (error) {
+		if (error && typeof error === "object" && "code" in error) {
+			if ((error as { code?: string }).code === "ENOENT") {
+				fileNames = [];
+			} else {
+				throw error;
+			}
+		} else {
+			throw error;
+		}
+	}
+
+	const documents: SerializedTranscriptSearchDocument[] = [];
+
+	for (const fileName of fileNames
+		.filter((fileName) => fileName.endsWith(".srt"))
+		.sort()) {
+		const content = await readFile(resolve(transcriptsDir, fileName), "utf8");
+		const document = serializeTranscriptSearchDocument(
+			basename(fileName, ".srt"),
+			content,
+		);
+		if (document) {
+			documents.push(document);
+		}
+	}
+
+	await mkdir(dirname(outPath), { recursive: true });
+	await writeFile(outPath, `${JSON.stringify(documents)}\n`, "utf8");
+
+	return documents.length;
 }

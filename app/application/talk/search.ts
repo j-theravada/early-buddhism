@@ -130,6 +130,14 @@ function buildNormalizedSlices(value: string) {
 	};
 }
 
+function normalizeForRangeProbe(value: string): string {
+	return value.normalize("NFKC").toLowerCase();
+}
+
+function hasAnyNormalizedToken(value: string, tokens: string[]): boolean {
+	return tokens.some((token) => value.includes(token));
+}
+
 function collectNormalizedRanges(value: string, tokens: string[]): Range[] {
 	const ranges: Range[] = [];
 
@@ -214,6 +222,11 @@ export function buildSearchSnippets(
 ): string[] {
 	const normalizedTokens = normalizeTokens(tokens);
 	if (!value || normalizedTokens.length === 0) {
+		return [];
+	}
+
+	const normalizedProbe = normalizeForRangeProbe(value);
+	if (!hasAnyNormalizedToken(normalizedProbe, normalizedTokens)) {
 		return [];
 	}
 

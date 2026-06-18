@@ -13,6 +13,7 @@
 		"out/**",
 		"**/*.css",
 		"app/generated/talks.json",
+		"app/generated/transcript-search-documents.json",
 		"app/generated/transcripts/**"
 	]
 }
