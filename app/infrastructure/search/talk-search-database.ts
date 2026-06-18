@@ -10,8 +10,6 @@ import {
 } from "../../application/talk/search-api";
 import { getLibsqlClient } from "../database/libsql";
 
-type SearchTableName = "talk_search_fts" | "transcript_search_fts";
-
 type TokenMatches = {
 	talkIds: Set<string>;
 	transcriptTalkIds: Set<string>;
@@ -20,12 +18,21 @@ type TokenMatches = {
 const MAX_TALK_IDS_PER_QUERY = 500;
 const MAX_MATCHING_CUES_PER_TALK = 12;
 const MAX_SNIPPETS_PER_TALK = 2;
+const MIN_FTS_TRIGRAM_TOKEN_LENGTH = 3;
 
 function escapeLikeToken(token: string): string {
 	return token
 		.replaceAll("\\", "\\\\")
 		.replaceAll("%", "\\%")
 		.replaceAll("_", "\\_");
+}
+
+function canUseFtsMatch(token: string): boolean {
+	return [...token].length >= MIN_FTS_TRIGRAM_TOKEN_LENGTH;
+}
+
+function quoteFtsPhrase(token: string): string {
+	return `"${token.replaceAll('"', '""')}"`;
 }
 
 function readStringColumn(row: Row, column: string): string | null {
@@ -44,21 +51,47 @@ function readNumberColumn(row: Row, column: string): number | null {
 	return null;
 }
 
-async function findMatchingTalkIds(
-	table: SearchTableName,
-	token: string,
-): Promise<Set<string>> {
+async function findTokenMatches(token: string): Promise<TokenMatches> {
 	const db = getLibsqlClient();
+	const useFtsMatch = canUseFtsMatch(token);
+	const operator = useFtsMatch ? "MATCH" : "LIKE";
+	const matcher = useFtsMatch
+		? quoteFtsPhrase(token)
+		: `%${escapeLikeToken(token)}%`;
+	const escapeClause = useFtsMatch ? "" : " ESCAPE '\\'";
 	const result = await db.execute({
-		sql: `SELECT talk_id FROM ${table} WHERE search_text LIKE ? ESCAPE '\\'`,
-		args: [`%${escapeLikeToken(token)}%`],
+		sql: `
+			SELECT talk_id, source
+			FROM (
+				SELECT talk_id, 'talk' AS source
+				FROM talk_search_fts
+				WHERE search_text ${operator} ?${escapeClause}
+				UNION ALL
+				SELECT talk_id, 'transcript' AS source
+				FROM transcript_search_fts
+				WHERE search_text ${operator} ?${escapeClause}
+			)
+		`,
+		args: [matcher, matcher],
 	});
-	return new Set(
-		result.rows.flatMap((row) => {
-			const talkId = readStringColumn(row, "talk_id");
-			return talkId ? [talkId] : [];
-		}),
-	);
+	const talkIds = new Set<string>();
+	const transcriptTalkIds = new Set<string>();
+
+	for (const row of result.rows) {
+		const talkId = readStringColumn(row, "talk_id");
+		const source = readStringColumn(row, "source");
+		if (!talkId) {
+			continue;
+		}
+
+		if (source === "talk") {
+			talkIds.add(talkId);
+		} else if (source === "transcript") {
+			transcriptTalkIds.add(talkId);
+		}
+	}
+
+	return { talkIds, transcriptTalkIds };
 }
 
 function intersectTokenMatches(tokenMatches: TokenMatches[]): Set<string> {
@@ -208,13 +241,7 @@ export async function searchTalkDatabase(
 	}
 
 	const tokenMatches = await Promise.all(
-		tokens.map(async (token) => {
-			const [talkIds, transcriptTalkIds] = await Promise.all([
-				findMatchingTalkIds("talk_search_fts", token),
-				findMatchingTalkIds("transcript_search_fts", token),
-			]);
-			return { talkIds, transcriptTalkIds };
-		}),
+		tokens.map((token) => findTokenMatches(token)),
 	);
 	const talkIds = [...intersectTokenMatches(tokenMatches)];
 	const transcriptTalkIds = unionTranscriptTalkIds(tokenMatches);
