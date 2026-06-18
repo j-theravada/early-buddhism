@@ -14,9 +14,15 @@ function createDisplayTalk(
 ): TalkForDisplay {
 	return {
 		id: "TALK-1",
+		kind: "talk",
+		collectionId: "monthly_talk",
+		collectionLabel: "月例講演会",
+		seriesId: "",
+		seriesLabel: "",
 		dvdId: "V-001",
 		event: "月例講演会",
 		title: "心と病気の関係",
+		description: "心のあり方が病気を作り出す。",
 		subtitle: "心のあり方が病気を作り出す。",
 		venue: "東京",
 		speaker: "アルボムッレ・スマナサーラ",
@@ -38,6 +44,11 @@ function createDisplayTalk(
 function createTalk(overrides: Partial<Talk> = {}): Talk {
 	return {
 		id: "TALK-1",
+		kind: "talk",
+		collectionId: "monthly_talk",
+		collectionLabel: "月例講演会",
+		seriesId: "",
+		seriesLabel: "",
 		dvdId: "V-001",
 		folder: "",
 		event: "月例講演会",
@@ -66,7 +77,9 @@ describe("talk search helpers", () => {
 			createDisplayTalk({
 				id: "TALK-2",
 				title: "無常観",
+				description: "",
 				subtitle: "悦びの心を得る",
+				venue: "大阪",
 				themeLabel: "無常",
 			}),
 		];
@@ -103,6 +116,62 @@ describe("talk search helpers", () => {
 		const result = filterTalksByQuery(
 			indexedTalks,
 			tokenizeSearchQuery("東京 ヴィパッサナー"),
+		);
+
+		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);
+	});
+
+	test("コレクション名を検索対象に含める", () => {
+		const talks = [
+			createDisplayTalk({
+				id: "TALK-1",
+				collectionId: "scripture_commentary",
+				collectionLabel: "経典解説",
+				seriesId: "dhammapada",
+				seriesLabel: "ダンマパダ",
+				title: "第一章",
+				subtitle: "",
+			}),
+			createDisplayTalk({
+				id: "TALK-2",
+				collectionId: "monthly_talk",
+				collectionLabel: "月例講演会",
+				title: "心と病気の関係",
+				subtitle: "",
+			}),
+		];
+
+		const indexedTalks = buildSearchIndex(talks);
+		const result = filterTalksByQuery(
+			indexedTalks,
+			tokenizeSearchQuery("ダンマパダ"),
+		);
+
+		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);
+	});
+
+	test("シリーズ名を検索対象に含める", () => {
+		const talks = [
+			createDisplayTalk({
+				id: "TALK-1",
+				collectionId: "scripture_commentary",
+				collectionLabel: "経典解説",
+				seriesId: "abhidhamma",
+				seriesLabel: "アビダンマ",
+				title: "第一講",
+				subtitle: "",
+			}),
+			createDisplayTalk({
+				id: "TALK-2",
+				title: "心と病気の関係",
+				subtitle: "",
+			}),
+		];
+
+		const indexedTalks = buildSearchIndex(talks);
+		const result = filterTalksByQuery(
+			indexedTalks,
+			tokenizeSearchQuery("アビダンマ"),
 		);
 
 		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);

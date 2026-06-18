@@ -3,7 +3,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GroupedVirtuosoHandle } from "react-virtuoso";
 import { GroupedVirtuoso } from "react-virtuoso";
-import { TALK_GALLERY_QUERY_PARAM } from "../application/talk/links";
+import {
+	TALK_GALLERY_COLLECTION_PARAM,
+	TALK_GALLERY_QUERY_PARAM,
+	TALK_GALLERY_SERIES_PARAM,
+} from "../application/talk/links";
+import {
+	parseContentCollectionId,
+	parseContentSeriesId,
+} from "../domain/content/collection";
+import type {
+	ContentCollectionId,
+	ContentSeriesId,
+} from "../domain/content/types";
 import type { TalkForDisplay } from "../domain/talk/types";
 import DecadeJumpNav from "./talk-gallery/decade-jump-nav";
 import TalkGalleryRow from "./talk-gallery/talk-gallery-row";
@@ -18,12 +30,25 @@ export default function TalkGallery({ talks }: Props) {
 	const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
 
 	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedCollectionId, setSelectedCollectionId] = useState<
+		ContentCollectionId | ""
+	>("");
+	const [selectedSeriesId, setSelectedSeriesId] = useState<
+		ContentSeriesId | ""
+	>("");
 
 	useEffect(() => {
-		const urlQuery =
-			new URLSearchParams(window.location.search)
-				.get(TALK_GALLERY_QUERY_PARAM)
-				?.trim() ?? "";
+		const params = new URLSearchParams(window.location.search);
+		const urlQuery = params.get(TALK_GALLERY_QUERY_PARAM)?.trim() ?? "";
+		const urlCollectionId = parseContentCollectionId(
+			params.get(TALK_GALLERY_COLLECTION_PARAM) ?? "",
+		);
+		const urlSeriesId = parseContentSeriesId(
+			params.get(TALK_GALLERY_SERIES_PARAM) ?? "",
+		);
+
+		setSelectedCollectionId(urlCollectionId);
+		setSelectedSeriesId(urlSeriesId);
 		if (urlQuery) {
 			setSearchQuery(urlQuery);
 			return;
@@ -53,25 +78,82 @@ export default function TalkGallery({ talks }: Props) {
 		flatRows,
 		searchTokens,
 		transcriptSnippetsByTalkId,
-	} = useTalkGalleryData(talks, "date", searchQuery);
+	} = useTalkGalleryData(
+		talks,
+		"date",
+		searchQuery,
+		selectedCollectionId,
+		selectedSeriesId,
+	);
 
-	const updateSearchQuery = useCallback((nextQuery: string) => {
-		const normalizedQuery = nextQuery.trim();
+	const updateGalleryFilters = useCallback(
+		(
+			nextQuery: string,
+			nextCollectionId: ContentCollectionId | "",
+			nextSeriesId: ContentSeriesId | "",
+		) => {
+			const normalizedQuery = nextQuery.trim();
 
-		setSearchQuery(nextQuery);
+			setSearchQuery(nextQuery);
+			setSelectedCollectionId(nextCollectionId);
+			setSelectedSeriesId(nextSeriesId);
 
-		const nextUrl = new URL(window.location.href);
-		if (normalizedQuery) {
-			nextUrl.searchParams.set(TALK_GALLERY_QUERY_PARAM, normalizedQuery);
-		} else {
-			nextUrl.searchParams.delete(TALK_GALLERY_QUERY_PARAM);
-		}
-		window.history.replaceState(
-			null,
-			"",
-			`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
-		);
-	}, []);
+			const nextUrl = new URL(window.location.href);
+			if (normalizedQuery) {
+				nextUrl.searchParams.set(TALK_GALLERY_QUERY_PARAM, normalizedQuery);
+			} else {
+				nextUrl.searchParams.delete(TALK_GALLERY_QUERY_PARAM);
+			}
+			if (nextCollectionId) {
+				nextUrl.searchParams.set(
+					TALK_GALLERY_COLLECTION_PARAM,
+					nextCollectionId,
+				);
+			} else {
+				nextUrl.searchParams.delete(TALK_GALLERY_COLLECTION_PARAM);
+			}
+			if (nextSeriesId) {
+				nextUrl.searchParams.set(TALK_GALLERY_SERIES_PARAM, nextSeriesId);
+			} else {
+				nextUrl.searchParams.delete(TALK_GALLERY_SERIES_PARAM);
+			}
+			window.history.replaceState(
+				null,
+				"",
+				`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
+			);
+		},
+		[],
+	);
+
+	const updateSearchQuery = useCallback(
+		(nextQuery: string) => {
+			updateGalleryFilters(nextQuery, selectedCollectionId, selectedSeriesId);
+		},
+		[selectedCollectionId, selectedSeriesId, updateGalleryFilters],
+	);
+
+	const updateCollectionFilter = useCallback(
+		(nextCollectionId: ContentCollectionId | "") => {
+			updateGalleryFilters(
+				searchQuery,
+				nextCollectionId,
+				nextCollectionId === "scripture_commentary" ? selectedSeriesId : "",
+			);
+		},
+		[searchQuery, selectedSeriesId, updateGalleryFilters],
+	);
+
+	const updateSeriesFilter = useCallback(
+		(nextSeriesId: ContentSeriesId | "") => {
+			updateGalleryFilters(
+				searchQuery,
+				nextSeriesId ? "scripture_commentary" : selectedCollectionId,
+				nextSeriesId,
+			);
+		},
+		[searchQuery, selectedCollectionId, updateGalleryFilters],
+	);
 
 	const handleNavigateToTalk = useCallback(() => {}, []);
 
@@ -87,7 +169,19 @@ export default function TalkGallery({ talks }: Props) {
 		});
 	}, []);
 
+	const selectedCollectionLabel = selectedCollectionId
+		? (talks.find((talk) => talk.collectionId === selectedCollectionId)
+				?.collectionLabel ?? selectedCollectionId)
+		: "";
+	const selectedSeriesLabel = selectedSeriesId
+		? (talks.find((talk) => talk.seriesId === selectedSeriesId)?.seriesLabel ??
+			selectedSeriesId)
+		: "";
 	const hasActiveQuery = searchQuery.trim().length > 0;
+	const hasActiveFilters =
+		hasActiveQuery ||
+		Boolean(selectedCollectionId) ||
+		Boolean(selectedSeriesId);
 	const totalMatched = filteredTalks.length;
 
 	if (talks.length === 0) {
@@ -139,12 +233,40 @@ export default function TalkGallery({ talks }: Props) {
 							</button>
 						)}
 					</div>
-					{hasActiveQuery && (
+					{selectedCollectionId && (
+						<div className="flex flex-wrap items-center gap-2">
+							<button
+								className="inline-flex items-center gap-2 rounded-sm border border-[#d6c6ad] bg-[#fffbeb] px-2.5 py-1 text-xs font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]"
+								onClick={() => {
+									updateCollectionFilter("");
+								}}
+								type="button"
+							>
+								<span>{selectedCollectionLabel}</span>
+								<span aria-hidden>×</span>
+							</button>
+						</div>
+					)}
+					{selectedSeriesId && (
+						<div className="flex flex-wrap items-center gap-2">
+							<button
+								className="inline-flex items-center gap-2 rounded-sm border border-[#d6c6ad] bg-white px-2.5 py-1 text-xs font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]"
+								onClick={() => {
+									updateSeriesFilter("");
+								}}
+								type="button"
+							>
+								<span>{selectedSeriesLabel}</span>
+								<span aria-hidden>×</span>
+							</button>
+						</div>
+					)}
+					{hasActiveFilters && (
 						<span className="text-xs text-gray-500">
 							検索結果 {totalMatched} 件
 						</span>
 					)}
-					{!hasActiveQuery && (
+					{!hasActiveFilters && (
 						<DecadeJumpNav groups={groups} onJumpToGroup={handleJumpToGroup} />
 					)}
 				</div>
@@ -152,7 +274,7 @@ export default function TalkGallery({ talks }: Props) {
 
 			{sections.length === 0 ? (
 				<div className="rounded-lg border border-[#d6c6ad] bg-white p-10 text-center text-sm text-[#888]">
-					{hasActiveQuery
+					{hasActiveFilters
 						? "検索条件に一致するデータが見つかりませんでした。条件を変えてお試しください。"
 						: "現在表示できるデータがありません。"}
 				</div>
@@ -183,8 +305,12 @@ export default function TalkGallery({ talks }: Props) {
 								columns={columns}
 								isFirstRow={row.rowIndex === 0}
 								onNavigateToTalk={handleNavigateToTalk}
+								onSelectCollection={updateCollectionFilter}
+								onSelectSeries={updateSeriesFilter}
 								searchQuery={searchQuery}
 								searchTokens={searchTokens}
+								selectedCollectionId={selectedCollectionId}
+								selectedSeriesId={selectedSeriesId}
 								talks={row.talks}
 								transcriptSnippetsByTalkId={transcriptSnippetsByTalkId}
 							/>

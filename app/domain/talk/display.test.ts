@@ -5,6 +5,11 @@ import type { Talk } from "./types";
 function createTalk(overrides: Partial<Talk> = {}): Talk {
 	return {
 		id: "TALK-1",
+		kind: "talk",
+		collectionId: "monthly_talk",
+		collectionLabel: "月例講演会",
+		seriesId: "",
+		seriesLabel: "",
 		dvdId: "V-001",
 		folder: "",
 		event: "月例講演会",
@@ -38,6 +43,8 @@ describe("transformTalkToDisplay", () => {
 			"病気は決して肉体だけの問題ではない。心のあり方が病気を作り出す。",
 		);
 		expect(result.recordedOnRaw).toBe("1995年9月9日");
+		expect(result.collectionLabel).toBe("月例講演会");
+		expect(result.seriesLabel).toBe("");
 		expect(result.decadeLabel).toBe("1990年代");
 		expect(result.themeLabel).toBe(
 			"病気は決して肉体だけの問題ではない。心のあり方が病気を作り出す。",

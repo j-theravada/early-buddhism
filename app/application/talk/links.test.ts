@@ -5,16 +5,37 @@ import {
 	buildTranscriptCueHref,
 	getFirstSearchParam,
 	parseTranscriptCueIndex,
+	TALK_DETAIL_GALLERY_COLLECTION_PARAM,
 	TALK_DETAIL_GALLERY_QUERY_PARAM,
+	TALK_DETAIL_GALLERY_SERIES_PARAM,
 	TALK_DETAIL_TRANSCRIPT_CUE_PARAM,
 	TALK_DETAIL_TRANSCRIPT_QUERY_PARAM,
+	TALK_GALLERY_COLLECTION_PARAM,
 	TALK_GALLERY_QUERY_PARAM,
+	TALK_GALLERY_SERIES_PARAM,
 } from "./links";
 
 describe("talk link helpers", () => {
 	test("講演一覧への検索リンクを組み立てる", () => {
 		expect(buildTalksHref(" 預流果 ")).toBe(
 			`/talks?${TALK_GALLERY_QUERY_PARAM}=%E9%A0%90%E6%B5%81%E6%9E%9C`,
+		);
+		expect(
+			buildTalksHref({
+				query: " 預流果 ",
+				collectionId: "monthly_talk",
+				seriesId: "abhidhamma",
+			}),
+		).toBe(
+			[
+				"/talks?",
+				`${TALK_GALLERY_QUERY_PARAM}=%E9%A0%90%E6%B5%81%E6%9E%9C`,
+				`&${TALK_GALLERY_COLLECTION_PARAM}=monthly_talk`,
+				`&${TALK_GALLERY_SERIES_PARAM}=abhidhamma`,
+			].join(""),
+		);
+		expect(buildTalksHref({ collectionId: "monthly_talk" })).toBe(
+			`/talks?${TALK_GALLERY_COLLECTION_PARAM}=monthly_talk`,
 		);
 		expect(buildTalksHref("   ")).toBe("/talks");
 	});
@@ -23,15 +44,43 @@ describe("talk link helpers", () => {
 		expect(buildTalkDetailHref("TALK V-001", "慈悲")).toBe(
 			`/talks/TALK%20V-001?${TALK_DETAIL_GALLERY_QUERY_PARAM}=%E6%85%88%E6%82%B2`,
 		);
+		expect(
+			buildTalkDetailHref(
+				"TALK V-001",
+				"慈悲",
+				"scripture_commentary",
+				"abhidhamma",
+			),
+		).toBe(
+			[
+				"/talks/TALK%20V-001?",
+				`${TALK_DETAIL_GALLERY_QUERY_PARAM}=%E6%85%88%E6%82%B2`,
+				`&${TALK_DETAIL_GALLERY_COLLECTION_PARAM}=scripture_commentary`,
+				`&${TALK_DETAIL_GALLERY_SERIES_PARAM}=abhidhamma`,
+			].join(""),
+		);
+		expect(buildTalkDetailHref("TALK-V-001", "", "monthly_talk")).toBe(
+			`/talks/TALK-V-001?${TALK_DETAIL_GALLERY_COLLECTION_PARAM}=monthly_talk`,
+		);
 		expect(buildTalkDetailHref("TALK-V-001")).toBe("/talks/TALK-V-001");
 	});
 
 	test("文字起こし cue へのリンクを組み立てる", () => {
-		expect(buildTranscriptCueHref("TALK-V-001", 12, "預流果")).toBe(
+		expect(
+			buildTranscriptCueHref(
+				"TALK-V-001",
+				12,
+				"預流果",
+				"scripture_commentary",
+				"abhidhamma",
+			),
+		).toBe(
 			[
 				"/talks/TALK-V-001?",
 				`${TALK_DETAIL_TRANSCRIPT_QUERY_PARAM}=%E9%A0%90%E6%B5%81%E6%9E%9C`,
 				`&${TALK_DETAIL_GALLERY_QUERY_PARAM}=%E9%A0%90%E6%B5%81%E6%9E%9C`,
+				`&${TALK_DETAIL_GALLERY_COLLECTION_PARAM}=scripture_commentary`,
+				`&${TALK_DETAIL_GALLERY_SERIES_PARAM}=abhidhamma`,
 				`&${TALK_DETAIL_TRANSCRIPT_CUE_PARAM}=12`,
 				"#transcript-cue-12",
 			].join(""),

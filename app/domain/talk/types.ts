@@ -1,29 +1,11 @@
-export type Talk = {
-	id: string;
-	dvdId: string;
-	folder: string;
-	event: string;
-	venue: string;
-	recordedOn: string;
-	recordedOnDate: Date | null;
-	duration: string;
-	title: string;
-	description: string;
-	speaker: string;
-	language: string;
-	format: string;
-	audioLink: string | null;
-	attachmentsLink: string | null;
-	slideLinks: string[];
-	youtubeLink: string | null;
-	srtLink: string | null;
-};
+import type { ContentItemBase, TalkContentItem } from "../content/types";
 
-export type TalkForDisplay = {
-	id: string;
+export type Talk = TalkContentItem;
+
+export type TalkForDisplay = ContentItemBase & {
+	kind: "talk";
 	dvdId: string;
 	event: string;
-	title: string;
 	subtitle: string;
 	venue: string;
 	speaker: string;

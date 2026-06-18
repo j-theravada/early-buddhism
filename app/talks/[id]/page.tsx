@@ -9,7 +9,9 @@ import {
 	buildTalksHref,
 	getFirstSearchParam,
 	parseTranscriptCueIndex,
+	TALK_DETAIL_GALLERY_COLLECTION_PARAM,
 	TALK_DETAIL_GALLERY_QUERY_PARAM,
+	TALK_DETAIL_GALLERY_SERIES_PARAM,
 	TALK_DETAIL_TRANSCRIPT_CUE_PARAM,
 	TALK_DETAIL_TRANSCRIPT_QUERY_PARAM,
 } from "../../application/talk/links";
@@ -17,11 +19,17 @@ import BackToGalleryLink from "../../components/back-to-gallery-link";
 import ContentCard from "../../components/content-card";
 import Footer from "../../components/footer";
 import TranscriptSection from "../../components/transcript-section";
+import {
+	parseContentCollectionId,
+	parseContentSeriesId,
+} from "../../domain/content/collection";
 import { getTalkById } from "../../infrastructure/talk/repository";
 import { getTranscriptByTalkId } from "../../infrastructure/transcript/repository";
 
 type TalkDetailSearchParamName =
 	| typeof TALK_DETAIL_GALLERY_QUERY_PARAM
+	| typeof TALK_DETAIL_GALLERY_COLLECTION_PARAM
+	| typeof TALK_DETAIL_GALLERY_SERIES_PARAM
 	| typeof TALK_DETAIL_TRANSCRIPT_QUERY_PARAM
 	| typeof TALK_DETAIL_TRANSCRIPT_CUE_PARAM;
 
@@ -76,7 +84,17 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 		getFirstSearchParam(
 			resolvedSearchParams?.[TALK_DETAIL_GALLERY_QUERY_PARAM],
 		) || transcriptHighlightQuery;
-	const galleryHref = buildTalksHref(galleryQuery);
+	const galleryCollectionId = getFirstSearchParam(
+		resolvedSearchParams?.[TALK_DETAIL_GALLERY_COLLECTION_PARAM],
+	);
+	const gallerySeriesId = getFirstSearchParam(
+		resolvedSearchParams?.[TALK_DETAIL_GALLERY_SERIES_PARAM],
+	);
+	const galleryHref = buildTalksHref({
+		query: galleryQuery,
+		collectionId: parseContentCollectionId(galleryCollectionId),
+		seriesId: parseContentSeriesId(gallerySeriesId),
+	});
 	const targetCueIndex = parseTranscriptCueIndex(
 		getFirstSearchParam(
 			resolvedSearchParams?.[TALK_DETAIL_TRANSCRIPT_CUE_PARAM],

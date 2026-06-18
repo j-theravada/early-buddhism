@@ -1,16 +1,48 @@
 import { cache } from "react";
+import {
+	parseContentCollectionId,
+	parseContentSeriesId,
+	resolveContentClassification,
+} from "../../domain/content/collection";
 import { normalizeTalkId } from "../../domain/talk/id";
 import type { Talk } from "../../domain/talk/types";
 import talksJson from "../../generated/talks.json";
 
-type SerializedTalk = Omit<Talk, "recordedOnDate" | "slideLinks"> & {
+type SerializedTalk = Omit<
+	Talk,
+	| "recordedOnDate"
+	| "slideLinks"
+	| "kind"
+	| "collectionId"
+	| "collectionLabel"
+	| "seriesId"
+	| "seriesLabel"
+> & {
+	kind?: Talk["kind"];
+	collectionId?: Talk["collectionId"];
+	collectionLabel?: string;
+	seriesId?: Talk["seriesId"];
+	seriesLabel?: string;
 	recordedOnDate: string | null;
 	slideLinks?: string[];
 };
 
 function deserializeTalk(talk: SerializedTalk): Talk {
+	const classification = resolveContentClassification({
+		collectionSources: [talk.collectionLabel ?? "", talk.event],
+		seriesSources: [talk.seriesLabel ?? ""],
+	});
+
 	return {
 		...talk,
+		kind: "talk",
+		collectionId:
+			parseContentCollectionId(talk.collectionId ?? "") ||
+			classification.collectionId,
+		collectionLabel: talk.collectionLabel ?? classification.collectionLabel,
+		seriesId:
+			parseContentSeriesId(talk.seriesId ?? "") || classification.seriesId,
+		seriesLabel: talk.seriesLabel ?? classification.seriesLabel,
 		recordedOnDate: talk.recordedOnDate ? new Date(talk.recordedOnDate) : null,
 		slideLinks: talk.slideLinks ?? [],
 		srtLink: talk.srtLink ?? null,

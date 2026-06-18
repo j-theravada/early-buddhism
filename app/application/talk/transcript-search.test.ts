@@ -9,6 +9,11 @@ import {
 function createTalk(overrides: Partial<Talk> = {}): Talk {
 	return {
 		id: "TALK-V-001",
+		kind: "talk",
+		collectionId: "monthly_talk",
+		collectionLabel: "月例講演会",
+		seriesId: "",
+		seriesLabel: "",
 		dvdId: "V-001",
 		folder: "",
 		event: "月例講演会",

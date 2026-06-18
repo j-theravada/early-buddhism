@@ -5,6 +5,11 @@ import { buildTalkDetailPageData, buildTalkMetadata } from "./detail";
 function createTalk(overrides: Partial<Talk> = {}): Talk {
 	return {
 		id: "TALK-1",
+		kind: "talk",
+		collectionId: "monthly_talk",
+		collectionLabel: "月例講演会",
+		seriesId: "",
+		seriesLabel: "",
 		dvdId: "V-001",
 		folder: "",
 		event: "月例講演会",
@@ -50,6 +55,7 @@ describe("talk detail application helpers", () => {
 		expect(result.talk.title).toBe("心と病気の関係");
 		expect(result.detailRows.map((row) => row.label)).toEqual([
 			"DVD番号",
+			"コレクション",
 			"タイトル",
 			"行事名",
 			"収録場所",
@@ -66,5 +72,18 @@ describe("talk detail application helpers", () => {
 		expect(result.videoJsonLd?.description).toBe(
 			"病気は決して肉体だけの問題ではない。心のあり方が病気を作り出す。",
 		);
+	});
+
+	test("シリーズがある詳細ページではシリーズ行を出す", () => {
+		const talk = createTalk({
+			collectionId: "scripture_commentary",
+			collectionLabel: "経典解説",
+			seriesId: "abhidhamma",
+			seriesLabel: "アビダンマ",
+		});
+
+		const result = buildTalkDetailPageData(talk);
+
+		expect(result.detailRows.map((row) => row.label)).toContain("シリーズ");
 	});
 });

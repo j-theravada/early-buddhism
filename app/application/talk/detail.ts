@@ -28,6 +28,8 @@ export type TalkDetailPageData = {
 	talk: {
 		id: string;
 		dvdId: string;
+		collectionLabel: string;
+		seriesLabel: string;
 		title: string;
 		description: string;
 		event: string;
@@ -93,6 +95,8 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 	const talkData = {
 		id: talk.id,
 		dvdId: talk.dvdId,
+		collectionLabel: talk.collectionLabel,
+		seriesLabel: talk.seriesLabel,
 		title: getTalkTitle(talk),
 		description: talk.description,
 		event: talk.event || "未分類",
@@ -110,6 +114,10 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 
 	const detailRows: TalkDetailRow[] = [
 		{ label: "DVD番号", value: talkData.dvdId || "—" },
+		{ label: "コレクション", value: talkData.collectionLabel },
+		...(talkData.seriesLabel
+			? [{ label: "シリーズ", value: talkData.seriesLabel }]
+			: []),
 		{ label: "タイトル", value: talkData.title },
 		{ label: "行事名", value: talkData.event },
 		{ label: "収録場所", value: talkData.venue },

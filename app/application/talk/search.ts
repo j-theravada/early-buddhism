@@ -1,10 +1,26 @@
+import type { ContentItemBase } from "../../domain/content/types";
 import type { TalkForDisplay } from "../../domain/talk/types";
 import type { TranscriptCue } from "../../domain/transcript/types";
 
-export type IndexedTalk = {
-	data: TalkForDisplay;
+export type ContentSearchItem = ContentItemBase & {
+	subtitle?: string;
+	dvdId?: string;
+	event?: string;
+	venue?: string;
+	speaker?: string;
+	language?: string;
+	recordedOnFormatted?: string;
+	recordedOnRaw?: string;
+	decadeLabel?: string;
+	themeLabel?: string;
+};
+
+export type IndexedContentItem<TItem extends ContentSearchItem> = {
+	data: TItem;
 	searchText: string;
 };
+
+export type IndexedTalk = IndexedContentItem<TalkForDisplay>;
 
 export type BuildSearchIndexOptions = {
 	extraSearchTextByTalkId?: ReadonlyMap<string, string>;
@@ -42,20 +58,27 @@ function normalizeForSearch(value: string): string {
 	return value.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-function buildSearchText(talk: TalkForDisplay, extraSearchText = ""): string {
+function buildSearchText(
+	item: ContentSearchItem,
+	extraSearchText = "",
+): string {
 	return normalizeForSearch(
 		[
-			talk.dvdId,
-			talk.title,
-			talk.subtitle,
-			talk.event,
-			talk.venue,
-			talk.speaker,
-			talk.language,
-			talk.recordedOnFormatted,
-			talk.recordedOnRaw,
-			talk.decadeLabel,
-			talk.themeLabel,
+			item.collectionLabel,
+			item.seriesLabel,
+			item.kind === "talk" ? "法話 講演 動画" : "テキスト 経典",
+			item.dvdId,
+			item.title,
+			item.description,
+			item.subtitle,
+			item.event,
+			item.venue,
+			item.speaker,
+			item.language,
+			item.recordedOnFormatted,
+			item.recordedOnRaw,
+			item.decadeLabel,
+			item.themeLabel,
 			extraSearchText,
 		]
 			.filter(Boolean)
@@ -271,15 +294,15 @@ export function buildTranscriptSearchSnippets(
 	return snippets;
 }
 
-export function buildSearchIndex(
-	talks: TalkForDisplay[],
+export function buildSearchIndex<TItem extends ContentSearchItem>(
+	items: TItem[],
 	options: BuildSearchIndexOptions = {},
-): IndexedTalk[] {
-	return talks.map((talk) => ({
-		data: talk,
+): IndexedContentItem<TItem>[] {
+	return items.map((item) => ({
+		data: item,
 		searchText: buildSearchText(
-			talk,
-			options.extraSearchTextByTalkId?.get(talk.id),
+			item,
+			options.extraSearchTextByTalkId?.get(item.id),
 		),
 	}));
 }
@@ -297,17 +320,24 @@ export function tokenizeSearchQuery(query: string): string[] {
 	return normalized.split(" ").filter(Boolean);
 }
 
-export function filterTalksByQuery(
-	indexedTalks: IndexedTalk[],
+export function filterContentItemsByQuery<TItem extends ContentSearchItem>(
+	indexedItems: IndexedContentItem<TItem>[],
 	tokens: string[],
-): TalkForDisplay[] {
+): TItem[] {
 	if (tokens.length === 0) {
-		return indexedTalks.map((item) => item.data);
+		return indexedItems.map((item) => item.data);
 	}
 
-	return indexedTalks
+	return indexedItems
 		.filter(({ searchText }) =>
 			tokens.every((token) => fuzzyMatch(searchText, token)),
 		)
 		.map(({ data }) => data);
+}
+
+export function filterTalksByQuery(
+	indexedTalks: IndexedTalk[],
+	tokens: string[],
+): TalkForDisplay[] {
+	return filterContentItemsByQuery(indexedTalks, tokens);
 }

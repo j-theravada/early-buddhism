@@ -1,5 +1,10 @@
 import { formatJapaneseDate } from "../../utils/date";
 import { getYouTubeInfo } from "../../utils/youtube";
+import {
+	parseContentCollectionId,
+	parseContentSeriesId,
+	resolveContentClassification,
+} from "../content/collection";
 import type { Talk, TalkForDisplay } from "./types";
 
 function normalizeText(text: string): string {
@@ -51,12 +56,26 @@ export function transformTalkToDisplay(
 
 	const recordedOnSortValue = talk.recordedOnDate?.getTime() ?? 0;
 	const recordedOnRaw = talk.recordedOn || "日付不明";
+	const classification = resolveContentClassification({
+		collectionSources: [talk.collectionLabel, talk.event],
+		seriesSources: [talk.seriesLabel],
+	});
+	const collectionId =
+		parseContentCollectionId(talk.collectionId) || classification.collectionId;
+	const seriesId =
+		parseContentSeriesId(talk.seriesId) || classification.seriesId;
 
 	return {
 		id: talk.id || `talk-${index}`,
+		kind: "talk",
+		collectionId,
+		collectionLabel: talk.collectionLabel || classification.collectionLabel,
+		seriesId,
+		seriesLabel: talk.seriesLabel || classification.seriesLabel,
 		dvdId: talk.dvdId || "",
 		event: talk.event || "未分類",
 		title: displayTitle,
+		description: normalizeText(talk.description || ""),
 		subtitle,
 		venue: talk.venue || "—",
 		speaker: talk.speaker || "—",

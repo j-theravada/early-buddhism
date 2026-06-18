@@ -1,3 +1,7 @@
+import type {
+	ContentCollectionId,
+	ContentSeriesId,
+} from "../../domain/content/types";
 import type { TalkForDisplay } from "../../domain/talk/types";
 import type { TranscriptSnippet } from "./use-talk-gallery-data";
 import TalkGalleryCard from "./talk-gallery-card";
@@ -14,8 +18,12 @@ type Props = {
 	columns: number;
 	searchTokens: string[];
 	searchQuery: string;
+	selectedCollectionId: ContentCollectionId | "";
+	selectedSeriesId: ContentSeriesId | "";
 	transcriptSnippetsByTalkId: ReadonlyMap<string, TranscriptSnippet[]>;
 	onNavigateToTalk: () => void;
+	onSelectCollection: (collectionId: ContentCollectionId) => void;
+	onSelectSeries: (seriesId: ContentSeriesId) => void;
 };
 
 export default function TalkGalleryRow({
@@ -24,8 +32,12 @@ export default function TalkGalleryRow({
 	columns,
 	searchTokens,
 	searchQuery,
+	selectedCollectionId,
+	selectedSeriesId,
 	transcriptSnippetsByTalkId,
 	onNavigateToTalk,
+	onSelectCollection,
+	onSelectSeries,
 }: Props) {
 	const gridClass = GRID_CLASS_BY_COLUMNS[columns] ?? GRID_CLASS_BY_COLUMNS[1];
 
@@ -36,8 +48,12 @@ export default function TalkGalleryRow({
 					<TalkGalleryCard
 						key={talk.id}
 						onNavigateToTalk={onNavigateToTalk}
+						onSelectCollection={onSelectCollection}
+						onSelectSeries={onSelectSeries}
 						searchQuery={searchQuery}
 						searchTokens={searchTokens}
+						selectedCollectionId={selectedCollectionId}
+						selectedSeriesId={selectedSeriesId}
 						talk={talk}
 						transcriptSnippets={transcriptSnippetsByTalkId.get(talk.id) ?? []}
 					/>

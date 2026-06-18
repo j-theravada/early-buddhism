@@ -12,9 +12,15 @@ function createTalk(
 ): TalkForDisplay {
 	return {
 		id,
+		kind: "talk",
+		collectionId: "monthly_talk",
+		collectionLabel: "月例講演会",
+		seriesId: "",
+		seriesLabel: "",
 		dvdId: id,
 		event: "月例講演会",
 		title: id,
+		description: "",
 		subtitle: "",
 		venue: "東京",
 		speaker: "スマナサーラ",

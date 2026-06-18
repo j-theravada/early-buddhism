@@ -1,7 +1,10 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { Talk } from "../app/domain/talk/types";
-import { parseCSVToTalks, SHEET_URL } from "../app/infrastructure/talk/csv";
+import {
+	parseCSVToTalks,
+	TALK_SHEET_SOURCES,
+} from "../app/infrastructure/talk/csv";
 import { writeGeneratedTranscripts } from "../app/infrastructure/transcript/generation";
 
 type SerializedTalk = Omit<Talk, "recordedOnDate"> & {
@@ -39,32 +42,45 @@ async function writeGeneratedTalks(outPath: string, talks: Talk[]) {
 	console.log(`Wrote ${serialized.length} talks to ${outPath}`);
 }
 
+async function fetchTalksFromSheetSource(
+	source: (typeof TALK_SHEET_SOURCES)[number],
+): Promise<Talk[]> {
+	const response = await fetch(source.url, {
+		headers: { Accept: "text/csv" },
+	});
+	if (!response.ok) {
+		throw new Error(
+			`Failed to fetch ${source.name} sheet data: ${response.status} ${response.statusText}`,
+		);
+	}
+
+	const csv = await response.text();
+	const talks = parseCSVToTalks(csv, source.parseOptions);
+	console.log(`Fetched ${talks.length} talks from ${source.name}`);
+	return talks;
+}
+
 async function main() {
 	const talksOutPath = resolve(process.cwd(), "app/generated/talks.json");
 	const transcriptsOutDir = resolve(process.cwd(), "app/generated/transcripts");
 
 	try {
-		const response = await fetch(SHEET_URL, {
-			headers: { Accept: "text/csv" },
-		});
-		if (!response.ok) {
-			throw new Error(
-				`Failed to fetch sheet data: ${response.status} ${response.statusText}`,
-			);
-		}
-
-		const csv = await response.text();
-		const talks = parseCSVToTalks(csv);
+		const talks = (
+			await Promise.all(TALK_SHEET_SOURCES.map(fetchTalksFromSheetSource))
+		).flat();
+		const transcriptTalks = talks.filter(
+			(talk) => talk.collectionId === "monthly_talk",
+		);
 		const transcriptResult = await writeGeneratedTranscripts(
 			transcriptsOutDir,
-			talks,
+			transcriptTalks,
 		);
 		const retainedMessage =
 			transcriptResult.retainedCount > 0
 				? ` (retained ${transcriptResult.retainedCount} existing transcripts)`
 				: "";
 		console.log(
-			`Wrote ${transcriptResult.writtenCount} transcripts to ${transcriptsOutDir}${retainedMessage}`,
+			`Wrote ${transcriptResult.writtenCount} transcripts from ${transcriptTalks.length} monthly talks to ${transcriptsOutDir}${retainedMessage}`,
 		);
 		await writeGeneratedTalks(talksOutPath, talks);
 	} catch (error) {

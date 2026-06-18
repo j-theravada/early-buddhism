@@ -5,6 +5,10 @@ import {
 	buildTalkDetailHref,
 	buildTranscriptCueHref,
 } from "../../application/talk/links";
+import type {
+	ContentCollectionId,
+	ContentSeriesId,
+} from "../../domain/content/types";
 import type { TalkForDisplay } from "../../domain/talk/types";
 import { highlightMatches } from "./highlight";
 import type { TranscriptSnippet } from "./use-talk-gallery-data";
@@ -13,17 +17,32 @@ type Props = {
 	talk: TalkForDisplay;
 	searchTokens: string[];
 	searchQuery?: string;
+	selectedCollectionId?: ContentCollectionId | "";
+	selectedSeriesId?: ContentSeriesId | "";
 	transcriptSnippets?: TranscriptSnippet[];
 	onNavigateToTalk?: () => void;
+	onSelectCollection?: (collectionId: ContentCollectionId) => void;
+	onSelectSeries?: (seriesId: ContentSeriesId) => void;
 };
 
 export default function TalkGalleryCard({
 	talk,
 	searchTokens,
 	searchQuery,
+	selectedCollectionId = "",
+	selectedSeriesId = "",
 	transcriptSnippets = [],
 	onNavigateToTalk,
+	onSelectCollection,
+	onSelectSeries,
 }: Props) {
+	const talkDetailHref = buildTalkDetailHref(
+		talk.id,
+		searchQuery,
+		selectedCollectionId,
+		selectedSeriesId,
+	);
+
 	return (
 		<div className="group relative flex flex-col overflow-hidden rounded-lg border border-[#d6c6ad] bg-white shadow-sm transition duration-200 ease-out hover:border-[#9d7e4c] hover:shadow-md">
 			{talk.dvdId && (
@@ -31,13 +50,13 @@ export default function TalkGalleryCard({
 					DVD ID: {talk.dvdId}
 				</div>
 			)}
-			<Link
-				className="flex flex-col flex-1"
-				href={buildTalkDetailHref(talk.id, searchQuery)}
-				{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
-			>
-				{/* 上半分: サムネイル */}
-				{talk.thumbnailUrl && (
+			{/* 上半分: サムネイル */}
+			{talk.thumbnailUrl && (
+				<Link
+					className="block"
+					href={talkDetailHref}
+					{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
+				>
 					<div className="relative aspect-video w-full overflow-hidden bg-[#fffbeb]">
 						<Image
 							alt={talk.title || "YouTube thumbnail"}
@@ -48,10 +67,52 @@ export default function TalkGalleryCard({
 							unoptimized
 						/>
 					</div>
-				)}
+				</Link>
+			)}
 
-				{/* 下半分: データ */}
-				<div className="flex flex-col flex-1 p-6">
+			{/* 下半分: データ */}
+			<div className="flex flex-col flex-1 p-6">
+				<div className="mb-3 flex flex-wrap items-center gap-2">
+					{onSelectCollection ? (
+						<button
+							aria-label={`${talk.collectionLabel}で絞り込む`}
+							className="rounded-sm border border-[#d6c6ad] bg-[#fffbeb] px-2 py-1 text-[11px] font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]"
+							onClick={() => {
+								onSelectCollection(talk.collectionId);
+							}}
+							type="button"
+						>
+							{highlightMatches(talk.collectionLabel, searchTokens)}
+						</button>
+					) : (
+						<span className="rounded-sm border border-[#d6c6ad] bg-[#fffbeb] px-2 py-1 text-[11px] font-medium text-[#5f5144]">
+							{highlightMatches(talk.collectionLabel, searchTokens)}
+						</span>
+					)}
+					{talk.seriesId && talk.seriesLabel && onSelectSeries ? (
+						<button
+							aria-label={`${talk.seriesLabel}で絞り込む`}
+							className="rounded-sm border border-[#d6c6ad] bg-white px-2 py-1 text-[11px] font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]"
+							onClick={() => {
+								if (talk.seriesId) {
+									onSelectSeries(talk.seriesId);
+								}
+							}}
+							type="button"
+						>
+							{highlightMatches(talk.seriesLabel, searchTokens)}
+						</button>
+					) : talk.seriesId && talk.seriesLabel ? (
+						<span className="rounded-sm border border-[#d6c6ad] bg-white px-2 py-1 text-[11px] font-medium text-[#5f5144]">
+							{highlightMatches(talk.seriesLabel, searchTokens)}
+						</span>
+					) : null}
+				</div>
+				<Link
+					className="block"
+					href={talkDetailHref}
+					{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
+				>
 					<h2 className="text-lg font-bold text-[#303030] sm:text-xl">
 						{highlightMatches(talk.title, searchTokens)}
 					</h2>
@@ -60,8 +121,8 @@ export default function TalkGalleryCard({
 							{highlightMatches(talk.subtitle, searchTokens)}
 						</p>
 					)}
-				</div>
-			</Link>
+				</Link>
+			</div>
 
 			{transcriptSnippets.length > 0 && (
 				<div className="px-6 pb-4">
@@ -78,6 +139,8 @@ export default function TalkGalleryCard({
 										talk.id,
 										snippet.cueIndex,
 										searchQuery,
+										selectedCollectionId,
+										selectedSeriesId,
 									)}
 									key={`${snippet.cueIndex}-${snippet.text}`}
 									onClick={onNavigateToTalk}

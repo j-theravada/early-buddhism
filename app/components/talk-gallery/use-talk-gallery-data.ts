@@ -16,6 +16,10 @@ import {
 	type ParsedTalkSearchApiResponse,
 	type TalkSearchTranscriptSnippet,
 } from "../../application/talk/search-api";
+import type {
+	ContentCollectionId,
+	ContentSeriesId,
+} from "../../domain/content/types";
 import type { TalkForDisplay } from "../../domain/talk/types";
 type ViewMode = "date" | "theme";
 
@@ -116,16 +120,48 @@ function useServerSearchResult(searchQuery: string): ServerSearchResult | null {
 		: null;
 }
 
+function filterTalksByCollection(
+	talks: TalkForDisplay[],
+	collectionId: ContentCollectionId | "",
+): TalkForDisplay[] {
+	if (!collectionId) {
+		return talks;
+	}
+
+	return talks.filter((talk) => talk.collectionId === collectionId);
+}
+
+function filterTalksBySeries(
+	talks: TalkForDisplay[],
+	seriesId: ContentSeriesId | "",
+): TalkForDisplay[] {
+	if (!seriesId) {
+		return talks;
+	}
+
+	return talks.filter((talk) => talk.seriesId === seriesId);
+}
+
 export function useTalkGalleryData(
 	talks: TalkForDisplay[],
 	viewMode: ViewMode,
 	searchQuery: string,
+	selectedCollectionId: ContentCollectionId | "" = "",
+	selectedSeriesId: ContentSeriesId | "" = "",
 ) {
 	const columns = useResponsiveColumns();
+	const classificationFilteredTalks = useMemo(
+		() =>
+			filterTalksBySeries(
+				filterTalksByCollection(talks, selectedCollectionId),
+				selectedSeriesId,
+			),
+		[talks, selectedCollectionId, selectedSeriesId],
+	);
 
 	const indexedTalks: IndexedTalk[] = useMemo(
-		() => buildSearchIndex(talks),
-		[talks],
+		() => buildSearchIndex(classificationFilteredTalks),
+		[classificationFilteredTalks],
 	);
 
 	const searchTokens = useMemo(
@@ -144,8 +180,15 @@ export function useTalkGalleryData(
 			return metadataFilteredTalks;
 		}
 
-		return talks.filter((talk) => serverSearchResult.talkIds.has(talk.id));
-	}, [metadataFilteredTalks, searchTokens.length, serverSearchResult, talks]);
+		return classificationFilteredTalks.filter((talk) =>
+			serverSearchResult.talkIds.has(talk.id),
+		);
+	}, [
+		classificationFilteredTalks,
+		metadataFilteredTalks,
+		searchTokens.length,
+		serverSearchResult,
+	]);
 	const transcriptSnippetsByTalkId = useMemo(
 		() =>
 			serverSearchResult?.transcriptSnippetsByTalkId ??

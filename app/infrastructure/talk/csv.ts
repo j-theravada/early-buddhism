@@ -1,9 +1,67 @@
 import { createHash } from "node:crypto";
+import { resolveContentClassification } from "../../domain/content/collection";
 import { normalizeTalkId } from "../../domain/talk/id";
 import type { Talk } from "../../domain/talk/types";
 
+const SPREADSHEET_ID = "1QMyakqH1i-W_bbK3yJl7u_Q_Jb_AoM94W6F8Gg3y3CA";
+
+export type ParseCSVToTalksOptions = {
+	audioLinkHeaders?: readonly string[];
+	collectionSources?: readonly string[];
+	eventFallback?: string;
+	seriesSources?: readonly string[];
+};
+
+export type TalkSheetSource = {
+	name: string;
+	url: string;
+	parseOptions?: ParseCSVToTalksOptions;
+};
+
+function buildSheetCsvUrl(gid: string): string {
+	return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}`;
+}
+
+export const TALK_SHEET_SOURCES: readonly TalkSheetSource[] = [
+	{
+		name: "DVD",
+		url: buildSheetCsvUrl("909287277"),
+		parseOptions: {
+			collectionSources: ["月例講演会"],
+		},
+	},
+	{
+		name: "ダンマパダ（DD）",
+		url: buildSheetCsvUrl("1726614353"),
+		parseOptions: {
+			audioLinkHeaders: ["MP3リンク", "MP4リンク", "ISOリンク"],
+			collectionSources: ["経典解説"],
+			seriesSources: ["ダンマパダ"],
+		},
+	},
+	{
+		name: "アビダンマ",
+		url: buildSheetCsvUrl("1186405772"),
+		parseOptions: {
+			audioLinkHeaders: ["MP3リンク"],
+			collectionSources: ["経典解説"],
+			eventFallback: "アビダンマ",
+			seriesSources: ["アビダンマ"],
+		},
+	},
+	{
+		name: "経典解説",
+		url: buildSheetCsvUrl("2131360778"),
+		parseOptions: {
+			audioLinkHeaders: ["MP3リンク"],
+			collectionSources: ["経典解説"],
+			eventFallback: "経典解説",
+		},
+	},
+];
+
 export const SHEET_URL =
-	"https://docs.google.com/spreadsheets/d/1QMyakqH1i-W_bbK3yJl7u_Q_Jb_AoM94W6F8Gg3y3CA/export?format=csv&gid=909287277";
+	TALK_SHEET_SOURCES[0]?.url ?? buildSheetCsvUrl("909287277");
 
 function parseChapterNumber(value: string): string {
 	const normalized = value
@@ -65,7 +123,7 @@ function parseDate(value: string): Date | null {
 		.replace(/\/+/g, "/")
 		.replace(/^\/|\/$/g, "");
 
-	const [yearRaw, monthRaw, dayRaw] = normalized
+	const [yearRaw, monthRaw, dayRaw = "1"] = normalized
 		.split("/")
 		.map((part) => part.trim())
 		.filter((part) => part.length > 0);
@@ -97,6 +155,49 @@ function sanitizeLink(value: string): string | null {
 		return null;
 	}
 	return trimmed;
+}
+
+function normalizeHeader(value: string): string {
+	return value
+		.replace(/\uFEFF/g, "")
+		.normalize("NFKC")
+		.replace(/\s+/g, "")
+		.trim();
+}
+
+function normalizeVisibilityValue(value: string): string {
+	return value.normalize("NFKC").replace(/\s+/g, "").trim().toLowerCase();
+}
+
+function shouldSkipRow(
+	getValue: (header: string) => string,
+	getValueFromHeaders: (headers: string[]) => string,
+): boolean {
+	const explicitVisibility = getValueFromHeaders([
+		"公開・非公開",
+		"公開非公開",
+		"公開/非公開",
+	]);
+	if (explicitVisibility) {
+		const normalized = normalizeVisibilityValue(explicitVisibility);
+		return (
+			normalized.includes("非公開") ||
+			normalized.includes("未公開") ||
+			normalized === "false"
+		);
+	}
+
+	const privateFlag = getValue("非公開");
+	if (!privateFlag) {
+		return false;
+	}
+
+	const normalized = normalizeVisibilityValue(privateFlag);
+	return (
+		normalized === "false" ||
+		normalized.includes("非公開") ||
+		normalized.includes("未公開")
+	);
 }
 
 function normalizeFingerprintPart(value: string): string {
@@ -161,7 +262,10 @@ function splitCSVLines(text: string): string[] {
 	return lines;
 }
 
-export function parseCSVToTalks(text: string): Talk[] {
+export function parseCSVToTalks(
+	text: string,
+	options: ParseCSVToTalksOptions = {},
+): Talk[] {
 	const lines = splitCSVLines(text);
 
 	if (lines.length === 0) {
@@ -171,7 +275,7 @@ export function parseCSVToTalks(text: string): Talk[] {
 	const headerCells = splitCSVLine(lines[0]);
 	const headerIndex = headerCells.reduce<Record<string, number>>(
 		(accumulator, header, index) => {
-			const normalizedHeader = header.trim().replace(/^\uFEFF/, "");
+			const normalizedHeader = normalizeHeader(header);
 			if (accumulator[normalizedHeader] === undefined) {
 				accumulator[normalizedHeader] = index;
 			}
@@ -181,7 +285,7 @@ export function parseCSVToTalks(text: string): Talk[] {
 	);
 
 	const getValue = (cells: string[], header: string): string => {
-		const index = headerIndex[header];
+		const index = headerIndex[normalizeHeader(header)];
 		if (index === undefined) {
 			return "";
 		}
@@ -228,12 +332,16 @@ export function parseCSVToTalks(text: string): Talk[] {
 		}
 
 		const cells = splitCSVLine(line);
-		const isPrivate = getValue(cells, "非公開");
-		if (isPrivate === "FALSE") {
+		if (
+			shouldSkipRow(
+				(header) => getValue(cells, header),
+				(headers) => getValueFromHeaders(cells, headers),
+			)
+		) {
 			continue;
 		}
 
-		const event = getValue(cells, "行事名");
+		const event = getValue(cells, "行事名") || options.eventFallback || "";
 		const title = getValue(cells, "タイトル");
 		const description = getValue(cells, "内容");
 
@@ -263,14 +371,31 @@ export function parseCSVToTalks(text: string): Talk[] {
 		}
 
 		const cells = splitCSVLine(line);
-		const isPrivate = getValue(cells, "非公開");
-		if (isPrivate === "FALSE") {
+		if (
+			shouldSkipRow(
+				(header) => getValue(cells, header),
+				(headers) => getValueFromHeaders(cells, headers),
+			)
+		) {
 			continue;
 		}
 
-		const event = getValue(cells, "行事名");
+		const event = getValue(cells, "行事名") || options.eventFallback || "";
 		const title = getValue(cells, "タイトル");
 		const description = getValue(cells, "内容");
+		const collectionLabel = getValueFromHeaders(cells, [
+			"コレクション",
+			"分類",
+			"資料種別",
+			"コンテンツ種別",
+		]);
+		const seriesLabel = getValueFromHeaders(cells, [
+			"シリーズ",
+			"対象テキスト",
+			"テキスト",
+			"経典",
+			"講義シリーズ",
+		]);
 
 		if (!event && !title && !description) {
 			continue;
@@ -306,7 +431,10 @@ export function parseCSVToTalks(text: string): Talk[] {
 
 		const chapterRaw = getValueFromHeaders(cells, [
 			"章番号",
+			"ID(章)",
 			"章",
+			"章1",
+			"章2",
 			"chapter",
 			"Chapter",
 		]);
@@ -324,7 +452,11 @@ export function parseCSVToTalks(text: string): Talk[] {
 			"ファイルのフォーマット",
 		]);
 		const audioLink = sanitizeLink(
-			getValueFromHeaders(cells, ["リンク", "音源リンク"]),
+			getValueFromHeaders(cells, [
+				"リンク",
+				"音源リンク",
+				...Array.from(options.audioLinkHeaders ?? []),
+			]),
 		);
 		const attachmentsLink = sanitizeLink(
 			getValueFromHeaders(cells, [
@@ -346,10 +478,22 @@ export function parseCSVToTalks(text: string): Talk[] {
 			"スライド",
 		]);
 		const youtubeLink = sanitizeLink(
-			getValueFromHeaders(cells, ["YouTube", "YouTubeリンク", "youtube"]) ||
-				(cells[12] ? cells[12].trim() : ""),
+			getValueFromHeaders(cells, [
+				"YouTube",
+				"YouTubeリンク",
+				"YoTubeリンク",
+				"youtube",
+			]) || (cells[12] ? cells[12].trim() : ""),
 		);
 		const srtLink = sanitizeLink(getValueFromHeaders(cells, ["SRTリンク"]));
+		const classification = resolveContentClassification({
+			collectionSources: [
+				collectionLabel,
+				...Array.from(options.collectionSources ?? []),
+				event,
+			],
+			seriesSources: [seriesLabel, ...Array.from(options.seriesSources ?? [])],
+		});
 
 		const fingerprint = [
 			`dvdId:${dvdIdKey}`,
@@ -393,6 +537,11 @@ export function parseCSVToTalks(text: string): Talk[] {
 
 		talks.push({
 			id: uniqueId,
+			kind: "talk",
+			collectionId: classification.collectionId,
+			collectionLabel: classification.collectionLabel,
+			seriesId: classification.seriesId,
+			seriesLabel: classification.seriesLabel,
 			dvdId,
 			folder: getValueFromHeaders(cells, ["Dropboxフォルダー名"]),
 			event,
