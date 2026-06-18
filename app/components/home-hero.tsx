@@ -31,23 +31,84 @@ const slides = [
 ];
 
 const SLIDE_INTERVAL_MS = 3000;
+const FIRST_SLIDE_INDEX = 0;
+
+type HeroSlideState = {
+	activeIndex: number;
+	renderedSlideIndexes: ReadonlySet<number>;
+};
+
+function getNextSlideIndex(index: number): number {
+	return (index + 1) % slides.length;
+}
+
+function addRenderedSlideIndexes(
+	current: ReadonlySet<number>,
+	indexes: number[],
+): ReadonlySet<number> {
+	const next = new Set(current);
+	let hasChanged = false;
+	for (const index of indexes) {
+		if (next.has(index)) {
+			continue;
+		}
+
+		next.add(index);
+		hasChanged = true;
+	}
+	return hasChanged ? next : current;
+}
 
 export default function HomeHero() {
-	const [activeIndex, setActiveIndex] = useState(0);
+	const [slideState, setSlideState] = useState<HeroSlideState>(() => ({
+		activeIndex: FIRST_SLIDE_INDEX,
+		renderedSlideIndexes: new Set([FIRST_SLIDE_INDEX]),
+	}));
 
 	useEffect(() => {
+		setSlideState((current) => ({
+			...current,
+			renderedSlideIndexes: addRenderedSlideIndexes(
+				current.renderedSlideIndexes,
+				[getNextSlideIndex(current.activeIndex)],
+			),
+		}));
+
 		const timer = window.setInterval(() => {
-			setActiveIndex((current) => (current + 1) % slides.length);
+			setSlideState((current) => {
+				const next = getNextSlideIndex(current.activeIndex);
+				return {
+					activeIndex: next,
+					renderedSlideIndexes: addRenderedSlideIndexes(
+						current.renderedSlideIndexes,
+						[next, getNextSlideIndex(next)],
+					),
+				};
+			});
 		}, SLIDE_INTERVAL_MS);
 
 		return () => window.clearInterval(timer);
 	}, []);
 
+	const { activeIndex, renderedSlideIndexes } = slideState;
 	const activeSlide = slides[activeIndex] ?? slides[0];
+	const activateSlide = (index: number) => {
+		setSlideState((current) => ({
+			activeIndex: index,
+			renderedSlideIndexes: addRenderedSlideIndexes(
+				current.renderedSlideIndexes,
+				[index, getNextSlideIndex(index)],
+			),
+		}));
+	};
 
 	return (
 		<section className="relative isolate min-h-[100svh] overflow-hidden bg-[#303030] text-white">
 			{slides.map((slide, index) => {
+				if (!renderedSlideIndexes.has(index)) {
+					return null;
+				}
+
 				const isActive = activeIndex === index;
 				return (
 					<div
@@ -100,7 +161,7 @@ export default function HomeHero() {
 							activeIndex === index ? "bg-white" : "bg-transparent"
 						}`}
 						key={slide.desktop}
-						onClick={() => setActiveIndex(index)}
+						onClick={() => activateSlide(index)}
 						type="button"
 					/>
 				))}

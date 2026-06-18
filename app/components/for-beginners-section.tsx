@@ -11,7 +11,7 @@ const BEGINNER_GUIDE_PARAGRAPHS = [
 export default function ForBeginnersSection() {
 	return (
 		<section
-			className="relative overflow-hidden bg-[#fffbeb] px-5 py-16 sm:px-8 md:py-20 lg:py-28"
+			className="home-deferred-section relative overflow-hidden bg-[#fffbeb] px-5 py-16 sm:px-8 md:py-20 lg:py-28"
 			id="for-beginners"
 		>
 			<div className="js-scroll-trigger slide-left pointer-events-none absolute left-0 top-4 w-[105px] opacity-90 sm:w-[140px] md:top-8 md:w-[220px] lg:w-[310px] xl:w-[360px]">

@@ -115,6 +115,11 @@ html {
   color: #fff;
 }
 
+.home-deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 760px;
+}
+
 .js-scroll-trigger {
   opacity: 0;
   transition: opacity 1s ease, transform 1s ease;

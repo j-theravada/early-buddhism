@@ -6,6 +6,10 @@ const SCROLL_REVEAL_SELECTOR = ".js-scroll-trigger";
 
 export default function HomeScrollReveal() {
 	useEffect(() => {
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			return;
+		}
+
 		const elements = Array.from(
 			document.querySelectorAll<HTMLElement>(SCROLL_REVEAL_SELECTOR),
 		);

@@ -70,7 +70,7 @@ const talkSearchKeywordGroups = [
 
 export function RecommendationsSection() {
 	return (
-		<section className="home-recommend-bg scroll-mt-20 px-5 py-16 sm:px-8 md:py-20 lg:py-28">
+		<section className="home-deferred-section home-recommend-bg scroll-mt-20 px-5 py-16 sm:px-8 md:py-20 lg:py-28">
 			<div className="mx-auto max-w-[1200px]">
 				<div className="flex flex-col gap-10 lg:flex-row-reverse lg:items-start">
 					{recommendations.map((recommendation) => (
@@ -130,7 +130,7 @@ export function RecommendationsSection() {
 
 export function TeacherProfileSection() {
 	return (
-		<section className="home-profile-bg px-5 py-16 sm:px-8 md:py-20 lg:py-28">
+		<section className="home-deferred-section home-profile-bg px-5 py-16 sm:px-8 md:py-20 lg:py-28">
 			<div className="mx-auto max-w-[1200px]">
 				<HomeSectionTitle>講師紹介</HomeSectionTitle>
 				<div className="flex flex-col gap-10 lg:flex-row-reverse lg:items-end lg:gap-16">
@@ -169,7 +169,10 @@ export function TeacherProfileSection() {
 
 export function NewsSection({ items }: { items: NewsItem[] }) {
 	return (
-		<section className="scroll-mt-24 px-5 py-16 sm:px-8 lg:py-24" id="info">
+		<section
+			className="home-deferred-section scroll-mt-24 px-5 py-16 sm:px-8 lg:py-24"
+			id="info"
+		>
 			<div className="mx-auto max-w-[900px]">
 				<HomeSectionTitle animate={false}>お知らせ</HomeSectionTitle>
 				{items.length > 0 ? (
@@ -203,7 +206,7 @@ function formatNewsDate(date: string): string {
 export function PopularVideosSection({ videos }: { videos: TalkForDisplay[] }) {
 	return (
 		<section
-			className="home-popular-bg px-5 py-16 sm:px-8 lg:py-24"
+			className="home-deferred-section home-popular-bg px-5 py-16 sm:px-8 lg:py-24"
 			id="popular"
 		>
 			<div className="mx-auto max-w-[1200px]">
@@ -226,7 +229,7 @@ export function PopularVideosSection({ videos }: { videos: TalkForDisplay[] }) {
 export function TalkSearchSection() {
 	return (
 		<section
-			className="home-gallery-bg px-5 py-16 sm:px-8 lg:py-24"
+			className="home-deferred-section home-gallery-bg px-5 py-16 sm:px-8 lg:py-24"
 			id="talk-search"
 		>
 			<div className="mx-auto max-w-[1000px]">
