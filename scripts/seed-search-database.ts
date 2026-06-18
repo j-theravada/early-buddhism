@@ -14,6 +14,10 @@ import {
 import { getTalks } from "../app/infrastructure/talk/repository";
 import { getTranscriptSearchDocuments } from "../app/infrastructure/transcript/repository";
 import { buildTranscriptSearchTextFromCues } from "../app/infrastructure/transcript/search-document";
+import {
+	GENERATED_DATA_HASH_META_KEY,
+	getGeneratedSearchDataFingerprint,
+} from "./generated-data";
 
 const SCHEMA_SQL = `
 	DROP TABLE IF EXISTS talk_search_fts;
@@ -295,6 +299,7 @@ async function seedDatabase() {
 	const talksForDisplay = buildTalkGalleryTalks(talks);
 	const indexedTalks = buildSearchIndex(talksForDisplay);
 	const transcriptDocuments = await getTranscriptSearchDocuments();
+	const generatedDataHash = await getGeneratedSearchDataFingerprint();
 
 	const talkStatements: InStatement[] = indexedTalks.map(
 		({ data, searchText }, sortIndex) => ({
@@ -348,6 +353,10 @@ async function seedDatabase() {
 		{
 			sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
 			args: ["transcriptDocumentCount", String(transcriptDocuments.length)],
+		},
+		{
+			sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
+			args: [GENERATED_DATA_HASH_META_KEY, generatedDataHash],
 		},
 	];
 

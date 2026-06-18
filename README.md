@@ -35,6 +35,23 @@ Transcript search uses libSQL. Local development defaults to a SQLite file at
 bun run db:seed:local
 ```
 
+Normal builds reuse the checked-in generated talk/transcript files and skip
+Google Drive transcript downloads. Refresh the generated data explicitly when
+the source sheets or transcript files change:
+
+```bash
+bun run generate-talks
+bun run db:seed:local
+```
+
+`bun run build` also reuses the existing local search database when its
+generated-data fingerprint matches the current generated files. Force a rebuild
+with:
+
+```bash
+GAKURIN_FORCE_SEARCH_DATABASE_SEED=1 bun run db:seed:build
+```
+
 Production uses Turso when these server-side variables are set in Vercel
 Production:
 
@@ -43,11 +60,18 @@ TURSO_DATABASE_URL=libsql://...
 TURSO_AUTH_TOKEN=...
 ```
 
-To seed Turso from the generated talks and transcripts, run:
+For a full Turso refresh, build the local SQLite database and import that file
+with the Turso CLI. This is much faster than inserting the full transcript index
+over HTTP:
 
 ```bash
-bun run db:seed:turso
+bun run generate-talks
+bun run db:seed:local
+turso db create early-buddhism-search-YYYYMMDD --from-file app/generated/gakurin.db --group default --wait
 ```
+
+Then update the Vercel Production `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`
+variables to point at the imported database.
 
 Popular videos can be loaded from the GA4 Data API when these server-side variables are set:
 
