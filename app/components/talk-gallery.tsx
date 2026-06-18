@@ -76,6 +76,8 @@ export default function TalkGallery({ talks }: Props) {
 		groups,
 		groupCounts,
 		flatRows,
+		hasSearchError,
+		isSearchLoading,
 		searchTokens,
 		transcriptSnippetsByTalkId,
 	} = useTalkGalleryData(
@@ -183,6 +185,15 @@ export default function TalkGallery({ talks }: Props) {
 		Boolean(selectedCollectionId) ||
 		Boolean(selectedSeriesId);
 	const totalMatched = filteredTalks.length;
+	const shouldShowResultCount =
+		hasActiveFilters && !isSearchLoading && !hasSearchError;
+	const emptyMessage = isSearchLoading
+		? "検索しています。"
+		: hasSearchError
+			? "検索結果を取得できませんでした。時間をおいて再度お試しください。"
+			: hasActiveFilters
+				? "検索条件に一致するデータが見つかりませんでした。条件を変えてお試しください。"
+				: "現在表示できるデータがありません。";
 
 	if (talks.length === 0) {
 		return (
@@ -261,10 +272,13 @@ export default function TalkGallery({ talks }: Props) {
 							</button>
 						</div>
 					)}
-					{hasActiveFilters && (
+					{shouldShowResultCount && (
 						<span className="text-xs text-gray-500">
 							検索結果 {totalMatched} 件
 						</span>
+					)}
+					{isSearchLoading && (
+						<output className="text-xs text-gray-500">検索しています</output>
 					)}
 					{!hasActiveFilters && (
 						<DecadeJumpNav groups={groups} onJumpToGroup={handleJumpToGroup} />
@@ -274,9 +288,7 @@ export default function TalkGallery({ talks }: Props) {
 
 			{sections.length === 0 ? (
 				<div className="rounded-lg border border-[#d6c6ad] bg-white p-10 text-center text-sm text-[#888]">
-					{hasActiveFilters
-						? "検索条件に一致するデータが見つかりませんでした。条件を変えてお試しください。"
-						: "現在表示できるデータがありません。"}
+					{emptyMessage}
 				</div>
 			) : (
 				<GroupedVirtuoso

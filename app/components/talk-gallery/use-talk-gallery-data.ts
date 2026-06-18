@@ -37,6 +37,18 @@ type ServerSearchResult = ParsedTalkSearchApiResponse & {
 	query: string;
 };
 
+type ServerSearchState = {
+	query: string;
+	result: ServerSearchResult | null;
+	status: "idle" | "loading" | "ready" | "error";
+};
+
+type CurrentServerSearchResult = {
+	result: ServerSearchResult | null;
+	isLoading: boolean;
+	hasError: boolean;
+};
+
 function resolveColumnsByViewport(): number {
 	if (window.matchMedia(MEDIA_QUERY_LG).matches) {
 		return 3;
@@ -71,16 +83,31 @@ function useResponsiveColumns() {
 	return columns;
 }
 
-function useServerSearchResult(searchQuery: string): ServerSearchResult | null {
+function useServerSearchResult(searchQuery: string): CurrentServerSearchResult {
 	const normalizedSearchQuery = searchQuery.trim();
-	const [serverSearchResult, setServerSearchResult] =
-		useState<ServerSearchResult | null>(null);
+	const [serverSearchState, setServerSearchState] = useState<ServerSearchState>(
+		{
+			query: "",
+			result: null,
+			status: "idle",
+		},
+	);
 
 	useEffect(() => {
 		if (!normalizedSearchQuery) {
-			setServerSearchResult(null);
+			setServerSearchState({
+				query: "",
+				result: null,
+				status: "idle",
+			});
 			return;
 		}
+
+		setServerSearchState({
+			query: normalizedSearchQuery,
+			result: null,
+			status: "loading",
+		});
 
 		const controller = new AbortController();
 		const timeoutId = window.setTimeout(async () => {
@@ -92,20 +119,32 @@ function useServerSearchResult(searchQuery: string): ServerSearchResult | null {
 					},
 				);
 				if (!response.ok) {
-					setServerSearchResult(null);
+					setServerSearchState({
+						query: normalizedSearchQuery,
+						result: null,
+						status: "error",
+					});
 					return;
 				}
 
 				const data = await response.json();
-				setServerSearchResult({
+				setServerSearchState({
 					query: normalizedSearchQuery,
-					...parseTalkSearchApiResponse(data),
+					result: {
+						query: normalizedSearchQuery,
+						...parseTalkSearchApiResponse(data),
+					},
+					status: "ready",
 				});
 			} catch (error) {
 				if (error instanceof DOMException && error.name === "AbortError") {
 					return;
 				}
-				setServerSearchResult(null);
+				setServerSearchState({
+					query: normalizedSearchQuery,
+					result: null,
+					status: "error",
+				});
 			}
 		}, SEARCH_DEBOUNCE_MS);
 
@@ -115,9 +154,27 @@ function useServerSearchResult(searchQuery: string): ServerSearchResult | null {
 		};
 	}, [normalizedSearchQuery]);
 
-	return serverSearchResult?.query === normalizedSearchQuery
-		? serverSearchResult
-		: null;
+	if (!normalizedSearchQuery) {
+		return {
+			result: null,
+			isLoading: false,
+			hasError: false,
+		};
+	}
+
+	const isCurrentQuery = serverSearchState.query === normalizedSearchQuery;
+
+	return {
+		result:
+			isCurrentQuery && serverSearchState.status === "ready"
+				? serverSearchState.result
+				: null,
+		isLoading:
+			!isCurrentQuery ||
+			serverSearchState.status === "idle" ||
+			serverSearchState.status === "loading",
+		hasError: isCurrentQuery && serverSearchState.status === "error",
+	};
 }
 
 function filterTalksByCollection(
@@ -173,11 +230,19 @@ export function useTalkGalleryData(
 		() => filterTalksByQuery(indexedTalks, searchTokens),
 		[indexedTalks, searchTokens],
 	);
-	const serverSearchResult = useServerSearchResult(searchQuery);
+	const {
+		result: serverSearchResult,
+		isLoading: isSearchLoading,
+		hasError: hasSearchError,
+	} = useServerSearchResult(searchQuery);
 
 	const filteredTalks = useMemo(() => {
-		if (searchTokens.length === 0 || serverSearchResult === null) {
+		if (searchTokens.length === 0) {
 			return metadataFilteredTalks;
+		}
+
+		if (serverSearchResult === null) {
+			return [];
 		}
 
 		return classificationFilteredTalks.filter((talk) =>
@@ -213,6 +278,8 @@ export function useTalkGalleryData(
 	return {
 		columns,
 		filteredTalks,
+		hasSearchError,
+		isSearchLoading,
 		sections,
 		searchTokens,
 		transcriptSnippetsByTalkId,
