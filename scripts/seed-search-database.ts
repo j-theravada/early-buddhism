@@ -18,6 +18,7 @@ import { buildTranscriptSearchTextFromCues } from "../app/infrastructure/transcr
 const SCHEMA_SQL = `
 	DROP TABLE IF EXISTS talk_search_fts;
 	DROP TABLE IF EXISTS transcript_search_fts;
+	DROP TABLE IF EXISTS transcript_short_token_index;
 	DROP TABLE IF EXISTS transcript_cues;
 	DROP TABLE IF EXISTS talks;
 	DROP TABLE IF EXISTS search_database_meta;
@@ -57,11 +58,27 @@ CREATE VIRTUAL TABLE talk_search_fts USING fts5(
 	tokenize = 'trigram'
 );
 
+	CREATE TABLE transcript_short_token_index (
+		token TEXT NOT NULL,
+		talk_id TEXT NOT NULL,
+		first_cue_index INTEGER NOT NULL,
+		second_cue_index INTEGER,
+		PRIMARY KEY (token, talk_id)
+	);
+
 CREATE TABLE search_database_meta (
 	key TEXT PRIMARY KEY,
 	value TEXT NOT NULL
 );
 `;
+
+type ShortTokenCueIndexes = {
+	firstCueIndex: number;
+	secondCueIndex: number | null;
+};
+
+const SHORT_TOKEN_PATTERN = /^[\p{Letter}\p{Number}]+$/u;
+const MAX_SHORT_TOKEN_LENGTH = 2;
 
 function getLocalDatabasePath(databaseUrl: string): string | null {
 	if (!databaseUrl.startsWith("file:")) {
@@ -114,6 +131,24 @@ function buildBulkInsertStatement(
 		sql: `INSERT INTO ${tableName} (${columns.join(", ")}) VALUES ${rows.map(() => rowPlaceholder).join(", ")}`,
 		args: rows.flat(),
 	};
+}
+
+function collectShortSearchTokens(value: string): Set<string> {
+	const chars = [...normalizeForSearch(value)];
+	const tokens = new Set<string>();
+	for (let start = 0; start < chars.length; start += 1) {
+		for (
+			let size = 1;
+			size <= MAX_SHORT_TOKEN_LENGTH && start + size <= chars.length;
+			size += 1
+		) {
+			const token = chars.slice(start, start + size).join("");
+			if (SHORT_TOKEN_PATTERN.test(token)) {
+				tokens.add(token);
+			}
+		}
+	}
+	return tokens;
 }
 
 async function batchTranscriptCueStatements(
@@ -175,6 +210,80 @@ async function batchTranscriptCueStatements(
 	}
 
 	return cueCount;
+}
+
+async function batchTranscriptShortTokenStatements(
+	db: Client | Transaction,
+	transcriptDocuments: Awaited<ReturnType<typeof getTranscriptSearchDocuments>>,
+) {
+	const rowChunkSize = 500;
+	const statementBatchSize = 20;
+	const columns = ["token", "talk_id", "first_cue_index", "second_cue_index"];
+	let rows: InValue[][] = [];
+	let statements: InStatement[] = [];
+	let tokenRowCount = 0;
+
+	async function flushRows() {
+		const statement = buildBulkInsertStatement(
+			"transcript_short_token_index",
+			columns,
+			rows,
+		);
+		rows = [];
+		if (!statement) {
+			return;
+		}
+
+		statements.push(statement);
+		if (statements.length >= statementBatchSize) {
+			await db.batch(statements);
+			statements = [];
+		}
+	}
+
+	for (const document of transcriptDocuments) {
+		const cueIndexesByToken = new Map<string, ShortTokenCueIndexes>();
+
+		for (const cue of document.cues) {
+			for (const token of collectShortSearchTokens(cue.text)) {
+				const cueIndexes = cueIndexesByToken.get(token);
+				if (!cueIndexes) {
+					cueIndexesByToken.set(token, {
+						firstCueIndex: cue.index,
+						secondCueIndex: null,
+					});
+					continue;
+				}
+
+				if (
+					cueIndexes.secondCueIndex === null &&
+					cueIndexes.firstCueIndex !== cue.index
+				) {
+					cueIndexes.secondCueIndex = cue.index;
+				}
+			}
+		}
+
+		for (const [token, cueIndexes] of cueIndexesByToken) {
+			tokenRowCount += 1;
+			rows.push([
+				token,
+				document.talkId,
+				cueIndexes.firstCueIndex,
+				cueIndexes.secondCueIndex,
+			]);
+			if (rows.length >= rowChunkSize) {
+				await flushRows();
+			}
+		}
+	}
+
+	await flushRows();
+	if (statements.length > 0) {
+		await db.batch(statements);
+	}
+
+	return tokenRowCount;
 }
 
 async function seedDatabase() {
@@ -244,11 +353,16 @@ async function seedDatabase() {
 
 	const transaction = await db.transaction("write");
 	let transcriptCueCount = 0;
+	let transcriptShortTokenCount = 0;
 	try {
 		await transaction.executeMultiple(SCHEMA_SQL);
 		await batchStatements(transaction, talkStatements, 100);
 		await batchStatements(transaction, talkSearchStatements, 100);
 		transcriptCueCount = await batchTranscriptCueStatements(
+			transaction,
+			transcriptDocuments,
+		);
+		transcriptShortTokenCount = await batchTranscriptShortTokenStatements(
 			transaction,
 			transcriptDocuments,
 		);
@@ -261,6 +375,13 @@ async function seedDatabase() {
 					sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
 					args: ["transcriptCueCount", String(transcriptCueCount)],
 				},
+				{
+					sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
+					args: [
+						"transcriptShortTokenCount",
+						String(transcriptShortTokenCount),
+					],
+				},
 			],
 			20,
 		);
@@ -271,7 +392,7 @@ async function seedDatabase() {
 	}
 
 	console.log(
-		`Seeded ${indexedTalks.length} talks, ${transcriptDocuments.length} transcript documents, and ${transcriptCueCount} transcript cues into ${config.target} database (${config.url}).`,
+		`Seeded ${indexedTalks.length} talks, ${transcriptDocuments.length} transcript documents, ${transcriptCueCount} transcript cues, and ${transcriptShortTokenCount} short transcript token rows into ${config.target} database (${config.url}).`,
 	);
 }
 

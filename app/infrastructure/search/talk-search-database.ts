@@ -19,6 +19,7 @@ const MAX_TALK_IDS_PER_QUERY = 500;
 const MAX_MATCHING_CUES_PER_TALK = 12;
 const MAX_SNIPPETS_PER_TALK = 2;
 const MIN_FTS_TRIGRAM_TOKEN_LENGTH = 3;
+const SHORT_TOKEN_PATTERN = /^[\p{Letter}\p{Number}]+$/u;
 
 function escapeLikeToken(token: string): string {
 	return token
@@ -29,6 +30,10 @@ function escapeLikeToken(token: string): string {
 
 function canUseFtsMatch(token: string): boolean {
 	return [...token].length >= MIN_FTS_TRIGRAM_TOKEN_LENGTH;
+}
+
+function canUseShortTokenIndex(token: string): boolean {
+	return !canUseFtsMatch(token) && SHORT_TOKEN_PATTERN.test(token);
 }
 
 function quoteFtsPhrase(token: string): string {
@@ -54,11 +59,17 @@ function readNumberColumn(row: Row, column: string): number | null {
 async function findTokenMatches(token: string): Promise<TokenMatches> {
 	const db = getLibsqlClient();
 	const useFtsMatch = canUseFtsMatch(token);
+	const useShortTokenIndex = canUseShortTokenIndex(token);
 	const operator = useFtsMatch ? "MATCH" : "LIKE";
 	const matcher = useFtsMatch
 		? quoteFtsPhrase(token)
 		: `%${escapeLikeToken(token)}%`;
 	const escapeClause = useFtsMatch ? "" : " ESCAPE '\\'";
+	const transcriptSearchSql = useShortTokenIndex
+		? "SELECT talk_id, 'transcript' AS source FROM transcript_short_token_index WHERE token = ?"
+		: `SELECT talk_id, 'transcript' AS source
+				FROM transcript_search_fts
+				WHERE search_text ${operator} ?${escapeClause}`;
 	const result = await db.execute({
 		sql: `
 			SELECT talk_id, source
@@ -67,12 +78,10 @@ async function findTokenMatches(token: string): Promise<TokenMatches> {
 				FROM talk_search_fts
 				WHERE search_text ${operator} ?${escapeClause}
 				UNION ALL
-				SELECT talk_id, 'transcript' AS source
-				FROM transcript_search_fts
-				WHERE search_text ${operator} ?${escapeClause}
+				${transcriptSearchSql}
 			)
 		`,
-		args: [matcher, matcher],
+		args: [matcher, useShortTokenIndex ? token : matcher],
 	});
 	const talkIds = new Set<string>();
 	const transcriptTalkIds = new Set<string>();
@@ -232,6 +241,120 @@ async function loadTranscriptSnippets(
 	return snippetsByTalkId;
 }
 
+async function loadShortTokenTranscriptSnippets(
+	talkIds: string[],
+	tokens: string[],
+): Promise<Map<string, TalkSearchTranscriptSnippet[]>> {
+	const snippetsByTalkId = new Map<string, TalkSearchTranscriptSnippet[]>();
+	const seenSnippetsByTalkId = new Map<string, Set<string>>();
+	if (talkIds.length === 0) {
+		return snippetsByTalkId;
+	}
+
+	const db = getLibsqlClient();
+	const tokenPlaceholders = tokens.map(() => "?").join(", ");
+
+	for (const chunk of chunkValues(talkIds, MAX_TALK_IDS_PER_QUERY)) {
+		const talkPlaceholders = chunk.map(() => "?").join(", ");
+		const statement: InStatement = {
+			sql: `
+				WITH short_matches AS (
+					SELECT
+						token,
+						talk_id,
+						first_cue_index AS cue_index,
+						1 AS snippet_rank
+					FROM transcript_short_token_index
+					WHERE token IN (${tokenPlaceholders})
+						AND talk_id IN (${talkPlaceholders})
+					UNION ALL
+					SELECT
+						token,
+						talk_id,
+						second_cue_index AS cue_index,
+						2 AS snippet_rank
+					FROM transcript_short_token_index
+					WHERE token IN (${tokenPlaceholders})
+						AND talk_id IN (${talkPlaceholders})
+						AND second_cue_index IS NOT NULL
+				)
+				SELECT
+					short_matches.talk_id,
+					transcript_cues.cue_index,
+					transcript_cues.start_seconds,
+					transcript_cues.start_label,
+					transcript_cues.text
+				FROM short_matches
+				INNER JOIN transcript_cues
+					ON transcript_cues.talk_id = short_matches.talk_id
+					AND transcript_cues.cue_index = short_matches.cue_index
+				ORDER BY short_matches.talk_id, transcript_cues.cue_index, short_matches.snippet_rank
+			`,
+			args: [...tokens, ...chunk, ...tokens, ...chunk],
+		};
+		const result = await db.execute(statement);
+
+		for (const row of result.rows) {
+			const talkId = readStringColumn(row, "talk_id");
+			if (!talkId) {
+				continue;
+			}
+			const existingSnippets = snippetsByTalkId.get(talkId) ?? [];
+			if (existingSnippets.length >= MAX_SNIPPETS_PER_TALK) {
+				continue;
+			}
+
+			const text = readStringColumn(row, "text");
+			const cueIndex = readNumberColumn(row, "cue_index");
+			const start = readNumberColumn(row, "start_seconds");
+			const startLabel = readStringColumn(row, "start_label");
+			if (!text || cueIndex === null || start === null || !startLabel) {
+				continue;
+			}
+
+			const snippetText = buildSearchSnippets(text, tokens, {
+				maxSnippets: 1,
+			})[0];
+			if (!snippetText) {
+				continue;
+			}
+
+			let seenSnippets = seenSnippetsByTalkId.get(talkId);
+			if (!seenSnippets) {
+				seenSnippets = new Set();
+				seenSnippetsByTalkId.set(talkId, seenSnippets);
+			}
+			if (seenSnippets.has(snippetText)) {
+				continue;
+			}
+			seenSnippets.add(snippetText);
+
+			const nextSnippets = [
+				...existingSnippets,
+				{
+					text: snippetText,
+					cueIndex,
+					start,
+					startLabel,
+				},
+			];
+			snippetsByTalkId.set(talkId, nextSnippets);
+		}
+	}
+
+	return snippetsByTalkId;
+}
+
+async function loadTranscriptSnippetsForTokens(
+	talkIds: string[],
+	tokens: string[],
+): Promise<Map<string, TalkSearchTranscriptSnippet[]>> {
+	if (tokens.every((token) => canUseShortTokenIndex(token))) {
+		return loadShortTokenTranscriptSnippets(talkIds, tokens);
+	}
+	return loadTranscriptSnippets(talkIds, tokens);
+}
+
 export async function searchTalkDatabase(
 	query: string,
 ): Promise<TalkSearchApiResponse> {
@@ -248,7 +371,7 @@ export async function searchTalkDatabase(
 	const talkIdsWithTranscriptMatches = talkIds.filter((talkId) =>
 		transcriptTalkIds.has(talkId),
 	);
-	const snippetsByTalkId = await loadTranscriptSnippets(
+	const snippetsByTalkId = await loadTranscriptSnippetsForTokens(
 		talkIdsWithTranscriptMatches,
 		tokens,
 	);
