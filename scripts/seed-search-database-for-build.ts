@@ -5,3 +5,5 @@ if (process.env.VERCEL_ENV === "production" && process.env.TURSO_DATABASE_URL) {
 } else {
 	await import("./seed-search-database");
 }
+
+export {};
