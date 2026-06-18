@@ -5,7 +5,7 @@ import { buildTalkGalleryTalks } from "./gallery";
 import {
 	buildSearchIndex,
 	buildTranscriptSearchSnippets,
-	filterTalksByQuery,
+	normalizeForSearch,
 	tokenizeSearchQuery,
 	type IndexedTalk,
 } from "./search";
@@ -23,6 +23,7 @@ export type TranscriptSearchDocumentInput = {
 export type TranscriptAwareSearchData = {
 	indexedTalks: IndexedTalk[];
 	transcriptDocumentByTalkId: Map<string, TranscriptSearchDocumentInput>;
+	transcriptSearchTextByTalkId: Map<string, string>;
 };
 
 function buildTranscriptDocumentIndex(
@@ -46,42 +47,44 @@ function findTranscriptDocument(
 	return transcriptDocumentByNormalizedTalkId.get(normalizeTalkId(talk.id));
 }
 
-function buildExtraSearchTextByTalkId(
-	talks: TalkForDisplay[],
-	transcriptDocumentByNormalizedTalkId: ReadonlyMap<
-		string,
-		TranscriptSearchDocumentInput
-	>,
-): Map<string, string> {
-	return new Map(
-		talks.map((talk) => [
-			talk.id,
-			findTranscriptDocument(talk, transcriptDocumentByNormalizedTalkId)
-				?.text ?? "",
-		]),
-	);
-}
+type TranscriptSearchMaps = Pick<
+	TranscriptAwareSearchData,
+	"transcriptDocumentByTalkId" | "transcriptSearchTextByTalkId"
+>;
 
-function buildTranscriptDocumentByTalkId(
+function buildTranscriptSearchMaps(
 	talks: TalkForDisplay[],
 	transcriptDocumentByNormalizedTalkId: ReadonlyMap<
 		string,
 		TranscriptSearchDocumentInput
 	>,
-): Map<string, TranscriptSearchDocumentInput> {
-	const documentsByTalkId = new Map<string, TranscriptSearchDocumentInput>();
+): TranscriptSearchMaps {
+	const transcriptDocumentByTalkId = new Map<
+		string,
+		TranscriptSearchDocumentInput
+	>();
+	const transcriptSearchTextByTalkId = new Map<string, string>();
 
 	for (const talk of talks) {
 		const document = findTranscriptDocument(
 			talk,
 			transcriptDocumentByNormalizedTalkId,
 		);
-		if (document) {
-			documentsByTalkId.set(talk.id, document);
+		if (!document) {
+			continue;
 		}
+
+		transcriptDocumentByTalkId.set(talk.id, document);
+		transcriptSearchTextByTalkId.set(
+			talk.id,
+			normalizeForSearch(document.text),
+		);
 	}
 
-	return documentsByTalkId;
+	return {
+		transcriptDocumentByTalkId,
+		transcriptSearchTextByTalkId,
+	};
 }
 
 export function hasTranscriptAwareSearchQuery(query: string): boolean {
@@ -95,20 +98,57 @@ export function buildTranscriptAwareSearchData(
 	const talksForDisplay = buildTalkGalleryTalks(talks);
 	const transcriptDocumentByNormalizedTalkId =
 		buildTranscriptDocumentIndex(transcriptDocuments);
-	const extraSearchTextByTalkId = buildExtraSearchTextByTalkId(
-		talksForDisplay,
-		transcriptDocumentByNormalizedTalkId,
-	);
-
-	return {
-		indexedTalks: buildSearchIndex(talksForDisplay, {
-			extraSearchTextByTalkId,
-		}),
-		transcriptDocumentByTalkId: buildTranscriptDocumentByTalkId(
+	const { transcriptDocumentByTalkId, transcriptSearchTextByTalkId } =
+		buildTranscriptSearchMaps(
 			talksForDisplay,
 			transcriptDocumentByNormalizedTalkId,
-		),
+		);
+
+	return {
+		indexedTalks: buildSearchIndex(talksForDisplay),
+		transcriptDocumentByTalkId,
+		transcriptSearchTextByTalkId,
 	};
+}
+
+function matchesTranscriptAwareSearch(
+	searchData: TranscriptAwareSearchData,
+	indexedTalk: IndexedTalk,
+	tokens: string[],
+): boolean {
+	const transcriptSearchText = searchData.transcriptSearchTextByTalkId.get(
+		indexedTalk.data.id,
+	);
+
+	return tokens.every(
+		(token) =>
+			indexedTalk.searchText.includes(token) ||
+			transcriptSearchText?.includes(token) === true,
+	);
+}
+
+function filterTranscriptAwareTalks(
+	searchData: TranscriptAwareSearchData,
+	tokens: string[],
+): TalkForDisplay[] {
+	return searchData.indexedTalks
+		.filter((indexedTalk) =>
+			matchesTranscriptAwareSearch(searchData, indexedTalk, tokens),
+		)
+		.map((indexedTalk) => indexedTalk.data);
+}
+
+function hasTranscriptTokenMatch(
+	searchData: TranscriptAwareSearchData,
+	talkId: string,
+	tokens: string[],
+): boolean {
+	const transcriptSearchText =
+		searchData.transcriptSearchTextByTalkId.get(talkId);
+	return (
+		typeof transcriptSearchText === "string" &&
+		tokens.some((token) => transcriptSearchText.includes(token))
+	);
 }
 
 export function searchTranscriptAwareTalks(
@@ -120,16 +160,30 @@ export function searchTranscriptAwareTalks(
 		return buildEmptyTalkSearchApiResponse();
 	}
 
-	const talks = filterTalksByQuery(searchData.indexedTalks, tokens);
+	const talks = filterTranscriptAwareTalks(searchData, tokens);
+	const results: TalkSearchApiResponse["results"] = [];
+
+	for (const talk of talks) {
+		if (!hasTranscriptTokenMatch(searchData, talk.id, tokens)) {
+			continue;
+		}
+
+		const transcriptSnippets = buildTranscriptSearchSnippets(
+			searchData.transcriptDocumentByTalkId.get(talk.id)?.cues ?? [],
+			tokens,
+		);
+		if (transcriptSnippets.length === 0) {
+			continue;
+		}
+
+		results.push({
+			talkId: talk.id,
+			transcriptSnippets,
+		});
+	}
 
 	return {
 		talkIds: talks.map((talk) => talk.id),
-		results: talks.map((talk) => ({
-			talkId: talk.id,
-			transcriptSnippets: buildTranscriptSearchSnippets(
-				searchData.transcriptDocumentByTalkId.get(talk.id)?.cues ?? [],
-				tokens,
-			),
-		})),
+		results,
 	};
 }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const navLinks = [
 	{ href: "/talks", label: "動画一覧" },
@@ -14,13 +14,39 @@ const navLinks = [
 
 export default function Header() {
 	const [isScrolled, setIsScrolled] = useState(false);
+	const isScrolledRef = useRef(false);
 
 	useEffect(() => {
-		const updateHeaderState = () => setIsScrolled(window.scrollY > 12);
-		updateHeaderState();
-		window.addEventListener("scroll", updateHeaderState, { passive: true });
+		let frameId: number | null = null;
+		const updateHeaderState = () => {
+			const nextIsScrolled = window.scrollY > 12;
+			if (isScrolledRef.current === nextIsScrolled) {
+				return;
+			}
 
-		return () => window.removeEventListener("scroll", updateHeaderState);
+			isScrolledRef.current = nextIsScrolled;
+			setIsScrolled(nextIsScrolled);
+		};
+		const onScroll = () => {
+			if (frameId !== null) {
+				return;
+			}
+
+			frameId = window.requestAnimationFrame(() => {
+				frameId = null;
+				updateHeaderState();
+			});
+		};
+
+		updateHeaderState();
+		window.addEventListener("scroll", onScroll, { passive: true });
+
+		return () => {
+			if (frameId !== null) {
+				window.cancelAnimationFrame(frameId);
+			}
+			window.removeEventListener("scroll", onScroll);
+		};
 	}, []);
 
 	return (

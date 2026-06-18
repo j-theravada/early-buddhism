@@ -17,8 +17,7 @@ import { getNewsItems } from "./infrastructure/news/repository";
 import { getTalks } from "./infrastructure/talk/repository";
 
 export default async function Home() {
-	const talks = await getTalks();
-	const newsItems = await getNewsItems();
+	const [talks, newsItems] = await Promise.all([getTalks(), getNewsItems()]);
 	const popularVideos = getPopularVideos(buildTalkGalleryTalks(talks));
 
 	return (

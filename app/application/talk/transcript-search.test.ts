@@ -101,12 +101,7 @@ describe("transcript-aware talk search", () => {
 
 		expect(response).toEqual({
 			talkIds: ["TALK-V-002"],
-			results: [
-				{
-					talkId: "TALK-V-002",
-					transcriptSnippets: [],
-				},
-			],
+			results: [],
 		});
 	});
 

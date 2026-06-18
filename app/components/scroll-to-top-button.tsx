@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FEEDBACK_FORM_URL } from "../utils/site-links";
 
 const SHOW_AFTER_PX = 400;
@@ -9,6 +9,7 @@ const SHOW_AFTER_PX = 400;
 export default function ScrollToTopButton() {
 	const [isVisible, setIsVisible] = useState(false);
 	const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+	const isVisibleRef = useRef(false);
 
 	useEffect(() => {
 		const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -19,22 +20,35 @@ export default function ScrollToTopButton() {
 	}, []);
 
 	useEffect(() => {
-		let ticking = false;
+		let frameId: number | null = null;
+		const updateVisibility = () => {
+			const nextIsVisible = window.scrollY > SHOW_AFTER_PX;
+			if (isVisibleRef.current === nextIsVisible) {
+				return;
+			}
+
+			isVisibleRef.current = nextIsVisible;
+			setIsVisible(nextIsVisible);
+		};
 
 		const onScroll = () => {
-			if (ticking) return;
-			ticking = true;
+			if (frameId !== null) return;
 
-			requestAnimationFrame(() => {
-				setIsVisible(window.scrollY > SHOW_AFTER_PX);
-				ticking = false;
+			frameId = window.requestAnimationFrame(() => {
+				frameId = null;
+				updateVisibility();
 			});
 		};
 
 		window.addEventListener("scroll", onScroll, { passive: true });
-		onScroll();
+		updateVisibility();
 
-		return () => window.removeEventListener("scroll", onScroll);
+		return () => {
+			if (frameId !== null) {
+				window.cancelAnimationFrame(frameId);
+			}
+			window.removeEventListener("scroll", onScroll);
+		};
 	}, []);
 
 	return (

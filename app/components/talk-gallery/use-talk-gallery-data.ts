@@ -1,15 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	buildDecadeSections,
 	buildThemeSections,
 	buildVirtualGalleryData,
 } from "../../application/talk/grouping";
-import {
-	buildSearchIndex,
-	filterTalksByQuery,
-	tokenizeSearchQuery,
-	type IndexedTalk,
-} from "../../application/talk/search";
+import { tokenizeSearchQuery } from "../../application/talk/search";
 import {
 	buildTalkSearchApiUrl,
 	parseTalkSearchApiResponse,
@@ -26,6 +21,7 @@ type ViewMode = "date" | "theme";
 const MEDIA_QUERY_SM = "(min-width: 640px)";
 const MEDIA_QUERY_LG = "(min-width: 1024px)";
 const SEARCH_DEBOUNCE_MS = 150;
+const MAX_SERVER_SEARCH_CACHE_ENTRIES = 20;
 export type TranscriptSnippet = TalkSearchTranscriptSnippet;
 
 const EMPTY_TRANSCRIPT_SNIPPETS_BY_TALK_ID = new Map<
@@ -85,6 +81,7 @@ function useResponsiveColumns() {
 
 function useServerSearchResult(searchQuery: string): CurrentServerSearchResult {
 	const normalizedSearchQuery = searchQuery.trim();
+	const resultCacheRef = useRef(new Map<string, ParsedTalkSearchApiResponse>());
 	const [serverSearchState, setServerSearchState] = useState<ServerSearchState>(
 		{
 			query: "",
@@ -99,6 +96,19 @@ function useServerSearchResult(searchQuery: string): CurrentServerSearchResult {
 				query: "",
 				result: null,
 				status: "idle",
+			});
+			return;
+		}
+
+		const cachedResult = resultCacheRef.current.get(normalizedSearchQuery);
+		if (cachedResult) {
+			setServerSearchState({
+				query: normalizedSearchQuery,
+				result: {
+					query: normalizedSearchQuery,
+					...cachedResult,
+				},
+				status: "ready",
 			});
 			return;
 		}
@@ -128,11 +138,21 @@ function useServerSearchResult(searchQuery: string): CurrentServerSearchResult {
 				}
 
 				const data = await response.json();
+				const parsedResult = parseTalkSearchApiResponse(data);
+				if (!resultCacheRef.current.has(normalizedSearchQuery)) {
+					if (resultCacheRef.current.size >= MAX_SERVER_SEARCH_CACHE_ENTRIES) {
+						const firstCachedQuery = resultCacheRef.current.keys().next().value;
+						if (firstCachedQuery) {
+							resultCacheRef.current.delete(firstCachedQuery);
+						}
+					}
+					resultCacheRef.current.set(normalizedSearchQuery, parsedResult);
+				}
 				setServerSearchState({
 					query: normalizedSearchQuery,
 					result: {
 						query: normalizedSearchQuery,
-						...parseTalkSearchApiResponse(data),
+						...parsedResult,
 					},
 					status: "ready",
 				});
@@ -216,20 +236,11 @@ export function useTalkGalleryData(
 		[talks, selectedCollectionId, selectedSeriesId],
 	);
 
-	const indexedTalks: IndexedTalk[] = useMemo(
-		() => buildSearchIndex(classificationFilteredTalks),
-		[classificationFilteredTalks],
-	);
-
 	const searchTokens = useMemo(
 		() => tokenizeSearchQuery(searchQuery),
 		[searchQuery],
 	);
 
-	const metadataFilteredTalks = useMemo(
-		() => filterTalksByQuery(indexedTalks, searchTokens),
-		[indexedTalks, searchTokens],
-	);
 	const {
 		result: serverSearchResult,
 		isLoading: isSearchLoading,
@@ -238,7 +249,7 @@ export function useTalkGalleryData(
 
 	const filteredTalks = useMemo(() => {
 		if (searchTokens.length === 0) {
-			return metadataFilteredTalks;
+			return classificationFilteredTalks;
 		}
 
 		if (serverSearchResult === null) {
@@ -248,12 +259,7 @@ export function useTalkGalleryData(
 		return classificationFilteredTalks.filter((talk) =>
 			serverSearchResult.talkIds.has(talk.id),
 		);
-	}, [
-		classificationFilteredTalks,
-		metadataFilteredTalks,
-		searchTokens.length,
-		serverSearchResult,
-	]);
+	}, [classificationFilteredTalks, searchTokens.length, serverSearchResult]);
 	const transcriptSnippetsByTalkId = useMemo(
 		() =>
 			serverSearchResult?.transcriptSnippetsByTalkId ??

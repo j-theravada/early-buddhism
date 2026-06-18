@@ -54,7 +54,7 @@ export type TranscriptSearchSnippet = {
 const DEFAULT_SNIPPET_CONTEXT_LENGTH = 42;
 const DEFAULT_MAX_SNIPPETS = 2;
 
-function normalizeForSearch(value: string): string {
+export function normalizeForSearch(value: string): string {
 	return value.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
 }
 
