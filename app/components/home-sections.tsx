@@ -4,6 +4,10 @@ import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
 import { buildTalksHref } from "../application/talk/links";
 import type { NewsItem } from "../domain/news/types";
+import {
+	SUMANASARA_JA_NAME,
+	SUMANASARA_ROMAN_NAME,
+} from "../domain/teacher/sumanasara";
 import type { TalkForDisplay } from "../domain/talk/types";
 import { THERAVADA_ASSOCIATION_URL } from "../utils/site-links";
 import TalkGalleryCard from "./talk-gallery/talk-gallery-card";
@@ -136,10 +140,10 @@ export function TeacherProfileSection() {
 				<div className="flex flex-col gap-10 lg:flex-row-reverse lg:items-end lg:gap-16">
 					<div className="js-scroll-trigger downup relative mx-auto flex max-w-[430px] items-end gap-5 lg:mx-0 lg:flex-[0_0_42%]">
 						<div className="font-serif-display home-profile-vertical text-xl text-[#9d7e4c] lg:text-[28px]">
-							Ven. Alubomulle Sumanasara
+							{SUMANASARA_ROMAN_NAME}
 						</div>
 						<Image
-							alt="アルボムッレ・スマナサーラ長老"
+							alt={SUMANASARA_JA_NAME}
 							className="h-auto w-[calc(100%-42px)] max-w-[380px]"
 							height={1294}
 							quality={75}
@@ -150,7 +154,7 @@ export function TeacherProfileSection() {
 					</div>
 					<div className="js-scroll-trigger downup flex-1">
 						<h2 className="font-serif-display mb-5 text-[24px] font-semibold text-[#303030] md:text-[32px]">
-							アルボムッレ・スマナサーラ長老
+							{SUMANASARA_JA_NAME}
 						</h2>
 						<p className="text-[16px] leading-[1.95] text-[#303030] md:text-[18px]">
 							スリランカ上座仏教（テーラワーダ仏教）長老。1945年4月、スリランカ生まれ。13歳で出家得度。国立ケラニヤ大学で仏教哲学の教鞭をとる。1980年に来日。駒澤大学大学院博士課程を経て、現在は（宗）日本テーラワーダ仏教協会で初期仏教の伝道と冥想指導に従事し、ブッダの根本の教えを説き続けている。

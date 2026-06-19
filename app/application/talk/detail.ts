@@ -2,6 +2,7 @@ import {
 	getPrimaryTalkMediaUrl,
 	getTalkTitle,
 } from "../../domain/talk/display";
+import { normalizeSumanasaraJapaneseName } from "../../domain/teacher/sumanasara";
 import type { Talk } from "../../domain/talk/types";
 import { formatJapaneseDate } from "../../utils/date";
 import { toIsoDuration } from "../../utils/duration";
@@ -101,7 +102,7 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 		description: talk.description,
 		event: talk.event || "未分類",
 		venue: talk.venue || "—",
-		speaker: talk.speaker || "—",
+		speaker: normalizeSumanasaraJapaneseName(talk.speaker || "—"),
 		duration: talk.duration || "—",
 		language: talk.language || "—",
 		recordedOn: formatJapaneseDate(talk.recordedOnDate, recordedOnRaw),

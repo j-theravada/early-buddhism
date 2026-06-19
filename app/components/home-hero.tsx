@@ -2,31 +2,34 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { SUMANASARA_JA_NAME } from "../domain/teacher/sumanasara";
+
+const HERO_SUB_TEXT = `心のしくみと苦を乗り越える智慧を\n${SUMANASARA_JA_NAME}の法話で学ぶ`;
 
 const slides = [
 	{
 		desktop: "/khanti/top/kv_pc_01.jpg",
 		mobile: "/khanti/top/kv_smp_01.jpg",
 		main: "お釈迦さまの\n根本の教えを\n現代の言葉で",
-		sub: "心のしくみと苦を乗り越える智慧を\nスマナサーラ長老の法話で学ぶ",
+		sub: HERO_SUB_TEXT,
 	},
 	{
 		desktop: "/khanti/top/kv_pc_02.jpg",
 		mobile: "/khanti/top/kv_smp_02.jpg",
 		main: "お釈迦さまの\n根本の教えを\n現代の言葉で",
-		sub: "心のしくみと苦を乗り越える智慧を\nスマナサーラ長老の法話で学ぶ",
+		sub: HERO_SUB_TEXT,
 	},
 	{
 		desktop: "/khanti/top/kv_pc_03.jpg",
 		mobile: "/khanti/top/kv_smp_03.jpg",
 		main: "お釈迦さまの\n根本の教えで\n心を育てる",
-		sub: "心のしくみと苦を乗り越える智慧を\nスマナサーラ長老の法話で学ぶ",
+		sub: HERO_SUB_TEXT,
 	},
 	{
 		desktop: "/khanti/top/kv_pc_04.jpg",
 		mobile: "/khanti/top/kv_smp_04.jpg",
 		main: "お釈迦さまの\n根本の教えで\n心を育てる",
-		sub: "心のしくみと苦を乗り越える智慧を\nスマナサーラ長老の法話で学ぶ",
+		sub: HERO_SUB_TEXT,
 	},
 ];
 

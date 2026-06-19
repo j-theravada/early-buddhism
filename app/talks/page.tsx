@@ -4,12 +4,13 @@ import ClientHomeActions from "../components/client-home-actions";
 import Footer from "../components/footer";
 import Header from "../components/header";
 import TalkGallery from "../components/talk-gallery";
+import { SUMANASARA_JA_NAME } from "../domain/teacher/sumanasara";
 import type { TalkForDisplay } from "../domain/talk/types";
 import { getTalks } from "../infrastructure/talk/repository";
 
 export const metadata: Metadata = {
 	title: "動画一覧",
-	description: "スマナサーラ長老の法話動画を一覧で探せます。",
+	description: `${SUMANASARA_JA_NAME}の法話動画を一覧で探せます。`,
 };
 
 export default async function TalksPage() {

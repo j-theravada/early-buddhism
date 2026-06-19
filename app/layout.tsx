@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import ClientPageChrome from "./components/client-page-chrome";
+import { SUMANASARA_JA_NAME } from "./domain/teacher/sumanasara";
 import "./globals.css";
 
 const inter = Inter({
@@ -17,7 +18,7 @@ const clarityProjectId = "x7vb96xmqu";
 export const metadata: Metadata = {
 	metadataBase: new URL(siteUrl),
 	title: { default: "初期仏教塾", template: "%s | 初期仏教塾" },
-	description: "スマナサーラ長老の珠玉の法話で学ぶ。",
+	description: `${SUMANASARA_JA_NAME}の珠玉の法話で学ぶ。`,
 	icons: {
 		icon: [{ url: "/jtba-mark.png", type: "image/png" }],
 	},

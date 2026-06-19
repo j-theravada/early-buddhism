@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { SUMANASARA_JA_NAME } from "../../domain/teacher/sumanasara";
 import type { Talk } from "../../domain/talk/types";
 import { buildTalkDetailPageData, buildTalkMetadata } from "./detail";
 
@@ -53,6 +54,7 @@ describe("talk detail application helpers", () => {
 		const result = buildTalkDetailPageData(talk);
 
 		expect(result.talk.title).toBe("心と病気の関係");
+		expect(result.talk.speaker).toBe(SUMANASARA_JA_NAME);
 		expect(result.detailRows.map((row) => row.label)).toEqual([
 			"DVD番号",
 			"コレクション",

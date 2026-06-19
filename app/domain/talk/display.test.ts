@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { SUMANASARA_JA_NAME } from "../teacher/sumanasara";
 import { transformTalkToDisplay } from "./display";
 import type { Talk } from "./types";
 
@@ -49,6 +50,7 @@ describe("transformTalkToDisplay", () => {
 		expect(result.themeLabel).toBe(
 			"病気は決して肉体だけの問題ではない。心のあり方が病気を作り出す。",
 		);
+		expect(result.speaker).toBe(SUMANASARA_JA_NAME);
 		expect(result.youtubeUrl).toBe("https://youtu.be/ZZYaasluSAA?si=test");
 		expect(result.thumbnailUrl).toBe(
 			"https://img.youtube.com/vi/ZZYaasluSAA/hqdefault.jpg",

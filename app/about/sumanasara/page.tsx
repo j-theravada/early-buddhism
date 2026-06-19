@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Footer from "../../components/footer";
 import Header from "../../components/header";
+import {
+	SUMANASARA_JA_NAME,
+	SUMANASARA_ROMAN_NAME,
+} from "../../domain/teacher/sumanasara";
 
 export const metadata: Metadata = {
-	title: "スマナサーラ長老のプロフィール",
-	description:
-		"スリランカ上座仏教長老・アルボムッレ・スマナサーラ長老の歩みと活動を紹介します。",
+	title: `${SUMANASARA_JA_NAME}のプロフィール`,
+	description: `スリランカ上座仏教長老・${SUMANASARA_JA_NAME}の歩みと活動を紹介します。`,
 };
 
 const profileParagraphs = [
@@ -77,10 +80,10 @@ export default function SumanasaraProfilePage() {
 						<div className="flex flex-col gap-10 lg:flex-row-reverse lg:items-start lg:justify-between lg:gap-16">
 							<div className="mx-auto flex w-full max-w-[430px] items-end justify-center gap-4 lg:mx-0 lg:flex-[0_0_40%] lg:justify-end">
 								<div className="font-serif-display about-profile-vertical text-xl leading-none text-[#9d7e4c] lg:text-[28px]">
-									Ven. Alubomulle Sumanasara
+									{SUMANASARA_ROMAN_NAME}
 								</div>
 								<Image
-									alt="アルボムッレ・スマナサーラ長老"
+									alt={SUMANASARA_JA_NAME}
 									className="h-auto w-[min(78vw,360px)] object-contain"
 									height={1294}
 									priority
@@ -92,10 +95,10 @@ export default function SumanasaraProfilePage() {
 
 							<div className="max-w-2xl flex-1">
 								<h2 className="font-serif-display mb-5 text-2xl font-semibold leading-relaxed text-[#303030] md:text-[30px]">
-									アルボムッレ・スマナサーラ長老
+									{SUMANASARA_JA_NAME}
 								</h2>
 								<p className="font-serif-display mb-7 text-lg text-[#9d7e4c]">
-									Ven. Alubomulle Sumanasara
+									{SUMANASARA_ROMAN_NAME}
 								</p>
 								<div className="space-y-6 text-[15px] leading-[2] text-[#303030] md:text-base">
 									{profileParagraphs.map((paragraph) => (

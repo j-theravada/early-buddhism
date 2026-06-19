@@ -5,6 +5,7 @@ import {
 	parseContentSeriesId,
 	resolveContentClassification,
 } from "../content/collection";
+import { normalizeSumanasaraJapaneseName } from "../teacher/sumanasara";
 import type { Talk, TalkForDisplay } from "./types";
 
 function normalizeText(text: string): string {
@@ -78,7 +79,7 @@ export function transformTalkToDisplay(
 		description: normalizeText(talk.description || ""),
 		subtitle,
 		venue: talk.venue || "—",
-		speaker: talk.speaker || "—",
+		speaker: normalizeSumanasaraJapaneseName(talk.speaker || "—"),
 		duration: talk.duration || "—",
 		language: talk.language || "—",
 		audioLink: talk.audioLink,
