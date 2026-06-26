@@ -100,7 +100,7 @@ export default function TranscriptSectionLoader({
 					setShouldLoad(true);
 				}
 			},
-			{ rootMargin: "600px 0px" },
+			{ rootMargin: "0px" },
 		);
 		observer.observe(target);
 

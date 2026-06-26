@@ -1,4 +1,3 @@
-import { GoogleAnalytics } from "@next/third-parties/google";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
@@ -43,7 +42,26 @@ export default function RootLayout({
 			<body className={`${inter.variable} antialiased`}>
 				<ClientPageChrome />
 				{children}
-				{gaId ? <GoogleAnalytics gaId={gaId} /> : null}
+				{gaId ? (
+					<>
+						<Script
+							src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+							strategy="lazyOnload"
+						/>
+						<Script
+							dangerouslySetInnerHTML={{
+								__html: `
+									window.dataLayer = window.dataLayer || [];
+									function gtag(){dataLayer.push(arguments);}
+									gtag('js', new Date());
+									gtag('config', '${gaId}');
+								`,
+							}}
+							id="google-analytics"
+							strategy="lazyOnload"
+						/>
+					</>
+				) : null}
 				<Script
 					dangerouslySetInnerHTML={{
 						__html: `
@@ -55,7 +73,7 @@ export default function RootLayout({
 						`,
 					}}
 					id="microsoft-clarity"
-					strategy="afterInteractive"
+					strategy="lazyOnload"
 				/>
 				<script
 					// JSON-LD structured data
