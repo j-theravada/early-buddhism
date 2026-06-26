@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 import {
 	TALK_GALLERY_COLLECTION_PARAM,
 	TALK_GALLERY_QUERY_PARAM,
@@ -16,17 +16,8 @@ const TalkGallery = dynamic(() => import("./talk-gallery"), {
 });
 
 const TALK_GALLERY_DATA_URL = "/api/talk-gallery";
-const GALLERY_LOAD_IDLE_TIMEOUT_MS = 1500;
-const GALLERY_LOAD_FALLBACK_DELAY_MS = 250;
-
-type IdleWindow = Window &
-	typeof globalThis & {
-		requestIdleCallback?: (
-			callback: () => void,
-			options?: { timeout?: number },
-		) => number;
-		cancelIdleCallback?: (handle: number) => void;
-	};
+const GALLERY_LOAD_ROOT_MARGIN = "600px 0px";
+const GALLERY_LOAD_FALLBACK_DELAY_MS = 1000;
 
 type LoadState =
 	| {
@@ -62,29 +53,49 @@ function hasGalleryUrlState(): boolean {
 	);
 }
 
-function scheduleGalleryLoad(callback: () => void): () => void {
+function observeGalleryLoadTrigger(
+	target: HTMLElement | null,
+	callback: () => void,
+): () => void {
 	if (hasGalleryUrlState()) {
 		callback();
 		return () => {};
 	}
 
-	const idleWindow = window as IdleWindow;
-	if (idleWindow.requestIdleCallback && idleWindow.cancelIdleCallback) {
-		const handle = idleWindow.requestIdleCallback(callback, {
-			timeout: GALLERY_LOAD_IDLE_TIMEOUT_MS,
-		});
-		return () => idleWindow.cancelIdleCallback?.(handle);
+	if (target && "IntersectionObserver" in window) {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((entry) => entry.isIntersecting)) {
+					callback();
+					observer.disconnect();
+				}
+			},
+			{
+				rootMargin: GALLERY_LOAD_ROOT_MARGIN,
+			},
+		);
+		observer.observe(target);
+		return () => observer.disconnect();
 	}
 
 	const timeoutId = window.setTimeout(callback, GALLERY_LOAD_FALLBACK_DELAY_MS);
 	return () => window.clearTimeout(timeoutId);
 }
 
+function getLoadingMessage(status: LoadState["status"]): string {
+	if (status === "error") {
+		return "全件データを読み込めませんでした。時間をおいて再度お試しください。";
+	}
+	return "続きを読み込んでいます。";
+}
+
 function PreviewGallery({
 	initialTalks,
+	loadTriggerRef,
 	status,
 }: {
 	initialTalks: TalkGalleryItem[];
+	loadTriggerRef: RefObject<HTMLDivElement | null>;
 	status: LoadState["status"];
 }) {
 	return (
@@ -102,6 +113,7 @@ function PreviewGallery({
 								<Image
 									alt={talk.title || "YouTube thumbnail"}
 									className="object-cover transition-transform duration-200 group-hover:scale-105"
+									fetchPriority={index === 0 ? "high" : "auto"}
 									fill
 									priority={index === 0}
 									sizes="(max-width: 768px) 100vw, 33vw"
@@ -125,22 +137,39 @@ function PreviewGallery({
 				))}
 			</div>
 
-			<div className="rounded-lg border border-dashed border-[#d6c6ad] bg-[#fffbeb]/70 px-4 py-3 text-sm text-[#9d7e4c]">
-				{status === "error"
-					? "全件データを読み込めませんでした。時間をおいて再度お試しください。"
-					: "全件データを読み込み中です。"}
+			<div
+				className="rounded-lg border border-dashed border-[#d6c6ad] bg-[#fffbeb]/70 px-4 py-3 text-sm text-[#9d7e4c]"
+				ref={loadTriggerRef}
+			>
+				{getLoadingMessage(status)}
 			</div>
 		</div>
 	);
 }
 
 export default function TalkGalleryLoader({ initialTalks }: Props) {
+	const loadTriggerRef = useRef<HTMLDivElement | null>(null);
+	const [shouldLoad, setShouldLoad] = useState(false);
 	const [loadState, setLoadState] = useState<LoadState>({
 		status: "loading",
 		talks: null,
 	});
 
 	useEffect(() => {
+		if (shouldLoad) {
+			return;
+		}
+
+		return observeGalleryLoadTrigger(loadTriggerRef.current, () => {
+			setShouldLoad(true);
+		});
+	}, [shouldLoad]);
+
+	useEffect(() => {
+		if (!shouldLoad) {
+			return;
+		}
+
 		const controller = new AbortController();
 
 		async function loadTalks() {
@@ -167,21 +196,20 @@ export default function TalkGalleryLoader({ initialTalks }: Props) {
 			}
 		}
 
-		const cancelScheduledLoad = scheduleGalleryLoad(() => {
-			void loadTalks();
-		});
+		void loadTalks();
 
-		return () => {
-			cancelScheduledLoad();
-			controller.abort();
-		};
-	}, []);
+		return () => controller.abort();
+	}, [shouldLoad]);
 
 	if (loadState.status === "ready") {
 		return <TalkGallery talks={loadState.talks} />;
 	}
 
 	return (
-		<PreviewGallery initialTalks={initialTalks} status={loadState.status} />
+		<PreviewGallery
+			initialTalks={initialTalks}
+			loadTriggerRef={loadTriggerRef}
+			status={loadState.status}
+		/>
 	);
 }

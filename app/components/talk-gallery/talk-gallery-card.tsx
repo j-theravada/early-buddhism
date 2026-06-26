@@ -64,6 +64,7 @@ export default function TalkGalleryCard({
 						<Image
 							alt={talk.title || "YouTube thumbnail"}
 							className="object-cover transition-transform duration-200 group-hover:scale-105"
+							fetchPriority={thumbnailPriority ? "high" : "auto"}
 							fill
 							priority={thumbnailPriority}
 							sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
