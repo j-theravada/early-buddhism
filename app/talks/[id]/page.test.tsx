@@ -36,7 +36,7 @@ describe("TalkDetailPage", () => {
 
 		expect(html).toContain("sticky top-0 z-20");
 		expect(html).toContain("aspect-video");
-		expect(html).toContain("transcript-toolbar-sticky");
+		expect(html).toContain("文字起こしを読み込み中です。");
 	});
 
 	test("検索結果から来た詳細画面は検索条件付きでギャラリーへ戻る", async () => {

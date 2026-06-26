@@ -16,14 +16,14 @@ import type {
 	ContentCollectionId,
 	ContentSeriesId,
 } from "../domain/content/types";
-import type { TalkForDisplay } from "../domain/talk/types";
+import type { TalkGalleryItem } from "../domain/talk/types";
 import DecadeJumpNav from "./talk-gallery/decade-jump-nav";
 import TalkGalleryRow from "./talk-gallery/talk-gallery-row";
 import TalkGallerySectionHeader from "./talk-gallery/talk-gallery-section-header";
 import { useTalkGalleryData } from "./talk-gallery/use-talk-gallery-data";
 
 type Props = {
-	talks: TalkForDisplay[];
+	talks: TalkGalleryItem[];
 };
 
 export default function TalkGallery({ talks }: Props) {

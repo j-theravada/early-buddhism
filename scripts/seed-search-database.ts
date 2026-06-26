@@ -1,5 +1,5 @@
 import type { Client, InStatement, InValue, Transaction } from "@libsql/client";
-import { mkdir } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { buildTalkGalleryTalks } from "../app/application/talk/gallery";
 import {
@@ -12,7 +12,7 @@ import {
 	getLibsqlDatabaseConfig,
 } from "../app/infrastructure/database/libsql";
 import { getTalks } from "../app/infrastructure/talk/repository";
-import { getTranscriptSearchDocuments } from "../app/infrastructure/transcript/repository";
+import { getTranscriptSearchDocuments } from "../app/infrastructure/transcript/search-repository";
 import { buildTranscriptSearchTextFromCues } from "../app/infrastructure/transcript/search-document";
 import {
 	GENERATED_DATA_HASH_META_KEY,
@@ -84,6 +84,8 @@ type ShortTokenCueIndexes = {
 const SHORT_TOKEN_PATTERN = /^[\p{Letter}\p{Number}]+$/u;
 const MAX_SHORT_TOKEN_LENGTH = 2;
 
+type DatabaseConfig = ReturnType<typeof getLibsqlDatabaseConfig>;
+
 function getLocalDatabasePath(databaseUrl: string): string | null {
 	if (!databaseUrl.startsWith("file:")) {
 		return null;
@@ -98,6 +100,32 @@ async function ensureLocalDatabaseDirectory(databaseUrl: string) {
 		return;
 	}
 	await mkdir(dirname(databasePath), { recursive: true });
+}
+
+async function compactLocalDatabase(db: Client, config: DatabaseConfig) {
+	if (config.target !== "local") {
+		return;
+	}
+
+	await db.execute("PRAGMA optimize");
+	await db.execute("VACUUM");
+	await db.execute("PRAGMA wal_checkpoint(TRUNCATE)");
+}
+
+async function removeLocalDatabaseSidecars(config: DatabaseConfig | null) {
+	if (!config || config.target !== "local") {
+		return;
+	}
+
+	const databasePath = getLocalDatabasePath(config.url);
+	if (!databasePath) {
+		return;
+	}
+
+	await Promise.all([
+		rm(`${databasePath}-shm`, { force: true }),
+		rm(`${databasePath}-wal`, { force: true }),
+	]);
 }
 
 function chunkStatements(
@@ -290,7 +318,7 @@ async function batchTranscriptShortTokenStatements(
 	return tokenRowCount;
 }
 
-async function seedDatabase() {
+async function seedDatabase(): Promise<DatabaseConfig> {
 	const config = getLibsqlDatabaseConfig();
 	await ensureLocalDatabaseDirectory(config.url);
 
@@ -400,13 +428,18 @@ async function seedDatabase() {
 		throw error;
 	}
 
+	await compactLocalDatabase(db, config);
+
 	console.log(
 		`Seeded ${indexedTalks.length} talks, ${transcriptDocuments.length} transcript documents, ${transcriptCueCount} transcript cues, and ${transcriptShortTokenCount} short transcript token rows into ${config.target} database (${config.url}).`,
 	);
+	return config;
 }
 
+let seededConfig: DatabaseConfig | null = null;
 try {
-	await seedDatabase();
+	seededConfig = await seedDatabase();
 } finally {
 	closeLibsqlClientForScript();
+	await removeLocalDatabaseSidecars(seededConfig);
 }

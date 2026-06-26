@@ -2,7 +2,7 @@ import type {
 	ContentCollectionId,
 	ContentSeriesId,
 } from "../../domain/content/types";
-import type { TalkForDisplay } from "../../domain/talk/types";
+import type { TalkGalleryItem } from "../../domain/talk/types";
 import type { TranscriptSnippet } from "./use-talk-gallery-data";
 import TalkGalleryCard from "./talk-gallery-card";
 
@@ -13,7 +13,7 @@ const GRID_CLASS_BY_COLUMNS: Record<number, string> = {
 };
 
 type Props = {
-	talks: TalkForDisplay[];
+	talks: TalkGalleryItem[];
 	isFirstRow: boolean;
 	columns: number;
 	searchTokens: string[];
@@ -55,6 +55,7 @@ export default function TalkGalleryRow({
 						selectedCollectionId={selectedCollectionId}
 						selectedSeriesId={selectedSeriesId}
 						talk={talk}
+						thumbnailPriority={isFirstRow}
 						transcriptSnippets={transcriptSnippetsByTalkId.get(talk.id) ?? []}
 					/>
 				))}

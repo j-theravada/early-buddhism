@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import { buildTalkGalleryTalks } from "../application/talk/gallery";
+import { buildTalkGalleryItems } from "../application/talk/gallery";
 import ClientHomeActions from "../components/client-home-actions";
 import Footer from "../components/footer";
 import Header from "../components/header";
-import TalkGallery from "../components/talk-gallery";
+import TalkGalleryLoader from "../components/talk-gallery-loader";
 import { SUMANASARA_JA_NAME } from "../domain/teacher/sumanasara";
-import type { TalkForDisplay } from "../domain/talk/types";
+import type { TalkGalleryItem } from "../domain/talk/types";
 import { getTalks } from "../infrastructure/talk/repository";
+
+const INITIAL_TALK_PREVIEW_COUNT = 6;
 
 export const metadata: Metadata = {
 	title: "動画一覧",
@@ -15,7 +17,10 @@ export const metadata: Metadata = {
 
 export default async function TalksPage() {
 	const talks = await getTalks();
-	const talksForDisplay: TalkForDisplay[] = buildTalkGalleryTalks(talks);
+	const initialTalks: TalkGalleryItem[] = buildTalkGalleryItems(talks).slice(
+		0,
+		INITIAL_TALK_PREVIEW_COUNT,
+	);
 
 	return (
 		<div className="min-h-screen flex flex-col bg-white text-[#303030]">
@@ -32,7 +37,7 @@ export default async function TalksPage() {
 									動画一覧
 								</h1>
 							</div>
-							<TalkGallery talks={talksForDisplay} />
+							<TalkGalleryLoader initialTalks={initialTalks} />
 						</div>
 					</section>
 				</main>

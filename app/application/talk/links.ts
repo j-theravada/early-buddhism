@@ -27,7 +27,7 @@ export function parseTranscriptCueIndex(value: string): number | null {
 	}
 
 	const cueIndex = Number(value);
-	return Number.isInteger(cueIndex) && cueIndex > 0 ? cueIndex : null;
+	return Number.isInteger(cueIndex) && cueIndex >= 0 ? cueIndex : null;
 }
 
 function buildTalkDetailPath(talkId: string): string {

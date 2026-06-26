@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type MouseEvent, useEffect, useMemo, useState } from "react";
+import {
+	LOAD_TALK_PLAYER_EVENT,
+	type LoadTalkPlayerEventDetail,
+} from "../application/talk/player-events";
 import { tokenizeSearchQuery } from "../application/talk/search";
 import {
 	buildCueTimeHref,
@@ -31,6 +35,15 @@ function getModeButtonClass(isActive: boolean): string {
 			? "bg-amber-100 text-amber-900"
 			: "text-amber-700 hover:text-amber-900"
 	}`;
+}
+
+function loadTalkPlayer(event: MouseEvent<HTMLAnchorElement>, src: string) {
+	event.preventDefault();
+	window.dispatchEvent(
+		new CustomEvent<LoadTalkPlayerEventDetail>(LOAD_TALK_PLAYER_EVENT, {
+			detail: { src },
+		}),
+	);
 }
 
 export default function TranscriptSection({
@@ -123,7 +136,7 @@ export default function TranscriptSection({
 										<a
 											className="text-sm font-medium text-amber-700 underline transition hover:text-amber-900"
 											href={timeHref}
-											target="talk-player"
+											onClick={(event) => loadTalkPlayer(event, timeHref)}
 										>
 											{cue.startLabel}
 										</a>

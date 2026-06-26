@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { buildTranscriptSearchText, getTranscriptByTalkId } from "./repository";
+import { getTranscriptByTalkId } from "./repository";
+import { buildTranscriptSearchText } from "./search-document";
 
 const GENERATED_TRANSCRIPTS_DIR = resolve(
 	process.cwd(),

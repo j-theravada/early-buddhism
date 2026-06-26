@@ -9,17 +9,18 @@ import type {
 	ContentCollectionId,
 	ContentSeriesId,
 } from "../../domain/content/types";
-import type { TalkForDisplay } from "../../domain/talk/types";
+import type { TalkGalleryItem } from "../../domain/talk/types";
 import { highlightMatches } from "./highlight";
 import type { TranscriptSnippet } from "./use-talk-gallery-data";
 
 type Props = {
-	talk: TalkForDisplay;
+	talk: TalkGalleryItem;
 	searchTokens: string[];
 	searchQuery?: string;
 	selectedCollectionId?: ContentCollectionId | "";
 	selectedSeriesId?: ContentSeriesId | "";
 	transcriptSnippets?: TranscriptSnippet[];
+	thumbnailPriority?: boolean;
 	onNavigateToTalk?: () => void;
 	onSelectCollection?: (collectionId: ContentCollectionId) => void;
 	onSelectSeries?: (seriesId: ContentSeriesId) => void;
@@ -32,6 +33,7 @@ export default function TalkGalleryCard({
 	selectedCollectionId = "",
 	selectedSeriesId = "",
 	transcriptSnippets = [],
+	thumbnailPriority = false,
 	onNavigateToTalk,
 	onSelectCollection,
 	onSelectSeries,
@@ -55,6 +57,7 @@ export default function TalkGalleryCard({
 				<Link
 					className="block"
 					href={talkDetailHref}
+					prefetch={false}
 					{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
 				>
 					<div className="relative aspect-video w-full overflow-hidden bg-[#fffbeb]">
@@ -62,7 +65,8 @@ export default function TalkGalleryCard({
 							alt={talk.title || "YouTube thumbnail"}
 							className="object-cover transition-transform duration-200 group-hover:scale-105"
 							fill
-							sizes="(max-width: 768px) 100vw, 50vw"
+							priority={thumbnailPriority}
+							sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
 							src={talk.thumbnailUrl}
 							unoptimized
 						/>
@@ -111,6 +115,7 @@ export default function TalkGalleryCard({
 				<Link
 					className="block"
 					href={talkDetailHref}
+					prefetch={false}
 					{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
 				>
 					<h2 className="text-lg font-bold text-[#303030] sm:text-xl">
@@ -144,6 +149,7 @@ export default function TalkGalleryCard({
 									)}
 									key={`${snippet.cueIndex}-${snippet.text}`}
 									onClick={onNavigateToTalk}
+									prefetch={false}
 								>
 									{snippet.startLabel && (
 										<span className="mr-1 font-medium text-amber-700">

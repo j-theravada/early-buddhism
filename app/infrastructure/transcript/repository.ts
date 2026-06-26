@@ -2,29 +2,11 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { parseSrt } from "../../domain/transcript/parser";
 import type { TranscriptCue } from "../../domain/transcript/types";
-import {
-	buildTranscriptSearchText as buildTranscriptSearchTextFromContent,
-	deserializeTranscriptSearchDocument,
-	type SerializedTranscriptSearchDocument,
-	type TranscriptSearchDocument,
-} from "./search-document";
 
 const TRANSCRIPTS_DIR = resolve(process.cwd(), "app/generated/transcripts");
-const TRANSCRIPT_SEARCH_DOCUMENTS_PATH = resolve(
-	process.cwd(),
-	"app/generated/transcript-search-documents.json",
-);
-
-let transcriptSearchDocumentsPromise: Promise<
-	TranscriptSearchDocument[]
-> | null = null;
 
 function isSafeTalkId(talkId: string) {
 	return /^[A-Za-z0-9_-]+$/.test(talkId);
-}
-
-export function buildTranscriptSearchText(content: string): string {
-	return buildTranscriptSearchTextFromContent(content);
 }
 
 export async function getTranscriptByTalkId(
@@ -46,19 +28,4 @@ export async function getTranscriptByTalkId(
 		}
 		throw error;
 	}
-}
-
-async function loadTranscriptSearchDocuments(): Promise<
-	TranscriptSearchDocument[]
-> {
-	const content = await readFile(TRANSCRIPT_SEARCH_DOCUMENTS_PATH, "utf8");
-	const documents = JSON.parse(content) as SerializedTranscriptSearchDocument[];
-	return documents.map(deserializeTranscriptSearchDocument);
-}
-
-export function getTranscriptSearchDocuments(): Promise<
-	TranscriptSearchDocument[]
-> {
-	transcriptSearchDocumentsPromise ??= loadTranscriptSearchDocuments();
-	return transcriptSearchDocumentsPromise;
 }

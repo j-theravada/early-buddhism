@@ -41,6 +41,7 @@ export type TalkDetailPageData = {
 		recordedOn: string;
 		youtubeUrl: string | null;
 		embedUrl: string | null;
+		thumbnailUrl: string | null;
 		audioLink: string | null;
 		attachmentsLink: string | null;
 		slideLinks: string[];
@@ -108,6 +109,9 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 		recordedOn: formatJapaneseDate(talk.recordedOnDate, recordedOnRaw),
 		youtubeUrl,
 		embedUrl,
+		thumbnailUrl: videoId
+			? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+			: null,
 		audioLink: talk.audioLink,
 		attachmentsLink: talk.attachmentsLink,
 		slideLinks: talk.slideLinks,

@@ -91,7 +91,7 @@ describe("talk link helpers", () => {
 		expect(getFirstSearchParam(["最初", "二番目"])).toBe("最初");
 		expect(getFirstSearchParam(undefined)).toBe("");
 		expect(parseTranscriptCueIndex("7")).toBe(7);
-		expect(parseTranscriptCueIndex("0")).toBeNull();
+		expect(parseTranscriptCueIndex("0")).toBe(0);
 		expect(parseTranscriptCueIndex("abc")).toBeNull();
 	});
 });

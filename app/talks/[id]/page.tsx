@@ -18,13 +18,13 @@ import {
 import BackToGalleryLink from "../../components/back-to-gallery-link";
 import ContentCard from "../../components/content-card";
 import Footer from "../../components/footer";
-import TranscriptSection from "../../components/transcript-section";
+import LiteYouTubeEmbed from "../../components/lite-youtube-embed";
+import TranscriptSectionLoader from "../../components/transcript-section-loader";
 import {
 	parseContentCollectionId,
 	parseContentSeriesId,
 } from "../../domain/content/collection";
 import { getTalkById } from "../../infrastructure/talk/repository";
-import { getTranscriptByTalkId } from "../../infrastructure/transcript/repository";
 
 type TalkDetailSearchParamName =
 	| typeof TALK_DETAIL_GALLERY_QUERY_PARAM
@@ -108,7 +108,7 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 	}
 
 	const pageData = buildTalkDetailPageData(talk);
-	const transcript = await getTranscriptByTalkId(talk.id);
+	const hasTranscript = Boolean(talk.srtLink);
 
 	return (
 		<div className="min-h-screen bg-white text-gray-900 flex flex-col">
@@ -128,16 +128,11 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 					{/* YouTube動画埋め込み */}
 					{pageData.talk.embedUrl && (
 						<div className="sticky top-0 z-20 -mx-6 bg-white/95 px-6 py-3 backdrop-blur sm:-mx-8 sm:px-8">
-							<div className="relative w-full aspect-video bg-gray-100 overflow-hidden rounded-lg shadow-sm">
-								<iframe
-									allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-									allowFullScreen
-									className="absolute inset-0 h-full w-full"
-									name="talk-player"
-									src={pageData.talk.embedUrl}
-									title={pageData.talk.title}
-								/>
-							</div>
+							<LiteYouTubeEmbed
+								embedUrl={pageData.talk.embedUrl}
+								thumbnailUrl={pageData.talk.thumbnailUrl}
+								title={pageData.talk.title}
+							/>
 						</div>
 					)}
 
@@ -183,12 +178,12 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 							</div>
 						)}
 
-						{transcript && transcript.length > 0 && (
-							<TranscriptSection
+						{hasTranscript && (
+							<TranscriptSectionLoader
 								embedUrlPrefix={pageData.embedUrlPrefix}
 								hasStickyPlayer={Boolean(pageData.talk.embedUrl)}
+								talkId={talk.id}
 								targetCueIndex={targetCueIndex}
-								transcript={transcript}
 								transcriptHighlightQuery={transcriptHighlightQuery}
 							/>
 						)}

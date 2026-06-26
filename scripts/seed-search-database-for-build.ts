@@ -1,5 +1,5 @@
 import { createClient } from "@libsql/client";
-import { access } from "node:fs/promises";
+import { access, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { getLibsqlDatabaseConfig } from "../app/infrastructure/database/libsql";
 import {
@@ -39,12 +39,22 @@ async function hasFreshLocalSearchDatabase(): Promise<boolean> {
 				sql: "SELECT value FROM search_database_meta WHERE key = ?",
 				args: [GENERATED_DATA_HASH_META_KEY],
 			});
-			return result.rows[0]?.value === expectedHash;
+			const isFresh = result.rows[0]?.value === expectedHash;
+			if (isFresh) {
+				await db.execute("PRAGMA optimize");
+				await db.execute("PRAGMA wal_checkpoint(TRUNCATE)");
+			}
+			return isFresh;
 		} finally {
 			db.close();
 		}
 	} catch {
 		return false;
+	} finally {
+		await Promise.all([
+			rm(`${databasePath}-shm`, { force: true }),
+			rm(`${databasePath}-wal`, { force: true }),
+		]);
 	}
 }
 

@@ -27,6 +27,18 @@ function createSearchResponse(response: TalkSearchApiResponse) {
 	});
 }
 
+function createSearchErrorResponse() {
+	return NextResponse.json(
+		{ error: "Talk search is temporarily unavailable." },
+		{
+			status: 503,
+			headers: {
+				"Cache-Control": "no-store",
+			},
+		},
+	);
+}
+
 function readCachedSearchResponse(
 	cacheKey: string,
 	now = Date.now(),
@@ -59,26 +71,6 @@ function writeCachedSearchResponse(
 	});
 }
 
-async function searchGeneratedTranscriptData(query: string) {
-	const [
-		{ buildTranscriptAwareSearchData, searchTranscriptAwareTalks },
-		{ getTalks },
-		{ getTranscriptSearchDocuments },
-	] = await Promise.all([
-		import("../../application/talk/transcript-search"),
-		import("../../infrastructure/talk/repository"),
-		import("../../infrastructure/transcript/repository"),
-	]);
-	const [talks, transcriptDocuments] = await Promise.all([
-		getTalks(),
-		getTranscriptSearchDocuments(),
-	]);
-	return searchTranscriptAwareTalks(
-		buildTranscriptAwareSearchData(talks, transcriptDocuments),
-		query,
-	);
-}
-
 export async function GET(request: Request) {
 	const { searchParams } = new URL(request.url);
 	const query = (searchParams.get("query") ?? "").slice(0, MAX_QUERY_LENGTH);
@@ -100,9 +92,7 @@ export async function GET(request: Request) {
 		writeCachedSearchResponse(cacheKey, response);
 		return createSearchResponse(response);
 	} catch (error) {
-		console.warn("Falling back to generated transcript search data.", error);
-		return createSearchResponse(
-			await searchGeneratedTranscriptData(normalizedQuery),
-		);
+		console.error("Talk search database query failed.", error);
+		return createSearchErrorResponse();
 	}
 }

@@ -15,7 +15,7 @@ import type {
 	ContentCollectionId,
 	ContentSeriesId,
 } from "../../domain/content/types";
-import type { TalkForDisplay } from "../../domain/talk/types";
+import type { TalkGalleryItem } from "../../domain/talk/types";
 type ViewMode = "date" | "theme";
 
 const MEDIA_QUERY_SM = "(min-width: 640px)";
@@ -198,9 +198,9 @@ function useServerSearchResult(searchQuery: string): CurrentServerSearchResult {
 }
 
 function filterTalksByCollection(
-	talks: TalkForDisplay[],
+	talks: TalkGalleryItem[],
 	collectionId: ContentCollectionId | "",
-): TalkForDisplay[] {
+): TalkGalleryItem[] {
 	if (!collectionId) {
 		return talks;
 	}
@@ -209,9 +209,9 @@ function filterTalksByCollection(
 }
 
 function filterTalksBySeries(
-	talks: TalkForDisplay[],
+	talks: TalkGalleryItem[],
 	seriesId: ContentSeriesId | "",
-): TalkForDisplay[] {
+): TalkGalleryItem[] {
 	if (!seriesId) {
 		return talks;
 	}
@@ -220,7 +220,7 @@ function filterTalksBySeries(
 }
 
 export function useTalkGalleryData(
-	talks: TalkForDisplay[],
+	talks: TalkGalleryItem[],
 	viewMode: ViewMode,
 	searchQuery: string,
 	selectedCollectionId: ContentCollectionId | "" = "",

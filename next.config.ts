@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
 	outputFileTracingIncludes: {
 		"/api/talk-search": ["./app/generated/gakurin.db"],
 	},
+	outputFileTracingExcludes: {
+		"/api/talk-search": [
+			"./app/generated/gakurin.db-shm",
+			"./app/generated/gakurin.db-wal",
+		],
+	},
 	images: {
 		remotePatterns: [
 			{

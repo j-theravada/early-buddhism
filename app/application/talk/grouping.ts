@@ -1,20 +1,20 @@
-import type { TalkForDisplay } from "../../domain/talk/types";
+import type { TalkGalleryItem } from "../../domain/talk/types";
 
 export type GroupedSection = {
 	label: string;
 	count: number;
 	sortKey: number;
-	talks: TalkForDisplay[];
+	talks: TalkGalleryItem[];
 };
 
 export type TalkGalleryGroup = {
 	section: GroupedSection;
-	rows: TalkForDisplay[][];
+	rows: TalkGalleryItem[][];
 };
 
 export type TalkGalleryVirtualRow = {
 	rowIndex: number;
-	talks: TalkForDisplay[];
+	talks: TalkGalleryItem[];
 };
 
 export type TalkGalleryVirtualData = {
@@ -37,8 +37,10 @@ function chunkArray<T>(items: T[], chunkSize: number): T[][] {
 	return chunks;
 }
 
-export function buildDecadeSections(talks: TalkForDisplay[]): GroupedSection[] {
-	const map = new Map<string, TalkForDisplay[]>();
+export function buildDecadeSections(
+	talks: TalkGalleryItem[],
+): GroupedSection[] {
+	const map = new Map<string, TalkGalleryItem[]>();
 
 	talks.forEach((talk) => {
 		const bucket = map.get(talk.decadeLabel);
@@ -51,7 +53,7 @@ export function buildDecadeSections(talks: TalkForDisplay[]): GroupedSection[] {
 
 	return Array.from(map.entries())
 		.map(([decadeLabel, groupedTalks]) => {
-			const getSortValue = (talk: TalkForDisplay) =>
+			const getSortValue = (talk: TalkGalleryItem) =>
 				talk.recordedOnSortValue > 0
 					? talk.recordedOnSortValue
 					: Number.POSITIVE_INFINITY;
@@ -63,7 +65,7 @@ export function buildDecadeSections(talks: TalkForDisplay[]): GroupedSection[] {
 				return getSortValue(a) - getSortValue(b);
 			});
 
-			const earliest = getSortValue(sortedTalks[0] as TalkForDisplay);
+			const earliest = getSortValue(sortedTalks[0] as TalkGalleryItem);
 
 			return {
 				label: decadeLabel,
@@ -80,8 +82,8 @@ export function buildDecadeSections(talks: TalkForDisplay[]): GroupedSection[] {
 		.sort((a, b) => a.sortKey - b.sortKey);
 }
 
-export function buildThemeSections(talks: TalkForDisplay[]): GroupedSection[] {
-	const map = new Map<string, TalkForDisplay[]>();
+export function buildThemeSections(talks: TalkGalleryItem[]): GroupedSection[] {
+	const map = new Map<string, TalkGalleryItem[]>();
 
 	talks.forEach((talk) => {
 		const key = talk.themeLabel;

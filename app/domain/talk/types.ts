@@ -21,3 +21,23 @@ export type TalkForDisplay = ContentItemBase & {
 	decadeLabel: string;
 	themeLabel: string;
 };
+
+export type TalkGalleryItem = Pick<
+	TalkForDisplay,
+	| "id"
+	| "dvdId"
+	| "collectionId"
+	| "collectionLabel"
+	| "seriesId"
+	| "seriesLabel"
+	| "title"
+	| "subtitle"
+	| "audioLink"
+	| "attachmentsLink"
+	| "youtubeUrl"
+	| "thumbnailUrl"
+	| "recordedOnFormatted"
+	| "recordedOnSortValue"
+	| "decadeLabel"
+	| "themeLabel"
+>;
