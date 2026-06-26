@@ -68,6 +68,7 @@ export default function LiteYouTubeEmbed({
 						<Image
 							alt=""
 							className="object-cover opacity-80"
+							fetchPriority="high"
 							fill
 							priority
 							sizes="(max-width: 896px) 100vw, 896px"
