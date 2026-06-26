@@ -3,7 +3,13 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import {
+	type CSSProperties,
+	type RefObject,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import {
 	TALK_GALLERY_COLLECTION_PARAM,
 	TALK_GALLERY_QUERY_PARAM,
@@ -18,6 +24,12 @@ const TalkGallery = dynamic(() => import("./talk-gallery"), {
 const TALK_GALLERY_DATA_URL = "/api/talk-gallery";
 const GALLERY_LOAD_ROOT_MARGIN = "600px 0px";
 const GALLERY_LOAD_FALLBACK_DELAY_MS = 1000;
+const PREVIEW_SUBTITLE_STYLE = {
+	display: "-webkit-box",
+	overflow: "hidden",
+	WebkitBoxOrient: "vertical",
+	WebkitLineClamp: 3,
+} satisfies CSSProperties;
 
 type LoadState =
 	| {
@@ -128,7 +140,10 @@ function PreviewGallery({
 								{talk.title}
 							</h2>
 							{talk.subtitle && (
-								<p className="text-sm leading-relaxed text-[#666]">
+								<p
+									className="text-sm leading-relaxed text-[#666]"
+									style={PREVIEW_SUBTITLE_STYLE}
+								>
 									{talk.subtitle}
 								</p>
 							)}
