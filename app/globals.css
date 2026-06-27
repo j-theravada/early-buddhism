@@ -60,8 +60,34 @@ html {
   scroll-behavior: smooth;
 }
 
+.talk-detail-layout {
+  --talk-detail-player-sticky-offset: calc(((min(100vw, 56rem) - 4rem) * 9 / 16) + 1.5rem);
+  --talk-detail-player-width: 100%;
+}
+
+.talk-detail-player-shell {
+  width: 100%;
+}
+
+.talk-detail-player-frame {
+  width: var(--talk-detail-player-width);
+}
+
+.talk-detail-player-media {
+  position: relative;
+  z-index: 0;
+}
+
 .transcript-toolbar-sticky {
-  top: calc(((min(100vw, 56rem) - 4rem) * 9 / 16) + 1.5rem);
+  top: var(--talk-detail-player-sticky-offset);
+}
+
+@media (min-width: 1024px) {
+  .talk-detail-layout {
+    --talk-detail-player-height: clamp(18rem, calc(100svh - 34rem), 29.25rem);
+    --talk-detail-player-sticky-offset: calc(var(--talk-detail-player-height) + 1.5rem);
+    --talk-detail-player-width: min(100%, calc(var(--talk-detail-player-height) * 16 / 9));
+  }
 }
 
 .font-display {

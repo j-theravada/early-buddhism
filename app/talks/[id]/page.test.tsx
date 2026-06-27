@@ -35,6 +35,8 @@ describe("TalkDetailPage", () => {
 		);
 
 		expect(html).toContain("sticky top-0 z-20");
+		expect(html).toContain("talk-detail-player-shell relative mx-auto");
+		expect(html).toContain("talk-detail-player-frame mx-auto");
 		expect(html).toContain("aspect-video");
 		expect(html).toContain("文字起こしを読み込み中です。");
 	});

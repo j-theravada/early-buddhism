@@ -18,7 +18,7 @@ import {
 import BackToGalleryLink from "../../components/back-to-gallery-link";
 import ContentCard from "../../components/content-card";
 import Footer from "../../components/footer";
-import LiteYouTubeEmbed from "../../components/lite-youtube-embed";
+import TalkDetailPlayer from "../../components/talk-detail-player";
 import TranscriptSectionLoader from "../../components/transcript-section-loader";
 import {
 	parseContentCollectionId,
@@ -124,18 +124,11 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 			</header>
 
 			<main className="w-full mx-auto max-w-4xl px-6 py-12 sm:px-8 flex-1">
-				<div className="space-y-8">
-					{/* YouTube動画埋め込み */}
-					{pageData.talk.embedUrl && (
-						<div className="sticky top-0 z-20 -mx-6 bg-white/95 px-6 py-3 backdrop-blur sm:-mx-8 sm:px-8">
-							<LiteYouTubeEmbed
-								embedUrl={pageData.talk.embedUrl}
-								thumbnailUrl={pageData.talk.thumbnailUrl}
-								title={pageData.talk.title}
-							/>
-						</div>
-					)}
-
+				<TalkDetailPlayer
+					embedUrl={pageData.talk.embedUrl}
+					thumbnailUrl={pageData.talk.thumbnailUrl}
+					title={pageData.talk.title}
+				>
 					{/* データ情報 */}
 					<ContentCard as="div">
 						<dl className="space-y-4 text-sm">
@@ -202,7 +195,7 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 							</div>
 						)}
 					</ContentCard>
-				</div>
+				</TalkDetailPlayer>
 			</main>
 
 			<Footer maxWidth="4xl" />

@@ -64,7 +64,11 @@ export default function TranscriptSection({
 	);
 
 	useEffect(() => {
-		if (mode !== "timeline" || !targetCueIndex) {
+		if (
+			mode !== "timeline" ||
+			targetCueIndex === null ||
+			targetCueIndex === undefined
+		) {
 			return;
 		}
 
