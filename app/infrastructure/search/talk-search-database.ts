@@ -65,39 +65,49 @@ async function findTokenMatches(token: string): Promise<TokenMatches> {
 		? quoteFtsPhrase(token)
 		: `%${escapeLikeToken(token)}%`;
 	const escapeClause = useFtsMatch ? "" : " ESCAPE '\\'";
-	const transcriptSearchSql = useShortTokenIndex
-		? "SELECT talk_id, 'transcript' AS source FROM transcript_short_token_index WHERE token = ?"
-		: `SELECT talk_id, 'transcript' AS source
-				FROM transcript_search_fts
-				WHERE search_text ${operator} ?${escapeClause}`;
-	const result = await db.execute({
+	const talkStatement: InStatement = {
 		sql: `
-			SELECT talk_id, source
-			FROM (
-				SELECT talk_id, 'talk' AS source
-				FROM talk_search_fts
-				WHERE search_text ${operator} ?${escapeClause}
-				UNION ALL
-				${transcriptSearchSql}
-			)
+			SELECT talk_id
+			FROM talk_search_fts
+			WHERE search_text ${operator} ?${escapeClause}
 		`,
-		args: [matcher, useShortTokenIndex ? token : matcher],
-	});
+		args: [matcher],
+	};
+	const transcriptStatement: InStatement = useShortTokenIndex
+		? {
+				sql: "SELECT talk_id FROM transcript_short_token_index WHERE token = ?",
+				args: [token],
+			}
+		: {
+				sql: `
+					SELECT talk_id
+					FROM transcript_cues
+					WHERE search_text LIKE ? ESCAPE '\\'
+					GROUP BY talk_id
+				`,
+				args: [`%${escapeLikeToken(token)}%`],
+			};
+	const [talkResult, transcriptResult] = await db.batch([
+		talkStatement,
+		transcriptStatement,
+	]);
 	const talkIds = new Set<string>();
 	const transcriptTalkIds = new Set<string>();
 
-	for (const row of result.rows) {
+	for (const row of talkResult.rows) {
 		const talkId = readStringColumn(row, "talk_id");
-		const source = readStringColumn(row, "source");
 		if (!talkId) {
 			continue;
 		}
+		talkIds.add(talkId);
+	}
 
-		if (source === "talk") {
-			talkIds.add(talkId);
-		} else if (source === "transcript") {
-			transcriptTalkIds.add(talkId);
+	for (const row of transcriptResult.rows) {
+		const talkId = readStringColumn(row, "talk_id");
+		if (!talkId) {
+			continue;
 		}
+		transcriptTalkIds.add(talkId);
 	}
 
 	return { talkIds, transcriptTalkIds };

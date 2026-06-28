@@ -3,6 +3,9 @@ import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 export const GENERATED_DATA_HASH_META_KEY = "generatedDataHash";
+export const SEARCH_DATABASE_SCHEMA_VERSION = "2";
+export const SEARCH_DATABASE_SCHEMA_VERSION_META_KEY =
+	"searchDatabaseSchemaVersion";
 
 type GeneratedDataPaths = {
 	talksPath: string;

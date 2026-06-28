@@ -13,15 +13,17 @@ import {
 } from "../app/infrastructure/database/libsql";
 import { getTalks } from "../app/infrastructure/talk/repository";
 import { getTranscriptSearchDocuments } from "../app/infrastructure/transcript/search-repository";
-import { buildTranscriptSearchTextFromCues } from "../app/infrastructure/transcript/search-document";
 import {
 	GENERATED_DATA_HASH_META_KEY,
+	SEARCH_DATABASE_SCHEMA_VERSION,
+	SEARCH_DATABASE_SCHEMA_VERSION_META_KEY,
 	getGeneratedSearchDataFingerprint,
 } from "./generated-data";
 
 const SCHEMA_SQL = `
 	DROP TABLE IF EXISTS talk_search_fts;
 	DROP TABLE IF EXISTS transcript_search_fts;
+	DROP TABLE IF EXISTS transcript_documents;
 	DROP TABLE IF EXISTS transcript_short_token_index;
 	DROP TABLE IF EXISTS transcript_cues;
 	DROP TABLE IF EXISTS talks;
@@ -55,12 +57,6 @@ CREATE VIRTUAL TABLE talk_search_fts USING fts5(
 
 	CREATE INDEX transcript_cues_talk_id_index
 		ON transcript_cues (talk_id, cue_index);
-
-	CREATE VIRTUAL TABLE transcript_search_fts USING fts5(
-		talk_id UNINDEXED,
-	search_text,
-	tokenize = 'trigram'
-);
 
 	CREATE TABLE transcript_short_token_index (
 		token TEXT NOT NULL,
@@ -360,15 +356,6 @@ async function seedDatabase(): Promise<DatabaseConfig> {
 			args: [data.id, searchText],
 		}),
 	);
-	const transcriptSearchStatements: InStatement[] = transcriptDocuments.map(
-		(document) => ({
-			sql: "INSERT INTO transcript_search_fts (talk_id, search_text) VALUES (?, ?)",
-			args: [
-				document.talkId,
-				normalizeForSearch(buildTranscriptSearchTextFromCues(document.cues)),
-			],
-		}),
-	);
 	const metaStatements: InStatement[] = [
 		{
 			sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
@@ -385,6 +372,13 @@ async function seedDatabase(): Promise<DatabaseConfig> {
 		{
 			sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
 			args: [GENERATED_DATA_HASH_META_KEY, generatedDataHash],
+		},
+		{
+			sql: "INSERT INTO search_database_meta (key, value) VALUES (?, ?)",
+			args: [
+				SEARCH_DATABASE_SCHEMA_VERSION_META_KEY,
+				SEARCH_DATABASE_SCHEMA_VERSION,
+			],
 		},
 	];
 
@@ -403,7 +397,6 @@ async function seedDatabase(): Promise<DatabaseConfig> {
 			transaction,
 			transcriptDocuments,
 		);
-		await batchStatements(transaction, transcriptSearchStatements, 20);
 		await batchStatements(
 			transaction,
 			[

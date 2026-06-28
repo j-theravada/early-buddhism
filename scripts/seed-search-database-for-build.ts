@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 import { getLibsqlDatabaseConfig } from "../app/infrastructure/database/libsql";
 import {
 	GENERATED_DATA_HASH_META_KEY,
+	SEARCH_DATABASE_SCHEMA_VERSION,
+	SEARCH_DATABASE_SCHEMA_VERSION_META_KEY,
 	getGeneratedSearchDataFingerprint,
 } from "./generated-data";
 
@@ -36,10 +38,23 @@ async function hasFreshLocalSearchDatabase(): Promise<boolean> {
 		const db = createClient({ url: config.url });
 		try {
 			const result = await db.execute({
-				sql: "SELECT value FROM search_database_meta WHERE key = ?",
-				args: [GENERATED_DATA_HASH_META_KEY],
+				sql: "SELECT key, value FROM search_database_meta WHERE key IN (?, ?)",
+				args: [
+					GENERATED_DATA_HASH_META_KEY,
+					SEARCH_DATABASE_SCHEMA_VERSION_META_KEY,
+				],
 			});
-			const isFresh = result.rows[0]?.value === expectedHash;
+			const meta = new Map(
+				result.rows.flatMap((row) =>
+					typeof row.key === "string" && typeof row.value === "string"
+						? [[row.key, row.value]]
+						: [],
+				),
+			);
+			const isFresh =
+				meta.get(GENERATED_DATA_HASH_META_KEY) === expectedHash &&
+				meta.get(SEARCH_DATABASE_SCHEMA_VERSION_META_KEY) ===
+					SEARCH_DATABASE_SCHEMA_VERSION;
 			if (isFresh) {
 				await db.execute("PRAGMA optimize");
 				await db.execute("PRAGMA wal_checkpoint(TRUNCATE)");
