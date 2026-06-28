@@ -22,6 +22,7 @@ import {
 
 const SCHEMA_SQL = `
 	DROP TABLE IF EXISTS talk_search_fts;
+	DROP TABLE IF EXISTS transcript_cue_search_fts;
 	DROP TABLE IF EXISTS transcript_search_fts;
 	DROP TABLE IF EXISTS transcript_documents;
 	DROP TABLE IF EXISTS transcript_short_token_index;
@@ -46,17 +47,23 @@ CREATE VIRTUAL TABLE talk_search_fts USING fts5(
 );
 
 	CREATE TABLE transcript_cues (
+		id INTEGER PRIMARY KEY,
 		talk_id TEXT NOT NULL,
 		cue_index INTEGER NOT NULL,
 		start_seconds REAL NOT NULL,
 		start_label TEXT NOT NULL,
 		text TEXT NOT NULL,
-		search_text TEXT NOT NULL,
-		PRIMARY KEY (talk_id, cue_index)
+		UNIQUE (talk_id, cue_index)
 	);
 
 	CREATE INDEX transcript_cues_talk_id_index
 		ON transcript_cues (talk_id, cue_index);
+
+	CREATE VIRTUAL TABLE transcript_cue_search_fts USING fts5(
+		search_text,
+		content = '',
+		tokenize = 'trigram'
+	);
 
 	CREATE TABLE transcript_short_token_index (
 		token TEXT NOT NULL,
@@ -185,30 +192,40 @@ async function batchTranscriptCueStatements(
 ) {
 	const rowChunkSize = 500;
 	const statementBatchSize = 20;
-	const columns = [
+	const cueColumns = [
+		"id",
 		"talk_id",
 		"cue_index",
 		"start_seconds",
 		"start_label",
 		"text",
-		"search_text",
 	];
-	let rows: InValue[][] = [];
+	const searchColumns = ["rowid", "search_text"];
+	let cueRows: InValue[][] = [];
+	let searchRows: InValue[][] = [];
 	let statements: InStatement[] = [];
 	let cueCount = 0;
 
 	async function flushRows() {
-		const statement = buildBulkInsertStatement(
+		const cueStatement = buildBulkInsertStatement(
 			"transcript_cues",
-			columns,
-			rows,
+			cueColumns,
+			cueRows,
 		);
-		rows = [];
-		if (!statement) {
-			return;
-		}
+		const searchStatement = buildBulkInsertStatement(
+			"transcript_cue_search_fts",
+			searchColumns,
+			searchRows,
+		);
+		cueRows = [];
+		searchRows = [];
 
-		statements.push(statement);
+		if (cueStatement) {
+			statements.push(cueStatement);
+		}
+		if (searchStatement) {
+			statements.push(searchStatement);
+		}
 		if (statements.length >= statementBatchSize) {
 			await db.batch(statements);
 			statements = [];
@@ -218,15 +235,16 @@ async function batchTranscriptCueStatements(
 	for (const document of transcriptDocuments) {
 		for (const cue of document.cues) {
 			cueCount += 1;
-			rows.push([
+			cueRows.push([
+				cueCount,
 				document.talkId,
 				cue.index,
 				cue.start,
 				cue.startLabel,
 				cue.text,
-				normalizeForSearch(cue.text),
 			]);
-			if (rows.length >= rowChunkSize) {
+			searchRows.push([cueCount, normalizeForSearch(cue.text)]);
+			if (cueRows.length >= rowChunkSize) {
 				await flushRows();
 			}
 		}
