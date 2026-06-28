@@ -56,18 +56,7 @@ function readNumberColumn(row: Row, column: string): number | null {
 	return null;
 }
 
-function isMissingCueSearchFtsError(error: unknown): boolean {
-	return (
-		error instanceof Error &&
-		error.message.includes("no such table") &&
-		error.message.includes("transcript_cue_search_fts")
-	);
-}
-
-async function findTokenMatchesWithCueSearchFts(
-	token: string,
-	useCueSearchFts: boolean,
-): Promise<TokenMatches> {
+async function findTokenMatches(token: string): Promise<TokenMatches> {
 	const db = getLibsqlClient();
 	const useFtsMatch = canUseFtsMatch(token);
 	const useShortTokenIndex = canUseShortTokenIndex(token);
@@ -89,32 +78,15 @@ async function findTokenMatchesWithCueSearchFts(
 				sql: "SELECT talk_id FROM transcript_short_token_index WHERE token = ?",
 				args: [token],
 			}
-		: useFtsMatch && useCueSearchFts
-			? {
-					sql: `
-						SELECT transcript_cues.talk_id
-						FROM transcript_cue_search_fts
-						INNER JOIN transcript_cues
-							ON transcript_cues.id = transcript_cue_search_fts.rowid
-						WHERE transcript_cue_search_fts.search_text MATCH ?
-						GROUP BY transcript_cues.talk_id
-					`,
-					args: [quoteFtsPhrase(token)],
-				}
-			: useCueSearchFts
-				? {
-						sql: "SELECT talk_id FROM transcript_cues WHERE 0",
-						args: [],
-					}
-				: {
-						sql: `
+		: {
+				sql: `
 					SELECT talk_id
 					FROM transcript_cues
 					WHERE search_text LIKE ? ESCAPE '\\'
 					GROUP BY talk_id
 				`,
-						args: [`%${escapeLikeToken(token)}%`],
-					};
+				args: [`%${escapeLikeToken(token)}%`],
+			};
 	const [talkResult, transcriptResult] = await db.batch([
 		talkStatement,
 		transcriptStatement,
@@ -139,17 +111,6 @@ async function findTokenMatchesWithCueSearchFts(
 	}
 
 	return { talkIds, transcriptTalkIds };
-}
-
-async function findTokenMatches(token: string): Promise<TokenMatches> {
-	try {
-		return await findTokenMatchesWithCueSearchFts(token, true);
-	} catch (error) {
-		if (isMissingCueSearchFtsError(error)) {
-			return findTokenMatchesWithCueSearchFts(token, false);
-		}
-		throw error;
-	}
 }
 
 function intersectTokenMatches(tokenMatches: TokenMatches[]): Set<string> {
@@ -196,127 +157,6 @@ function chunkValues<TValue>(values: TValue[], size: number): TValue[][] {
 }
 
 async function loadTranscriptSnippets(
-	talkIds: string[],
-	tokens: string[],
-): Promise<Map<string, TalkSearchTranscriptSnippet[]>> {
-	const ftsTokens = tokens.filter((token) => canUseFtsMatch(token));
-	if (ftsTokens.length === 0) {
-		return new Map();
-	}
-
-	try {
-		return await loadCueSearchFtsTranscriptSnippets(talkIds, ftsTokens, tokens);
-	} catch (error) {
-		if (isMissingCueSearchFtsError(error)) {
-			return loadLegacyTranscriptSnippets(talkIds, tokens);
-		}
-		throw error;
-	}
-}
-
-async function loadCueSearchFtsTranscriptSnippets(
-	talkIds: string[],
-	ftsTokens: string[],
-	snippetTokens: string[],
-): Promise<Map<string, TalkSearchTranscriptSnippet[]>> {
-	const snippetsByTalkId = new Map<string, TalkSearchTranscriptSnippet[]>();
-	const seenSnippetsByTalkId = new Map<string, Set<string>>();
-	if (talkIds.length === 0) {
-		return snippetsByTalkId;
-	}
-
-	const db = getLibsqlClient();
-	const matchQuery = ftsTokens
-		.map((token) => quoteFtsPhrase(token))
-		.join(" OR ");
-
-	for (const chunk of chunkValues(talkIds, MAX_TALK_IDS_PER_QUERY)) {
-		const placeholders = chunk.map(() => "?").join(", ");
-		const statement: InStatement = {
-			sql: `
-				WITH matching_cues AS (
-					SELECT
-						transcript_cues.id,
-						transcript_cues.talk_id,
-						transcript_cues.cue_index,
-						ROW_NUMBER() OVER (
-							PARTITION BY transcript_cues.talk_id
-							ORDER BY transcript_cues.cue_index
-						) AS match_rank
-					FROM transcript_cue_search_fts
-					INNER JOIN transcript_cues
-						ON transcript_cues.id = transcript_cue_search_fts.rowid
-					WHERE transcript_cue_search_fts.search_text MATCH ?
-						AND transcript_cues.talk_id IN (${placeholders})
-				)
-				SELECT
-					transcript_cues.talk_id,
-					transcript_cues.cue_index,
-					transcript_cues.start_seconds,
-					transcript_cues.start_label,
-					transcript_cues.text
-				FROM matching_cues
-				INNER JOIN transcript_cues
-					ON transcript_cues.id = matching_cues.id
-				WHERE matching_cues.match_rank <= ?
-				ORDER BY transcript_cues.talk_id, transcript_cues.cue_index
-			`,
-			args: [matchQuery, ...chunk, MAX_MATCHING_CUES_PER_TALK],
-		};
-		const result = await db.execute(statement);
-
-		for (const row of result.rows) {
-			const talkId = readStringColumn(row, "talk_id");
-			if (!talkId) {
-				continue;
-			}
-			const existingSnippets = snippetsByTalkId.get(talkId) ?? [];
-			if (existingSnippets.length >= MAX_SNIPPETS_PER_TALK) {
-				continue;
-			}
-
-			const text = readStringColumn(row, "text");
-			const cueIndex = readNumberColumn(row, "cue_index");
-			const start = readNumberColumn(row, "start_seconds");
-			const startLabel = readStringColumn(row, "start_label");
-			if (!text || cueIndex === null || start === null || !startLabel) {
-				continue;
-			}
-
-			const snippetText = buildSearchSnippets(text, snippetTokens, {
-				maxSnippets: 1,
-			})[0];
-			if (!snippetText) {
-				continue;
-			}
-
-			let seenSnippets = seenSnippetsByTalkId.get(talkId);
-			if (!seenSnippets) {
-				seenSnippets = new Set();
-				seenSnippetsByTalkId.set(talkId, seenSnippets);
-			}
-			if (seenSnippets.has(snippetText)) {
-				continue;
-			}
-			seenSnippets.add(snippetText);
-
-			const nextSnippets = [
-				...existingSnippets,
-				{
-					text: snippetText,
-					cueIndex,
-					start,
-					startLabel,
-				},
-			];
-			snippetsByTalkId.set(talkId, nextSnippets);
-		}
-	}
-
-	return snippetsByTalkId;
-}
-
-async function loadLegacyTranscriptSnippets(
 	talkIds: string[],
 	tokens: string[],
 ): Promise<Map<string, TalkSearchTranscriptSnippet[]>> {
