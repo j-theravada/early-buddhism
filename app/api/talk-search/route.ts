@@ -4,7 +4,13 @@ import {
 	type TalkSearchApiResponse,
 } from "../../application/talk/search-api";
 import { tokenizeSearchQuery } from "../../application/talk/search";
-import { searchTalkDatabase } from "../../infrastructure/search/talk-search-database";
+import {
+	buildTranscriptAwareSearchData,
+	searchTranscriptAwareTalks,
+	type TranscriptAwareSearchData,
+} from "../../application/talk/transcript-search";
+import { getTalks } from "../../infrastructure/talk/repository";
+import { getTranscriptSearchDocuments } from "../../infrastructure/transcript/search-repository";
 
 const MAX_QUERY_LENGTH = 120;
 const SEARCH_RESPONSE_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -18,6 +24,17 @@ const searchResponseCache = new Map<
 	string,
 	{ expiresAt: number; response: TalkSearchApiResponse }
 >();
+let searchDataPromise: Promise<TranscriptAwareSearchData> | null = null;
+
+async function getSearchData(): Promise<TranscriptAwareSearchData> {
+	searchDataPromise ??= Promise.all([
+		getTalks(),
+		getTranscriptSearchDocuments(),
+	]).then(([talks, transcriptDocuments]) =>
+		buildTranscriptAwareSearchData(talks, transcriptDocuments),
+	);
+	return searchDataPromise;
+}
 
 function createSearchResponse(response: TalkSearchApiResponse) {
 	return NextResponse.json(response, {
@@ -88,11 +105,12 @@ export async function GET(request: Request) {
 	}
 
 	try {
-		const response = await searchTalkDatabase(normalizedQuery);
+		const searchData = await getSearchData();
+		const response = searchTranscriptAwareTalks(searchData, normalizedQuery);
 		writeCachedSearchResponse(cacheKey, response);
 		return createSearchResponse(response);
 	} catch (error) {
-		console.error("Talk search database query failed.", error);
+		console.error("Talk search query failed.", error);
 		return createSearchErrorResponse();
 	}
 }
