@@ -11,7 +11,7 @@
 		"db:seed:local": "GAKURIN_DATABASE_TARGET=local bun run scripts/seed-search-database.ts",
 		"db:seed:turso": "GAKURIN_DATABASE_TARGET=turso bun run scripts/seed-search-database.ts",
 		"update-popular-videos": "bun run scripts/update-popular-videos.ts",
-		"prebuild": "bun run generate-talks:build",
+		"prebuild": "bun run generate-talks:build && bun run db:seed:build",
 		"build": "next build",
 		"start": "next start",
 		"lint": "oxlint .",
