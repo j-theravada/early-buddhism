@@ -52,10 +52,10 @@ export default function Header() {
 
 	return (
 		<header
-			className={`fixed inset-x-0 top-0 z-50 h-16 border-b backdrop-blur-md transition-[background-color,border-color,box-shadow] duration-300 lg:h-20 ${
+			className={`fixed inset-x-0 top-0 z-50 h-16 border-b transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300 lg:h-20 ${
 				isScrolled
-					? "border-white/30 bg-white/90 shadow-[0_1px_18px_rgba(0,0,0,0.06)]"
-					: "border-transparent bg-transparent shadow-none"
+					? "border-white/30 bg-white/90 shadow-[0_1px_18px_rgba(0,0,0,0.06)] backdrop-blur-md"
+					: "border-transparent bg-transparent shadow-none backdrop-blur-0"
 			}`}
 		>
 			<div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-5 sm:px-8">

@@ -4,6 +4,7 @@ import { normalizeTalkId } from "../../domain/talk/id";
 import type { Talk } from "../../domain/talk/types";
 
 const SPREADSHEET_ID = "1QMyakqH1i-W_bbK3yJl7u_Q_Jb_AoM94W6F8Gg3y3CA";
+const SHAKYAMUNI_BASICS_TITLE = "釈迦牟尼仏陀～教えの基本".normalize("NFKC");
 
 export type ParseCSVToTalksOptions = {
 	audioLinkHeaders?: readonly string[];
@@ -155,6 +156,46 @@ function sanitizeLink(value: string): string | null {
 		return null;
 	}
 	return trimmed;
+}
+
+function safelyDecodeURIComponent(value: string): string {
+	try {
+		return decodeURIComponent(value);
+	} catch {
+		return value;
+	}
+}
+
+function shouldUseYoutubeForKnownBrokenAudioLink({
+	audioLink,
+	chapterNumber,
+	dvdId,
+	title,
+}: {
+	audioLink: string | null;
+	chapterNumber: string;
+	dvdId: string;
+	title: string;
+}): boolean {
+	if (!audioLink) {
+		return false;
+	}
+
+	if (dvdId && dvdId !== "AC-3") {
+		return false;
+	}
+
+	if (chapterNumber && chapterNumber !== "1") {
+		return false;
+	}
+
+	if (title.normalize("NFKC").trim() !== SHAKYAMUNI_BASICS_TITLE) {
+		return false;
+	}
+
+	const decodedAudioLink =
+		safelyDecodeURIComponent(audioLink).normalize("NFKC");
+	return decodedAudioLink.includes("/経典解説/AM-01");
 }
 
 function normalizeHeader(value: string): string {
@@ -451,7 +492,7 @@ export function parseCSVToTalks(
 			"音声フォーマット",
 			"ファイルのフォーマット",
 		]);
-		const audioLink = sanitizeLink(
+		const rawAudioLink = sanitizeLink(
 			getValueFromHeaders(cells, [
 				"リンク",
 				"音源リンク",
@@ -485,6 +526,14 @@ export function parseCSVToTalks(
 				"youtube",
 			]) || (cells[12] ? cells[12].trim() : ""),
 		);
+		const audioLink = shouldUseYoutubeForKnownBrokenAudioLink({
+			audioLink: rawAudioLink,
+			chapterNumber,
+			dvdId,
+			title,
+		})
+			? youtubeLink
+			: rawAudioLink;
 		const srtLink = sanitizeLink(getValueFromHeaders(cells, ["SRTリンク"]));
 		const classification = resolveContentClassification({
 			collectionSources: [
@@ -506,7 +555,7 @@ export function parseCSVToTalks(
 			`duration:${duration}`,
 			`language:${language}`,
 			`format:${format}`,
-			`audioLink:${audioLink ?? ""}`,
+			`audioLink:${rawAudioLink ?? ""}`,
 			`attachmentsLink:${attachmentsLink ?? ""}`,
 			`youtubeLink:${youtubeLink ?? ""}`,
 		]

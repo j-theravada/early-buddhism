@@ -192,6 +192,22 @@ describe("parseCSVToTalks", () => {
 		expect(talk?.audioLink).toBe("https://example.com/abhidhamma.mp3");
 	});
 
+	test("釈迦牟尼仏陀～教えの基本1巻のAM-01誤リンクは音声リンクもYouTubeに差し替える", () => {
+		const csv = [
+			"ID,ID(章),タイトル,内容,講師,言語,ファイルのフォーマット,YouTubeリンク,MP3リンク,公開・非公開",
+			",,釈迦牟尼仏陀～教えの基本,説明,スマナサーラ,日本語,MP3,https://youtu.be/qRXo5Jm7798,https://www.dropbox.com/scl/fo/m243wmor5vfmyguz2o3bi/AMuWtv57NQ8DKHSSmjtHfL0/%E7%B5%8C%E5%85%B8%E8%A7%A3%E8%AA%AC/AM-01?rlkey=688u2e4kbmtj32cvd5mb8dah5&dl=0,公開",
+		].join("\n");
+
+		const [talk] = parseCSVToTalks(csv, {
+			audioLinkHeaders: ["MP3リンク"],
+			collectionSources: ["経典解説"],
+			eventFallback: "経典解説",
+		});
+
+		expect(talk?.audioLink).toBe("https://youtu.be/qRXo5Jm7798");
+		expect(talk?.youtubeLink).toBe("https://youtu.be/qRXo5Jm7798");
+	});
+
 	test("タイトルだけではシリーズ分類しない", () => {
 		const csv = [
 			"ID,行事名,タイトル,内容,収録日,収録場所,収録時間,講師,言語,音声フォーマット,非公開",
