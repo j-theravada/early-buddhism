@@ -17,7 +17,7 @@ import {
 
 const TRANSCRIPT_DOWNLOAD_CONCURRENCY = 8;
 
-type TranscriptSource = {
+export type TranscriptSource = {
 	id: string;
 	srtLink: string | null;
 };
@@ -56,6 +56,12 @@ export function collectTranscriptDownloadTargets(
 			},
 		];
 	});
+}
+
+export function selectTranscriptSourceTalks<T extends TranscriptSource>(
+	talks: readonly T[],
+): T[] {
+	return talks.filter((talk) => Boolean(talk.srtLink));
 }
 
 export function normalizeTranscriptContent(

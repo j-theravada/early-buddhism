@@ -6,7 +6,7 @@ import type { TranscriptCue } from "../../domain/transcript/types";
 const TRANSCRIPTS_DIR = resolve(process.cwd(), "app/generated/transcripts");
 
 function isSafeTalkId(talkId: string) {
-	return /^[A-Za-z0-9_-]+$/.test(talkId);
+	return /^[A-Za-z0-9_()-]+$/.test(talkId);
 }
 
 export async function getTranscriptByTalkId(

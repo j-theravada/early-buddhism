@@ -6,6 +6,7 @@ import {
 	TALK_SHEET_SOURCES,
 } from "../app/infrastructure/talk/csv";
 import {
+	selectTranscriptSourceTalks,
 	writeGeneratedTranscriptSearchDocuments,
 	writeGeneratedTranscripts,
 } from "../app/infrastructure/transcript/generation";
@@ -75,9 +76,7 @@ async function main() {
 		const talks = (
 			await Promise.all(TALK_SHEET_SOURCES.map(fetchTalksFromSheetSource))
 		).flat();
-		const transcriptTalks = talks.filter(
-			(talk) => talk.collectionId === "monthly_talk",
-		);
+		const transcriptTalks = selectTranscriptSourceTalks(talks);
 		const transcriptResult = await writeGeneratedTranscripts(
 			transcriptsOutDir,
 			transcriptTalks,
@@ -87,7 +86,7 @@ async function main() {
 				? ` (retained ${transcriptResult.retainedCount} existing transcripts)`
 				: "";
 		console.log(
-			`Wrote ${transcriptResult.writtenCount} transcripts from ${transcriptTalks.length} monthly talks to ${transcriptsOutDir}${retainedMessage}`,
+			`Wrote ${transcriptResult.writtenCount} transcripts from ${transcriptTalks.length} talks with SRT links to ${transcriptsOutDir}${retainedMessage}`,
 		);
 		const transcriptSearchDocumentCount =
 			await writeGeneratedTranscriptSearchDocuments(

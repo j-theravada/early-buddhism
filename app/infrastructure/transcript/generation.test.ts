@@ -5,6 +5,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	collectTranscriptDownloadTargets,
 	normalizeTranscriptContent,
+	selectTranscriptSourceTalks,
 	writeGeneratedTranscriptSearchDocuments,
 	writeGeneratedTranscripts,
 } from "./generation";
@@ -28,6 +29,33 @@ describe("collectTranscriptDownloadTargets", () => {
 				sourceUrl: "https://drive.google.com/file/d/FILE_ID/view?usp=sharing",
 				downloadUrl: "https://drive.google.com/uc?export=download&id=FILE_ID",
 			},
+		]);
+	});
+});
+
+describe("selectTranscriptSourceTalks", () => {
+	test("コレクションに関係なくSRTリンクがあるトークを生成対象にする", () => {
+		const result = selectTranscriptSourceTalks([
+			{
+				id: "TALK-MONTHLY",
+				collectionId: "monthly_talk",
+				srtLink: "https://example.com/monthly.srt",
+			},
+			{
+				id: "TALK-DHAMMAPADA",
+				collectionId: "scripture_commentary",
+				srtLink: "https://example.com/dhammapada.srt",
+			},
+			{
+				id: "TALK-NO-SRT",
+				collectionId: "scripture_commentary",
+				srtLink: null,
+			},
+		]);
+
+		expect(result.map((talk) => talk.id)).toEqual([
+			"TALK-MONTHLY",
+			"TALK-DHAMMAPADA",
 		]);
 	});
 });
