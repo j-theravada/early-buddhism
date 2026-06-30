@@ -25,7 +25,6 @@ function pickTalkGalleryItem(talk: TalkForDisplay): TalkGalleryItem {
 		seriesLabel: talk.seriesLabel,
 		title: talk.title,
 		subtitle: talk.subtitle,
-		audioLink: talk.audioLink,
 		attachmentsLink: talk.attachmentsLink,
 		youtubeUrl: talk.youtubeUrl,
 		thumbnailUrl: talk.thumbnailUrl,

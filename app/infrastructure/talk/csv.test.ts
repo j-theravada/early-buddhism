@@ -139,9 +139,9 @@ describe("parseCSVToTalks", () => {
 		].join("\n");
 
 		const [talk] = parseCSVToTalks(csv, {
-			audioLinkHeaders: ["MP3リンク"],
 			collectionSources: ["経典解説"],
 			seriesSources: ["ダンマパダ"],
+			sourceMediaLinkHeaders: ["MP3リンク"],
 		});
 
 		expect(talk?.id).toMatch(/^TALK-DD-1-/);
@@ -149,7 +149,6 @@ describe("parseCSVToTalks", () => {
 		expect(talk?.collectionLabel).toBe("経典解説");
 		expect(talk?.seriesId).toBe("dhammapada");
 		expect(talk?.seriesLabel).toBe("ダンマパダ");
-		expect(talk?.audioLink).toBe("https://example.com/audio.mp3");
 		expect(talk?.youtubeLink).toBe("https://youtu.be/example");
 		expect(talk?.recordedOnDate?.toISOString()).toBe(
 			"2022-05-11T00:00:00.000Z",
@@ -179,32 +178,31 @@ describe("parseCSVToTalks", () => {
 		].join("\n");
 
 		const [talk] = parseCSVToTalks(csv, {
-			audioLinkHeaders: ["MP3リンク"],
 			collectionSources: ["経典解説"],
 			eventFallback: "アビダンマ",
 			seriesSources: ["アビダンマ"],
+			sourceMediaLinkHeaders: ["MP3リンク"],
 		});
 
 		expect(talk?.event).toBe("アビダンマ");
 		expect(talk?.collectionId).toBe("scripture_commentary");
 		expect(talk?.seriesId).toBe("abhidhamma");
 		expect(talk?.youtubeLink).toBe("https://youtu.be/abhidhamma");
-		expect(talk?.audioLink).toBe("https://example.com/abhidhamma.mp3");
 	});
 
-	test("釈迦牟尼仏陀～教えの基本1巻のAM-01誤リンクは音声リンクもYouTubeに差し替える", () => {
+	test("音声リンク列は公開Talkに出さずYouTubeリンクだけ取り込む", () => {
 		const csv = [
 			"ID,ID(章),タイトル,内容,講師,言語,ファイルのフォーマット,YouTubeリンク,MP3リンク,公開・非公開",
 			",,釈迦牟尼仏陀～教えの基本,説明,スマナサーラ,日本語,MP3,https://youtu.be/qRXo5Jm7798,https://www.dropbox.com/scl/fo/m243wmor5vfmyguz2o3bi/AMuWtv57NQ8DKHSSmjtHfL0/%E7%B5%8C%E5%85%B8%E8%A7%A3%E8%AA%AC/AM-01?rlkey=688u2e4kbmtj32cvd5mb8dah5&dl=0,公開",
 		].join("\n");
 
 		const [talk] = parseCSVToTalks(csv, {
-			audioLinkHeaders: ["MP3リンク"],
 			collectionSources: ["経典解説"],
 			eventFallback: "経典解説",
+			sourceMediaLinkHeaders: ["MP3リンク"],
 		});
 
-		expect(talk?.audioLink).toBe("https://youtu.be/qRXo5Jm7798");
+		expect(talk).not.toHaveProperty("audioLink");
 		expect(talk?.youtubeLink).toBe("https://youtu.be/qRXo5Jm7798");
 	});
 

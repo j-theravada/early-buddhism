@@ -4,13 +4,12 @@ import { normalizeTalkId } from "../../domain/talk/id";
 import type { Talk } from "../../domain/talk/types";
 
 const SPREADSHEET_ID = "1QMyakqH1i-W_bbK3yJl7u_Q_Jb_AoM94W6F8Gg3y3CA";
-const SHAKYAMUNI_BASICS_TITLE = "釈迦牟尼仏陀～教えの基本".normalize("NFKC");
 
 export type ParseCSVToTalksOptions = {
-	audioLinkHeaders?: readonly string[];
 	collectionSources?: readonly string[];
 	eventFallback?: string;
 	seriesSources?: readonly string[];
+	sourceMediaLinkHeaders?: readonly string[];
 };
 
 export type TalkSheetSource = {
@@ -35,28 +34,28 @@ export const TALK_SHEET_SOURCES: readonly TalkSheetSource[] = [
 		name: "ダンマパダ（DD）",
 		url: buildSheetCsvUrl("1726614353"),
 		parseOptions: {
-			audioLinkHeaders: ["MP3リンク", "MP4リンク", "ISOリンク"],
 			collectionSources: ["経典解説"],
 			seriesSources: ["ダンマパダ"],
+			sourceMediaLinkHeaders: ["MP3リンク", "MP4リンク", "ISOリンク"],
 		},
 	},
 	{
 		name: "アビダンマ",
 		url: buildSheetCsvUrl("1186405772"),
 		parseOptions: {
-			audioLinkHeaders: ["MP3リンク"],
 			collectionSources: ["経典解説"],
 			eventFallback: "アビダンマ",
 			seriesSources: ["アビダンマ"],
+			sourceMediaLinkHeaders: ["MP3リンク"],
 		},
 	},
 	{
 		name: "経典解説",
 		url: buildSheetCsvUrl("2131360778"),
 		parseOptions: {
-			audioLinkHeaders: ["MP3リンク"],
 			collectionSources: ["経典解説"],
 			eventFallback: "経典解説",
+			sourceMediaLinkHeaders: ["MP3リンク"],
 		},
 	},
 ];
@@ -156,46 +155,6 @@ function sanitizeLink(value: string): string | null {
 		return null;
 	}
 	return trimmed;
-}
-
-function safelyDecodeURIComponent(value: string): string {
-	try {
-		return decodeURIComponent(value);
-	} catch {
-		return value;
-	}
-}
-
-function shouldUseYoutubeForKnownBrokenAudioLink({
-	audioLink,
-	chapterNumber,
-	dvdId,
-	title,
-}: {
-	audioLink: string | null;
-	chapterNumber: string;
-	dvdId: string;
-	title: string;
-}): boolean {
-	if (!audioLink) {
-		return false;
-	}
-
-	if (dvdId && dvdId !== "AC-3") {
-		return false;
-	}
-
-	if (chapterNumber && chapterNumber !== "1") {
-		return false;
-	}
-
-	if (title.normalize("NFKC").trim() !== SHAKYAMUNI_BASICS_TITLE) {
-		return false;
-	}
-
-	const decodedAudioLink =
-		safelyDecodeURIComponent(audioLink).normalize("NFKC");
-	return decodedAudioLink.includes("/経典解説/AM-01");
 }
 
 function normalizeHeader(value: string): string {
@@ -492,11 +451,11 @@ export function parseCSVToTalks(
 			"音声フォーマット",
 			"ファイルのフォーマット",
 		]);
-		const rawAudioLink = sanitizeLink(
+		const rawSourceMediaLink = sanitizeLink(
 			getValueFromHeaders(cells, [
 				"リンク",
 				"音源リンク",
-				...Array.from(options.audioLinkHeaders ?? []),
+				...Array.from(options.sourceMediaLinkHeaders ?? []),
 			]),
 		);
 		const attachmentsLink = sanitizeLink(
@@ -526,14 +485,6 @@ export function parseCSVToTalks(
 				"youtube",
 			]) || (cells[12] ? cells[12].trim() : ""),
 		);
-		const audioLink = shouldUseYoutubeForKnownBrokenAudioLink({
-			audioLink: rawAudioLink,
-			chapterNumber,
-			dvdId,
-			title,
-		})
-			? youtubeLink
-			: rawAudioLink;
 		const srtLink = sanitizeLink(getValueFromHeaders(cells, ["SRTリンク"]));
 		const classification = resolveContentClassification({
 			collectionSources: [
@@ -555,7 +506,7 @@ export function parseCSVToTalks(
 			`duration:${duration}`,
 			`language:${language}`,
 			`format:${format}`,
-			`audioLink:${rawAudioLink ?? ""}`,
+			`audioLink:${rawSourceMediaLink ?? ""}`,
 			`attachmentsLink:${attachmentsLink ?? ""}`,
 			`youtubeLink:${youtubeLink ?? ""}`,
 		]
@@ -606,7 +557,6 @@ export function parseCSVToTalks(
 			speaker,
 			language,
 			format,
-			audioLink,
 			attachmentsLink,
 			slideLinks,
 			youtubeLink,

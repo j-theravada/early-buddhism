@@ -30,7 +30,6 @@ export type TalkContentItem = ContentItemBase & {
 	speaker: string;
 	language: string;
 	format: string;
-	audioLink: string | null;
 	attachmentsLink: string | null;
 	slideLinks: string[];
 	youtubeLink: string | null;

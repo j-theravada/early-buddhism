@@ -11,7 +11,6 @@ export type TalkForDisplay = ContentItemBase & {
 	speaker: string;
 	duration: string;
 	language: string;
-	audioLink: string | null;
 	attachmentsLink: string | null;
 	youtubeUrl: string | null;
 	thumbnailUrl: string | null;
@@ -32,7 +31,6 @@ export type TalkGalleryItem = Pick<
 	| "seriesLabel"
 	| "title"
 	| "subtitle"
-	| "audioLink"
 	| "attachmentsLink"
 	| "youtubeUrl"
 	| "thumbnailUrl"

@@ -26,7 +26,6 @@ function createTalk(
 		speaker: "スマナサーラ",
 		duration: "1:00:00",
 		language: "日本語",
-		audioLink: null,
 		attachmentsLink: null,
 		youtubeUrl: null,
 		thumbnailUrl: null,

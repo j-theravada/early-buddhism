@@ -25,9 +25,9 @@ export function getTalkTitle(
 }
 
 export function getPrimaryTalkMediaUrl(
-	talk: Pick<Talk, "youtubeLink" | "audioLink">,
+	talk: Pick<Talk, "youtubeLink">,
 ): string | null {
-	return talk.youtubeLink || talk.audioLink || null;
+	return talk.youtubeLink || null;
 }
 
 export function transformTalkToDisplay(
@@ -82,7 +82,6 @@ export function transformTalkToDisplay(
 		speaker: normalizeSumanasaraJapaneseName(talk.speaker || "—"),
 		duration: talk.duration || "—",
 		language: talk.language || "—",
-		audioLink: talk.audioLink,
 		attachmentsLink: talk.attachmentsLink,
 		youtubeUrl: finalYoutubeUrl,
 		thumbnailUrl,

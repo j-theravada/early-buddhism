@@ -26,7 +26,6 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		speaker: "アルボムッレ・スマナサーラ",
 		language: "日本語",
 		format: "ISO",
-		audioLink: null,
 		attachmentsLink: null,
 		slideLinks: [],
 		youtubeLink: null,

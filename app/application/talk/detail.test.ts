@@ -24,7 +24,6 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 		speaker: "アルボムッレ・スマナサーラ",
 		language: "日本語",
 		format: "ISO",
-		audioLink: "https://example.com/audio.mp3",
 		attachmentsLink: "https://example.com/notes.pdf",
 		slideLinks: ["https://docs.google.com/presentation/d/slide-1/edit"],
 		youtubeLink: "https://youtu.be/ZZYaasluSAA?si=test",
@@ -67,7 +66,6 @@ describe("talk detail application helpers", () => {
 			"収録日",
 		]);
 		expect(result.resourceLinks.map((link) => link.label)).toEqual([
-			"音源を聞く",
 			"スライドを見る",
 			"添付データ",
 		]);

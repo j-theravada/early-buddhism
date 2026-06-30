@@ -42,7 +42,6 @@ export type TalkDetailPageData = {
 		youtubeUrl: string | null;
 		embedUrl: string | null;
 		thumbnailUrl: string | null;
-		audioLink: string | null;
 		attachmentsLink: string | null;
 		slideLinks: string[];
 	};
@@ -62,8 +61,6 @@ export type TalkDetailPageData = {
 	} | null;
 };
 
-const AUDIO_LINK_CLASS_NAME =
-	"inline-flex items-center gap-2 rounded-full bg-gray-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-gray-700";
 const SLIDE_LINK_CLASS_NAME =
 	"inline-flex items-center gap-2 rounded-full bg-amber-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-amber-700";
 const ATTACHMENT_LINK_CLASS_NAME =
@@ -112,7 +109,6 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 		thumbnailUrl: videoId
 			? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
 			: null,
-		audioLink: talk.audioLink,
 		attachmentsLink: talk.attachmentsLink,
 		slideLinks: talk.slideLinks,
 	};
@@ -133,13 +129,6 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 	];
 
 	const resourceLinks: TalkResourceLink[] = [
-		talkData.audioLink
-			? {
-					label: "音源を聞く",
-					href: talkData.audioLink,
-					className: AUDIO_LINK_CLASS_NAME,
-				}
-			: null,
 		...talkData.slideLinks.map((href, index) => ({
 			label:
 				talkData.slideLinks.length === 1
