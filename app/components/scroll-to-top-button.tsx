@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { addMediaQueryChangeListener } from "../infrastructure/browser/media-query";
 import { FEEDBACK_FORM_URL } from "../utils/site-links";
 
 const SHOW_AFTER_PX = 400;
@@ -15,8 +16,7 @@ export default function ScrollToTopButton() {
 		const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 		const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches);
 		updatePreference();
-		mediaQuery.addEventListener("change", updatePreference);
-		return () => mediaQuery.removeEventListener("change", updatePreference);
+		return addMediaQueryChangeListener(mediaQuery, updatePreference);
 	}, []);
 
 	useEffect(() => {

@@ -16,6 +16,7 @@ import type {
 	ContentSeriesId,
 } from "../../domain/content/types";
 import type { TalkGalleryItem } from "../../domain/talk/types";
+import { addMediaQueryChangeListener } from "../../infrastructure/browser/media-query";
 type ViewMode = "date" | "theme";
 
 const MEDIA_QUERY_SM = "(min-width: 640px)";
@@ -67,12 +68,18 @@ function useResponsiveColumns() {
 		const mediaQueryLg = window.matchMedia(MEDIA_QUERY_LG);
 
 		updateColumns();
-		mediaQuerySm.addEventListener("change", updateColumns);
-		mediaQueryLg.addEventListener("change", updateColumns);
+		const removeSmListener = addMediaQueryChangeListener(
+			mediaQuerySm,
+			updateColumns,
+		);
+		const removeLgListener = addMediaQueryChangeListener(
+			mediaQueryLg,
+			updateColumns,
+		);
 
 		return () => {
-			mediaQuerySm.removeEventListener("change", updateColumns);
-			mediaQueryLg.removeEventListener("change", updateColumns);
+			removeSmListener();
+			removeLgListener();
 		};
 	}, []);
 

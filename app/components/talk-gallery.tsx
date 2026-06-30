@@ -17,6 +17,11 @@ import type {
 	ContentSeriesId,
 } from "../domain/content/types";
 import type { TalkGalleryItem } from "../domain/talk/types";
+import {
+	markTalkGalleryRestorePending,
+	readAndConsumeTalkGalleryRestoreSnapshot,
+	writeTalkGalleryVirtuosoState,
+} from "../infrastructure/browser/talk-gallery-storage";
 import DecadeJumpNav from "./talk-gallery/decade-jump-nav";
 import TalkGalleryRow from "./talk-gallery/talk-gallery-row";
 import TalkGallerySectionHeader from "./talk-gallery/talk-gallery-section-header";
@@ -28,6 +33,9 @@ type Props = {
 
 export default function TalkGallery({ talks }: Props) {
 	const virtuosoRef = useRef<GroupedVirtuosoHandle>(null);
+	const [restoreStateFrom] = useState(() =>
+		readAndConsumeTalkGalleryRestoreSnapshot(),
+	);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCollectionId, setSelectedCollectionId] = useState<
@@ -157,7 +165,10 @@ export default function TalkGallery({ talks }: Props) {
 		[searchQuery, selectedCollectionId, updateGalleryFilters],
 	);
 
-	const handleNavigateToTalk = useCallback(() => {}, []);
+	const handleNavigateToTalk = useCallback(() => {
+		markTalkGalleryRestorePending();
+		virtuosoRef.current?.getState(writeTalkGalleryVirtuosoState);
+	}, []);
 
 	const handleJumpToGroup = useCallback((groupIndex: number) => {
 		if (groupIndex === 0) {
@@ -329,6 +340,7 @@ export default function TalkGallery({ talks }: Props) {
 						);
 					}}
 					ref={virtuosoRef}
+					restoreStateFrom={restoreStateFrom}
 					useWindowScroll
 				/>
 			)}
