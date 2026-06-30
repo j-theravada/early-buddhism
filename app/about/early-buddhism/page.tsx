@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import AboutPageLayout, {
 	AboutTextSection,
 } from "../../components/about-page-layout";
+import { buildCanonicalUrl } from "../../utils/seo";
 
 export const metadata: Metadata = {
 	title: "初期仏教はお釈迦さまの教え",
 	description:
 		"初期仏教とは釈尊ご自身の教えを指します。テーラワーダ仏教とアビダンマの役割を紹介します。",
+	alternates: {
+		canonical: buildCanonicalUrl("/about/early-buddhism"),
+	},
 };
 
 export default function EarlyBuddhismPage() {

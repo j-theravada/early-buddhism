@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 import ClientPageChrome from "./components/client-page-chrome";
 import { SUMANASARA_JA_NAME } from "./domain/teacher/sumanasara";
+import { SITE_NAME, SITE_URL } from "./utils/seo";
 import "./globals.css";
 
 const inter = Inter({
@@ -11,18 +12,17 @@ const inter = Inter({
 	display: "swap",
 });
 
-const siteUrl = "https://early-buddhism.j-theravada.com";
 const clarityProjectId = "x7vb96xmqu";
 
 export const metadata: Metadata = {
-	metadataBase: new URL(siteUrl),
-	title: { default: "初期仏教塾", template: "%s | 初期仏教塾" },
+	metadataBase: new URL(SITE_URL),
+	title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
 	description: `${SUMANASARA_JA_NAME}の珠玉の法話で学ぶ。`,
 	icons: {
 		icon: [{ url: "/jtba-mark.png", type: "image/png" }],
 	},
 	openGraph: {
-		siteName: "初期仏教塾",
+		siteName: SITE_NAME,
 		locale: "ja_JP",
 		type: "website",
 	},
@@ -82,15 +82,15 @@ export default function RootLayout({
 							{
 								"@context": "https://schema.org",
 								"@type": "WebSite",
-								name: "初期仏教塾",
-								url: siteUrl,
+								name: SITE_NAME,
+								url: SITE_URL,
 							},
 							{
 								"@context": "https://schema.org",
 								"@type": "Organization",
-								name: "初期仏教塾",
-								url: siteUrl,
-								logo: `${siteUrl}/jtba-mark.png`,
+								name: SITE_NAME,
+								url: SITE_URL,
+								logo: `${SITE_URL}/jtba-mark.png`,
 							},
 						]),
 					}}

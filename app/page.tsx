@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getPopularVideos } from "./application/analytics/popular-videos";
 import { buildTalkGalleryTalks } from "./application/talk/gallery";
 import ClientHomeActions from "./components/client-home-actions";
@@ -15,6 +16,13 @@ import {
 } from "./components/home-sections";
 import { getNewsItems } from "./infrastructure/news/repository";
 import { getTalks } from "./infrastructure/talk/repository";
+import { buildCanonicalUrl } from "./utils/seo";
+
+export const metadata: Metadata = {
+	alternates: {
+		canonical: buildCanonicalUrl("/"),
+	},
+};
 
 export default async function Home() {
 	const [talks, newsItems] = await Promise.all([getTalks(), getNewsItems()]);

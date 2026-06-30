@@ -6,7 +6,9 @@ import { normalizeSumanasaraJapaneseName } from "../../domain/teacher/sumanasara
 import type { Talk } from "../../domain/talk/types";
 import { formatJapaneseDate } from "../../utils/date";
 import { toIsoDuration } from "../../utils/duration";
+import { buildCanonicalUrl, SITE_NAME } from "../../utils/seo";
 import { extractYouTubeVideoId } from "../../utils/youtube";
+import { buildTalkDetailHref } from "./links";
 
 export type TalkDetailRow = {
 	label: string;
@@ -22,7 +24,19 @@ export type TalkResourceLink = {
 export type TalkMetadataData = {
 	title: string;
 	description: string;
+	canonicalUrl: string;
 	thumbnailUrl?: string;
+};
+
+export type BreadcrumbJsonLd = {
+	"@context": string;
+	"@type": string;
+	itemListElement: Array<{
+		"@type": string;
+		position: number;
+		name: string;
+		item: string;
+	}>;
 };
 
 export type TalkDetailPageData = {
@@ -59,15 +73,88 @@ export type TalkDetailPageData = {
 		embedUrl: string;
 		duration?: string | null;
 	} | null;
+	breadcrumbJsonLd: BreadcrumbJsonLd;
 };
 
 const SLIDE_LINK_CLASS_NAME =
 	"inline-flex items-center gap-2 rounded-full bg-amber-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-amber-700";
 const ATTACHMENT_LINK_CLASS_NAME =
 	"inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-700";
+const MAX_META_DESCRIPTION_LENGTH = 120;
+
+function normalizeDescriptionText(text: string): string {
+	return text
+		.replace(/\r\n/g, " ")
+		.replace(/\n/g, " ")
+		.replace(/\r/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+}
+
+function truncateDescription(text: string): string {
+	const normalizedText = normalizeDescriptionText(text);
+	if (normalizedText.length <= MAX_META_DESCRIPTION_LENGTH) {
+		return normalizedText;
+	}
+	return `${normalizedText.slice(0, MAX_META_DESCRIPTION_LENGTH - 1)}…`;
+}
+
+function buildGeneratedTalkDescription(talk: Talk): string {
+	const title = getTalkTitle(talk);
+	const speaker = talk.speaker
+		? normalizeSumanasaraJapaneseName(talk.speaker)
+		: "スマナサーラ長老";
+	const recordedOn = talk.recordedOnDate
+		? `${formatJapaneseDate(talk.recordedOnDate, talk.recordedOn)}収録の`
+		: "";
+	const themeLabel = talk.seriesLabel || talk.collectionLabel || "初期仏教";
+	const mediaLabel = talk.srtLink ? "動画と文字起こし" : "動画";
+
+	return `${title}。${speaker}による${recordedOn}${themeLabel}の法話を${mediaLabel}で学べます。`;
+}
 
 function getTalkDescription(talk: Talk): string {
-	return talk.description || "初期仏教の法話を静かに味わうアーカイブ";
+	const title = normalizeDescriptionText(getTalkTitle(talk));
+	const description = normalizeDescriptionText(talk.description);
+
+	if (description && description !== title) {
+		return truncateDescription(description);
+	}
+
+	return truncateDescription(buildGeneratedTalkDescription(talk));
+}
+
+function formatStructuredDataDate(date: Date | null): string | null {
+	return date ? date.toISOString().slice(0, 10) : null;
+}
+
+function buildTalkBreadcrumbJsonLd(talk: Talk): BreadcrumbJsonLd {
+	const detailUrl = buildCanonicalUrl(buildTalkDetailHref(talk.id));
+
+	return {
+		"@context": "https://schema.org",
+		"@type": "BreadcrumbList",
+		itemListElement: [
+			{
+				"@type": "ListItem",
+				position: 1,
+				name: SITE_NAME,
+				item: buildCanonicalUrl("/"),
+			},
+			{
+				"@type": "ListItem",
+				position: 2,
+				name: "動画一覧",
+				item: buildCanonicalUrl("/talks"),
+			},
+			{
+				"@type": "ListItem",
+				position: 3,
+				name: getTalkTitle(talk),
+				item: detailUrl,
+			},
+		],
+	};
 }
 
 export function buildTalkMetadata(talk: Talk): TalkMetadataData {
@@ -79,6 +166,7 @@ export function buildTalkMetadata(talk: Talk): TalkMetadataData {
 	return {
 		title,
 		description,
+		canonicalUrl: buildCanonicalUrl(buildTalkDetailHref(talk.id)),
 		...(videoId && {
 			thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
 		}),
@@ -90,6 +178,7 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 	const videoId = youtubeUrl ? extractYouTubeVideoId(youtubeUrl) : null;
 	const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : null;
 	const recordedOnRaw = talk.recordedOn || "日付不明";
+	const structuredDataDate = formatStructuredDataDate(talk.recordedOnDate);
 
 	const talkData = {
 		id: talk.id,
@@ -158,8 +247,8 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 					name: talkData.title,
 					description: getTalkDescription(talk),
 					thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-					...(talk.recordedOnDate && {
-						uploadDate: talk.recordedOnDate.toISOString(),
+					...(structuredDataDate && {
+						uploadDate: structuredDataDate,
 					}),
 					contentUrl: youtubeUrl,
 					embedUrl,
@@ -175,5 +264,6 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 		resourceLinks,
 		embedUrlPrefix,
 		videoJsonLd,
+		breadcrumbJsonLd: buildTalkBreadcrumbJsonLd(talk),
 	};
 }

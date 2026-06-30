@@ -7,12 +7,16 @@ import TalkGalleryLoader from "../components/talk-gallery-loader";
 import { SUMANASARA_JA_NAME } from "../domain/teacher/sumanasara";
 import type { TalkGalleryItem } from "../domain/talk/types";
 import { getTalks } from "../infrastructure/talk/repository";
+import { buildCanonicalUrl } from "../utils/seo";
 
 const INITIAL_TALK_PREVIEW_COUNT = 6;
 
 export const metadata: Metadata = {
 	title: "動画一覧",
 	description: `${SUMANASARA_JA_NAME}の法話動画を一覧で探せます。`,
+	alternates: {
+		canonical: buildCanonicalUrl("/talks"),
+	},
 };
 
 export default async function TalksPage() {

@@ -6,10 +6,14 @@ import {
 	SUMANASARA_JA_NAME,
 	SUMANASARA_ROMAN_NAME,
 } from "../../domain/teacher/sumanasara";
+import { buildCanonicalUrl } from "../../utils/seo";
 
 export const metadata: Metadata = {
 	title: `${SUMANASARA_JA_NAME}のプロフィール`,
 	description: `スリランカ上座仏教長老・${SUMANASARA_JA_NAME}の歩みと活動を紹介します。`,
+	alternates: {
+		canonical: buildCanonicalUrl("/about/sumanasara"),
+	},
 };
 
 const profileParagraphs = [

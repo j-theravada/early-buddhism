@@ -1,26 +1,33 @@
 import type { MetadataRoute } from "next";
 import { buildTalkDetailHref } from "./application/talk/links";
 import { getTalks } from "./infrastructure/talk/repository";
-
-const BASE = "https://early-buddhism.j-theravada.com";
+import { buildCanonicalUrl } from "./utils/seo";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const staticPages: MetadataRoute.Sitemap = [
-		{ url: BASE, changeFrequency: "weekly", priority: 1 },
-		{ url: `${BASE}/talks`, changeFrequency: "weekly", priority: 0.8 },
-		{ url: `${BASE}/about`, changeFrequency: "monthly", priority: 0.7 },
+		{ url: buildCanonicalUrl("/"), changeFrequency: "weekly", priority: 1 },
 		{
-			url: `${BASE}/about/sumanasara`,
+			url: buildCanonicalUrl("/talks"),
+			changeFrequency: "weekly",
+			priority: 0.8,
+		},
+		{
+			url: buildCanonicalUrl("/about"),
 			changeFrequency: "monthly",
 			priority: 0.7,
 		},
 		{
-			url: `${BASE}/about/early-buddhism`,
+			url: buildCanonicalUrl("/about/sumanasara"),
 			changeFrequency: "monthly",
 			priority: 0.7,
 		},
 		{
-			url: `${BASE}/about/vipassana`,
+			url: buildCanonicalUrl("/about/early-buddhism"),
+			changeFrequency: "monthly",
+			priority: 0.7,
+		},
+		{
+			url: buildCanonicalUrl("/about/vipassana"),
 			changeFrequency: "monthly",
 			priority: 0.7,
 		},
@@ -28,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 	const talks = await getTalks();
 	const talkPages: MetadataRoute.Sitemap = talks.map((talk) => ({
-		url: `${BASE}${buildTalkDetailHref(talk.id)}`,
+		url: buildCanonicalUrl(buildTalkDetailHref(talk.id)),
 		...(talk.recordedOnDate && { lastModified: talk.recordedOnDate }),
 		changeFrequency: "monthly",
 		priority: 0.6,

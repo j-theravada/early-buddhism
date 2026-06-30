@@ -42,9 +42,28 @@ describe("talk detail application helpers", () => {
 		expect(result.description).toBe(
 			"病気は決して肉体だけの問題ではない。心のあり方が病気を作り出す。",
 		);
+		expect(result.canonicalUrl).toBe(
+			"https://early-buddhism.j-theravada.com/talks/TALK-1",
+		);
 		expect(result.thumbnailUrl).toBe(
 			"https://img.youtube.com/vi/ZZYaasluSAA/hqdefault.jpg",
 		);
+	});
+
+	test("説明文が空のときは法話ごとの固有descriptionを生成する", () => {
+		const talk = createTalk({
+			title: "慈悲の瞑想",
+			description: "",
+			seriesLabel: "瞑想",
+			srtLink: "https://example.com/transcript.srt",
+		});
+
+		const result = buildTalkMetadata(talk);
+
+		expect(result.description).toContain("慈悲の瞑想");
+		expect(result.description).toContain(SUMANASARA_JA_NAME);
+		expect(result.description).toContain("瞑想の法話");
+		expect(result.description).toContain("動画と文字起こし");
 	});
 
 	test("詳細ページ用データを組み立てる", () => {
@@ -72,6 +91,27 @@ describe("talk detail application helpers", () => {
 		expect(result.videoJsonLd?.description).toBe(
 			"病気は決して肉体だけの問題ではない。心のあり方が病気を作り出す。",
 		);
+		expect(result.videoJsonLd?.uploadDate).toBe("1995-09-09");
+		expect(result.breadcrumbJsonLd.itemListElement).toEqual([
+			{
+				"@type": "ListItem",
+				position: 1,
+				name: "初期仏教塾",
+				item: "https://early-buddhism.j-theravada.com",
+			},
+			{
+				"@type": "ListItem",
+				position: 2,
+				name: "動画一覧",
+				item: "https://early-buddhism.j-theravada.com/talks",
+			},
+			{
+				"@type": "ListItem",
+				position: 3,
+				name: "心と病気の関係",
+				item: "https://early-buddhism.j-theravada.com/talks/TALK-1",
+			},
+		]);
 	});
 
 	test("シリーズがある詳細ページではシリーズ行を出す", () => {

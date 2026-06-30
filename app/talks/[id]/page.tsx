@@ -57,10 +57,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	return {
 		title: metadataData.title,
 		description: metadataData.description,
+		alternates: {
+			canonical: metadataData.canonicalUrl,
+		},
 		openGraph: {
 			title: metadataData.title,
 			description: metadataData.description,
 			type: "article",
+			url: metadataData.canonicalUrl,
 			...(metadataData.thumbnailUrl && {
 				images: [{ url: metadataData.thumbnailUrl, width: 480, height: 360 }],
 			}),
@@ -124,6 +128,17 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 			</header>
 
 			<main className="w-full mx-auto max-w-4xl px-6 py-12 sm:px-8 flex-1">
+				<div className="mb-8 space-y-3">
+					<p className="text-sm font-medium text-amber-700">
+						{pageData.talk.seriesLabel
+							? `${pageData.talk.collectionLabel} / ${pageData.talk.seriesLabel}`
+							: pageData.talk.collectionLabel}
+					</p>
+					<h1 className="text-2xl font-semibold leading-relaxed text-gray-950 sm:text-3xl">
+						{pageData.talk.title}
+					</h1>
+				</div>
+
 				<TalkDetailPlayer
 					embedUrl={pageData.talk.embedUrl}
 					thumbnailUrl={pageData.talk.thumbnailUrl}
@@ -199,6 +214,14 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 			</main>
 
 			<Footer maxWidth="4xl" />
+
+			<script
+				// JSON-LD structured data
+				dangerouslySetInnerHTML={{
+					__html: JSON.stringify(pageData.breadcrumbJsonLd),
+				}}
+				type="application/ld+json"
+			/>
 
 			{pageData.videoJsonLd && (
 				<script

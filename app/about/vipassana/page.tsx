@@ -3,11 +3,15 @@ import AboutPageLayout, {
 	AboutQuote,
 	AboutTextSection,
 } from "../../components/about-page-layout";
+import { buildCanonicalUrl } from "../../utils/seo";
 
 export const metadata: Metadata = {
 	title: "ヴィパッサナー瞑想",
 	description:
 		"ヴィパッサナー（VIPASSANĀ）は、お釈迦さまが、我々に確実に悟りを体験できるように教えられた実践方法（修習，瞑想）です。",
+	alternates: {
+		canonical: buildCanonicalUrl("/about/vipassana"),
+	},
 };
 
 const sections = [

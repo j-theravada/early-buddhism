@@ -3,11 +3,15 @@ import AboutPageLayout, {
 	AboutTextSection,
 } from "../components/about-page-layout";
 import { SUMANASARA_JA_NAME } from "../domain/teacher/sumanasara";
+import { buildCanonicalUrl } from "../utils/seo";
 
 export const metadata: Metadata = {
 	title: "このサイトについて",
 	description:
 		"初期仏教塾は、お釈迦様の真の教えを現代の言葉で学ぶためのサイトです。",
+	alternates: {
+		canonical: buildCanonicalUrl("/about"),
+	},
 };
 
 export default function AboutPage() {

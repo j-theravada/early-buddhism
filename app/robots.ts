@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { buildCanonicalUrl } from "./utils/seo";
 
 export default function robots(): MetadataRoute.Robots {
 	return {
@@ -6,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
 			userAgent: "*",
 			allow: "/",
 		},
-		sitemap: "https://early-buddhism.j-theravada.com/sitemap.xml",
+		sitemap: buildCanonicalUrl("/sitemap.xml"),
 	};
 }
