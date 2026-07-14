@@ -1,0 +1,4 @@
+interface:
+  display_name: "Early Buddhism Turso Import"
+  short_description: "Import local search SQLite to Turso"
+  default_prompt: "Use $early-buddhism-turso-import to safely import this repository's search DB to Turso."
