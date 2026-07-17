@@ -119,6 +119,15 @@ export default function TranscriptSectionLoader({
 	const [retryToken, setRetryToken] = useState(0);
 
 	useEffect(() => {
+		if (
+			getInitialTranscriptMode(targetCueIndex, transcriptHighlightQuery) ===
+			"timeline"
+		) {
+			setMode("timeline");
+		}
+	}, [targetCueIndex, transcriptHighlightQuery]);
+
+	useEffect(() => {
 		if (mode !== "timeline" || transcript !== null) return;
 
 		const controller = new AbortController();
