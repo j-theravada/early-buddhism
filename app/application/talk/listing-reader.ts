@@ -34,6 +34,7 @@ export function createTalkListingReader(
 	const maxEntries =
 		options.maxSearchCacheEntries ?? TALK_SEARCH_MATCH_CACHE_MAX_ENTRIES;
 	const cache = new Map<string, { expiresAt: number; talkIds: string[] }>();
+	const inFlight = new Map<string, Promise<string[]>>();
 
 	async function readMatchingIds(query: string) {
 		const tokens = tokenizeSearchQuery(query);
@@ -42,16 +43,28 @@ export function createTalkListingReader(
 		const cached = cache.get(key);
 		if (cached && cached.expiresAt > now()) return cached.talkIds;
 		if (cached) cache.delete(key);
+		const pending = inFlight.get(key);
+		if (pending) return pending;
 
-		const talkIds = [
-			...(await dependencies.findMatchingTalkIds(tokens.join(" "))),
-		];
-		if (cache.size >= maxEntries) {
-			const oldestKey = cache.keys().next().value;
-			if (oldestKey !== undefined) cache.delete(oldestKey);
+		const loadPromise = (async () => {
+			const talkIds = [
+				...(await dependencies.findMatchingTalkIds(tokens.join(" "))),
+			];
+			if (cache.size >= maxEntries) {
+				const oldestKey = cache.keys().next().value;
+				if (oldestKey !== undefined) cache.delete(oldestKey);
+			}
+			cache.set(key, { expiresAt: now() + ttl, talkIds });
+			return talkIds;
+		})();
+		inFlight.set(key, loadPromise);
+		try {
+			return await loadPromise;
+		} finally {
+			if (inFlight.get(key) === loadPromise) {
+				inFlight.delete(key);
+			}
 		}
-		cache.set(key, { expiresAt: now() + ttl, talkIds });
-		return talkIds;
 	}
 
 	return async function readTalkListingPage(

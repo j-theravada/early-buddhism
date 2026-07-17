@@ -97,7 +97,9 @@ describe("TalkListing", () => {
 		);
 
 		expect(html).toContain('href="/talks/page/2#talk-decade-2010"');
-		expect(html).toContain('id="talk-decade-2010"');
+		expect(html).toContain(
+			'class="scroll-mt-72 lg:scroll-mt-80" id="talk-decade-2010"',
+		);
 	});
 
 	test("1ページだけの結果にはページナビゲーションを出さない", () => {

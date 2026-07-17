@@ -98,6 +98,57 @@ describe("talk listing reader", () => {
 		expect(matchCalls).toBe(2);
 	});
 
+	test("同じ正規化queryの同時missは1回の検索を共有する", async () => {
+		let matchCalls = 0;
+		const items = createItems(1);
+		const reader = createTalkListingReader({
+			loadItems: async () => items,
+			findMatchingTalkIds: async () => {
+				matchCalls += 1;
+				await Promise.resolve();
+				return items.map((item) => item.id);
+			},
+			buildTranscriptSnippets: async () => new Map(),
+		});
+
+		const [first, second] = await Promise.all([
+			reader({ page: "1", query: " 慈悲   瞑想 " }),
+			reader({ page: "1", query: "慈悲 瞑想" }),
+		]);
+
+		expect(first?.items).toHaveLength(1);
+		expect(second?.items).toHaveLength(1);
+		expect(matchCalls).toBe(1);
+	});
+
+	test("同時検索の失敗を共有し次の呼び出しで再試行する", async () => {
+		let matchCalls = 0;
+		const items = createItems(1);
+		const reader = createTalkListingReader({
+			loadItems: async () => items,
+			findMatchingTalkIds: async () => {
+				matchCalls += 1;
+				await Promise.resolve();
+				if (matchCalls === 1) throw new Error("temporary search failure");
+				return items.map((item) => item.id);
+			},
+			buildTranscriptSnippets: async () => new Map(),
+		});
+
+		const failed = await Promise.allSettled([
+			reader({ page: "1", query: " 慈悲   瞑想 " }),
+			reader({ page: "1", query: "慈悲 瞑想" }),
+		]);
+		expect(failed.map(({ status }) => status)).toEqual([
+			"rejected",
+			"rejected",
+		]);
+		expect(matchCalls).toBe(1);
+
+		expect(await reader({ page: "1", query: "慈悲 瞑想" })).not.toBeNull();
+		expect(matchCalls).toBe(2);
+	});
+
 	test("ID cacheを上限内に保ち最古queryを再計算する", async () => {
 		let matchCalls = 0;
 		const items = createItems(1);

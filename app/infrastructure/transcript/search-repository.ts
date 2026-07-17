@@ -11,10 +11,6 @@ const TRANSCRIPT_SEARCH_DOCUMENTS_PATH = resolve(
 	"app/generated/transcript-search-documents.json",
 );
 
-let transcriptSearchDocumentsPromise: Promise<
-	TranscriptSearchDocument[]
-> | null = null;
-
 async function loadTranscriptSearchDocuments(): Promise<
 	TranscriptSearchDocument[]
 > {
@@ -23,9 +19,20 @@ async function loadTranscriptSearchDocuments(): Promise<
 	return documents.map(deserializeTranscriptSearchDocument);
 }
 
-export function getTranscriptSearchDocuments(): Promise<
-	TranscriptSearchDocument[]
-> {
-	transcriptSearchDocumentsPromise ??= loadTranscriptSearchDocuments();
-	return transcriptSearchDocumentsPromise;
+export function createTranscriptSearchDocumentsLoader(
+	load: () => Promise<TranscriptSearchDocument[]>,
+) {
+	let transcriptSearchDocumentsPromise: Promise<
+		TranscriptSearchDocument[]
+	> | null = null;
+	return function getTranscriptSearchDocuments() {
+		transcriptSearchDocumentsPromise ??= load().catch((error: unknown) => {
+			transcriptSearchDocumentsPromise = null;
+			throw error;
+		});
+		return transcriptSearchDocumentsPromise;
+	};
 }
+
+export const getTranscriptSearchDocuments =
+	createTranscriptSearchDocumentsLoader(loadTranscriptSearchDocuments);

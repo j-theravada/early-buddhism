@@ -9,17 +9,24 @@ import {
 import { getTranscriptSearchDocuments } from "../transcript/search-repository";
 import { getTalks } from "./repository";
 
-let searchDataPromise: Promise<TranscriptAwareSearchData> | null = null;
-
-function getSearchData() {
-	searchDataPromise ??= Promise.all([
-		getTalks(),
-		getTranscriptSearchDocuments(),
-	]).then(([talks, documents]) =>
-		buildTranscriptAwareSearchData(talks, documents),
-	);
-	return searchDataPromise;
+export function createSearchDataLoader(
+	load: () => Promise<TranscriptAwareSearchData>,
+) {
+	let searchDataPromise: Promise<TranscriptAwareSearchData> | null = null;
+	return function getSearchData() {
+		searchDataPromise ??= load().catch((error: unknown) => {
+			searchDataPromise = null;
+			throw error;
+		});
+		return searchDataPromise;
+	};
 }
+
+const getSearchData = createSearchDataLoader(() =>
+	Promise.all([getTalks(), getTranscriptSearchDocuments()]).then(
+		([talks, documents]) => buildTranscriptAwareSearchData(talks, documents),
+	),
+);
 
 export const readTalkListingPage = createTalkListingReader({
 	loadItems: async () => buildTalkGalleryItems(await getTalks()),

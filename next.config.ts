@@ -1,11 +1,14 @@
 import type { NextConfig } from "next";
 
+const transcriptSearchDocuments =
+	"./app/generated/transcript-search-documents.json";
+
 const nextConfig: NextConfig = {
 	reactCompiler: true,
 	outputFileTracingIncludes: {
-		"/api/talk-search": ["./app/generated/transcript-search-documents.json"],
-		"/talks": ["./app/generated/transcript-search-documents.json"],
-		"/talks/page/[page]": ["./app/generated/transcript-search-documents.json"],
+		// Next matches these globs as substrings; the negative extglob keeps the root route exact.
+		"/talks!(/**)": [transcriptSearchDocuments],
+		"/talks/page/[page]": [transcriptSearchDocuments],
 	},
 	async redirects() {
 		return [

@@ -1,18 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import {
-	buildTalkSearchApiUrl,
-	parseTalkSearchApiResponse,
-} from "./search-api";
+import { parseTalkSearchApiResponse } from "./search-api";
 
 describe("talk search API helpers", () => {
-	test("検索 API URL にクエリをエンコードする", () => {
-		const query = "預流果 東京";
-
-		expect(buildTalkSearchApiUrl(query)).toBe(
-			`/api/talk-search?query=${encodeURIComponent(query)}`,
-		);
-	});
-
 	test("検索 API レスポンスから ID と文字起こしスニペットを取り出す", () => {
 		const parsed = parseTalkSearchApiResponse({
 			talkIds: ["TALK-1", 123, "TALK-2"],

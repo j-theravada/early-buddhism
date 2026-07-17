@@ -20,10 +20,6 @@ export type ParsedTalkSearchApiResponse = {
 	transcriptSnippetsByTalkId: Map<string, TalkSearchTranscriptSnippet[]>;
 };
 
-export function buildTalkSearchApiUrl(query: string): string {
-	return `/api/talk-search?query=${encodeURIComponent(query)}`;
-}
-
 export function buildEmptyTalkSearchApiResponse(): TalkSearchApiResponse {
 	return { talkIds: [], results: [] };
 }

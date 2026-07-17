@@ -173,7 +173,11 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 			) : (
 				<div className="space-y-12">
 					{sections.map((section, sectionIndex) => (
-						<section id={section.anchorId} key={section.label}>
+						<section
+							className="scroll-mt-72 lg:scroll-mt-80"
+							id={section.anchorId}
+							key={section.label}
+						>
 							<TalkGallerySectionHeader
 								count={section.items.length}
 								isFirst={sectionIndex === 0}
