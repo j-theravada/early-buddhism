@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+	buildTalkArchiveHref,
 	buildTalkDetailHref,
 	buildTalksHref,
 	buildTranscriptCueHref,
@@ -16,6 +17,11 @@ import {
 } from "./links";
 
 describe("talk link helpers", () => {
+	test("全法話アーカイブへのページリンクを組み立てる", () => {
+		expect(buildTalkArchiveHref(1)).toBe("/talks/archive/1");
+		expect(buildTalkArchiveHref(10)).toBe("/talks/archive/10");
+	});
+
 	test("講演一覧への検索リンクを組み立てる", () => {
 		expect(buildTalksHref(" 預流果 ")).toBe(
 			`/talks?${TALK_GALLERY_QUERY_PARAM}=%E9%A0%90%E6%B5%81%E6%9E%9C`,

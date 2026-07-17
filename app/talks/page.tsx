@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { buildTalkGalleryItems } from "../application/talk/gallery";
+import { buildTalkArchiveHref } from "../application/talk/links";
 import ClientHomeActions from "../components/client-home-actions";
 import Footer from "../components/footer";
 import Header from "../components/header";
@@ -42,6 +44,15 @@ export default async function TalksPage() {
 								</h1>
 							</div>
 							<TalkGalleryLoader initialTalks={initialTalks} />
+							<div className="mt-10 text-center">
+								<Link
+									className="home-outline-button"
+									href={buildTalkArchiveHref(1)}
+									prefetch={false}
+								>
+									全法話をページ一覧で見る
+								</Link>
+							</div>
 						</div>
 					</section>
 				</main>

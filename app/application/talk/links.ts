@@ -34,6 +34,10 @@ function buildTalkDetailPath(talkId: string): string {
 	return `/talks/${encodeURIComponent(talkId)}`;
 }
 
+export function buildTalkArchiveHref(page: number): string {
+	return `/talks/archive/${page}`;
+}
+
 type TalkGalleryHrefOptions = {
 	query?: string;
 	collectionId?: ContentCollectionId | "";
