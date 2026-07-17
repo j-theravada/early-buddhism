@@ -41,7 +41,7 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 				<form action="/talks" className="flex gap-2" method="get">
 					<input
 						aria-label="法話を検索"
-						className="search-cancel-none w-full rounded-sm border border-[#d6c6ad] bg-white py-3 pl-4 pr-10 text-sm text-[#303030] placeholder:text-[#888] focus:border-[#9d7e4c] focus:outline-none focus:ring-2 focus:ring-[#9d7e4c]/15"
+						className="search-cancel-none w-full min-w-0 rounded-sm border border-[#d6c6ad] bg-white py-3 pl-4 pr-10 text-sm text-[#303030] placeholder:text-[#888] focus:border-[#9d7e4c] focus:outline-none focus:ring-2 focus:ring-[#9d7e4c]/15"
 						defaultValue={conditions.query}
 						name="query"
 						placeholder="キーワード・文字起こしで検索"
@@ -57,7 +57,10 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 					{conditions.seriesId && (
 						<input name="series" type="hidden" value={conditions.seriesId} />
 					)}
-					<button className="home-outline-button shrink-0" type="submit">
+					<button
+						className="min-w-20 shrink-0 rounded-sm border border-[#9d7e4c] bg-white px-4 py-3 text-sm font-medium text-[#303030] transition hover:bg-[#9d7e4c] hover:text-white focus-visible:bg-[#9d7e4c] focus-visible:text-white focus-visible:outline-none sm:min-w-48"
+						type="submit"
+					>
 						検索
 					</button>
 				</form>

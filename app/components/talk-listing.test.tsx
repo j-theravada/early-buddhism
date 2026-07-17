@@ -62,6 +62,10 @@ describe("TalkListing", () => {
 		expect(html).toContain('name="query"');
 		expect(html).toContain('type="hidden" name="collection"');
 		expect(html).toContain("検索");
+		expect(html).toContain("w-full min-w-0");
+		expect(html).toContain("min-w-20");
+		expect(html).toContain("sm:min-w-48");
+		expect(html).not.toContain("home-outline-button");
 		expect(html).toContain("全65件中 31〜60件");
 		expect(html).toContain(
 			'href="/talks/page/3?query=%E4%BB%8F%E6%95%99&amp;collection=monthly_talk"',
