@@ -24,7 +24,7 @@ export default function Footer({ maxWidth = "7xl" }: Props) {
 							rel="noopener noreferrer"
 							target="_blank"
 						>
-							日本テーラワーダ仏教協会
+							運営：日本テーラワーダ仏教協会
 						</a>
 					</div>
 					<div>

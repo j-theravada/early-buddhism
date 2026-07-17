@@ -8,6 +8,10 @@ import { formatJapaneseDate } from "../../utils/date";
 import { toIsoDuration } from "../../utils/duration";
 import { buildCanonicalUrl, SITE_NAME } from "../../utils/seo";
 import { extractYouTubeVideoId } from "../../utils/youtube";
+import {
+	buildPublisherReference,
+	type PublisherReference,
+} from "../seo/site-identity";
 import { buildTalkDetailHref } from "./links";
 
 export type TalkDetailRow = {
@@ -72,6 +76,7 @@ export type TalkDetailPageData = {
 		contentUrl: string;
 		embedUrl: string;
 		duration?: string | null;
+		publisher: PublisherReference;
 	} | null;
 	breadcrumbJsonLd: BreadcrumbJsonLd;
 };
@@ -252,6 +257,7 @@ export function buildTalkDetailPageData(talk: Talk): TalkDetailPageData {
 					}),
 					contentUrl: youtubeUrl,
 					embedUrl,
+					publisher: buildPublisherReference(),
 					...(talk.duration && {
 						duration: toIsoDuration(talk.duration),
 					}),

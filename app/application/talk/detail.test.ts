@@ -92,6 +92,9 @@ describe("talk detail application helpers", () => {
 			"病気は決して肉体だけの問題ではない。心のあり方が病気を作り出す。",
 		);
 		expect(result.videoJsonLd?.uploadDate).toBe("1995-09-09");
+		expect(result.videoJsonLd?.publisher).toEqual({
+			"@id": "https://j-theravada.com/#organization",
+		});
 		expect(result.breadcrumbJsonLd.itemListElement).toEqual([
 			{
 				"@type": "ListItem",

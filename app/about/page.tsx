@@ -8,7 +8,7 @@ import { buildCanonicalUrl } from "../utils/seo";
 export const metadata: Metadata = {
 	title: "このサイトについて",
 	description:
-		"初期仏教塾は、お釈迦様の真の教えを現代の言葉で学ぶためのサイトです。",
+		"初期仏教塾は、宗教法人日本テーラワーダ仏教協会が運営する、アルボムッレ・スマナサーラ長老の法話デジタルアーカイブです。",
 	alternates: {
 		canonical: buildCanonicalUrl("/about"),
 	},
@@ -18,7 +18,10 @@ export default function AboutPage() {
 	return (
 		<AboutPageLayout title="このサイトについて">
 			<AboutTextSection>
-				<p>初期仏教塾は、お釈迦様の真の教えを現代の言葉で学べるサイトです。</p>
+				<p>
+					初期仏教塾は、宗教法人日本テーラワーダ仏教協会が運営する、
+					{SUMANASARA_JA_NAME}の法話デジタルアーカイブです。
+				</p>
 				<p>
 					私たちは、仏教を「信じるための宗教」としてではなく、瞑想によって誰にでも確かめられる事実を語った実践の教えとして捉えています。とくにヴィパッサナーと呼ばれる瞑想法は、自分の心と身体を観察しながら真理を体験していくための方法です。
 				</p>

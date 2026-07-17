@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
+import {
+	buildSiteIdentityJsonLd,
+	SITE_DESCRIPTION,
+} from "./application/seo/site-identity";
 import ClientPageChrome from "./components/client-page-chrome";
-import { SUMANASARA_JA_NAME } from "./domain/teacher/sumanasara";
 import { SITE_NAME, SITE_URL } from "./utils/seo";
 import "./globals.css";
 
@@ -17,7 +20,7 @@ const clarityProjectId = "x7vb96xmqu";
 export const metadata: Metadata = {
 	metadataBase: new URL(SITE_URL),
 	title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
-	description: `${SUMANASARA_JA_NAME}の珠玉の法話で学ぶ。`,
+	description: SITE_DESCRIPTION,
 	icons: {
 		icon: [{ url: "/jtba-mark.png", type: "image/png" }],
 	},
@@ -78,21 +81,7 @@ export default function RootLayout({
 				<script
 					// JSON-LD structured data
 					dangerouslySetInnerHTML={{
-						__html: JSON.stringify([
-							{
-								"@context": "https://schema.org",
-								"@type": "WebSite",
-								name: SITE_NAME,
-								url: SITE_URL,
-							},
-							{
-								"@context": "https://schema.org",
-								"@type": "Organization",
-								name: SITE_NAME,
-								url: SITE_URL,
-								logo: `${SITE_URL}/jtba-mark.png`,
-							},
-						]),
+						__html: JSON.stringify(buildSiteIdentityJsonLd()),
 					}}
 					type="application/ld+json"
 				/>
