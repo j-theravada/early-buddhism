@@ -3,24 +3,30 @@ import Image from "next/image";
 import Link from "next/link";
 import {
 	buildTalkDetailHref,
+	buildTalksHref,
 	buildTranscriptCueHref,
+	type TalkGalleryHrefOptions,
 } from "../../application/talk/links";
+import type { TalkSearchTranscriptSnippet } from "../../application/talk/search-api";
+import type { TranscriptSearchSnippet } from "../../application/talk/search";
 import type {
 	ContentCollectionId,
 	ContentSeriesId,
 } from "../../domain/content/types";
 import type { TalkGalleryItem } from "../../domain/talk/types";
 import { highlightMatches } from "./highlight";
-import type { TranscriptSnippet } from "./use-talk-gallery-data";
 
 type Props = {
 	talk: TalkGalleryItem;
 	searchTokens: string[];
+	galleryOptions?: TalkGalleryHrefOptions;
+	transcriptSnippets?: Array<
+		TranscriptSearchSnippet | TalkSearchTranscriptSnippet
+	>;
+	thumbnailPriority?: boolean;
 	searchQuery?: string;
 	selectedCollectionId?: ContentCollectionId | "";
 	selectedSeriesId?: ContentSeriesId | "";
-	transcriptSnippets?: TranscriptSnippet[];
-	thumbnailPriority?: boolean;
 	onNavigateToTalk?: () => void;
 	onSelectCollection?: (collectionId: ContentCollectionId) => void;
 	onSelectSeries?: (seriesId: ContentSeriesId) => void;
@@ -29,21 +35,41 @@ type Props = {
 export default function TalkGalleryCard({
 	talk,
 	searchTokens,
+	galleryOptions,
+	transcriptSnippets = [],
+	thumbnailPriority = false,
 	searchQuery,
 	selectedCollectionId = "",
 	selectedSeriesId = "",
-	transcriptSnippets = [],
-	thumbnailPriority = false,
 	onNavigateToTalk,
 	onSelectCollection,
 	onSelectSeries,
 }: Props) {
-	const talkDetailHref = buildTalkDetailHref(
-		talk.id,
-		searchQuery,
-		selectedCollectionId,
-		selectedSeriesId,
-	);
+	const detailOptions: TalkGalleryHrefOptions = galleryOptions ?? {
+		query: searchQuery,
+		collectionId: selectedCollectionId,
+		seriesId: selectedSeriesId,
+	};
+	const talkDetailHref = buildTalkDetailHref(talk.id, detailOptions);
+	const collectionHref = galleryOptions
+		? buildTalksHref({
+				query: galleryOptions.query,
+				collectionId: talk.collectionId,
+				seriesId:
+					talk.collectionId === "scripture_commentary"
+						? galleryOptions.seriesId
+						: "",
+			})
+		: null;
+	const seriesHref =
+		galleryOptions && talk.seriesId
+			? buildTalksHref({
+					query: galleryOptions.query,
+					collectionId: "scripture_commentary",
+					seriesId: talk.seriesId,
+				})
+			: null;
+	const legacyNavigateToTalk = galleryOptions ? undefined : onNavigateToTalk;
 
 	return (
 		<div className="group relative flex flex-col overflow-hidden rounded-lg border border-[#d6c6ad] bg-white shadow-sm transition duration-200 ease-out hover:border-[#9d7e4c] hover:shadow-md">
@@ -58,7 +84,7 @@ export default function TalkGalleryCard({
 					className="block"
 					href={talkDetailHref}
 					prefetch={false}
-					{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
+					{...(legacyNavigateToTalk ? { onClick: legacyNavigateToTalk } : {})}
 				>
 					<div className="relative aspect-video w-full overflow-hidden bg-[#fffbeb]">
 						<Image
@@ -78,7 +104,16 @@ export default function TalkGalleryCard({
 			{/* 下半分: データ */}
 			<div className="flex flex-col flex-1 p-6">
 				<div className="mb-3 flex flex-wrap items-center gap-2">
-					{onSelectCollection ? (
+					{collectionHref ? (
+						<Link
+							aria-label={`${talk.collectionLabel}で絞り込む`}
+							className="rounded-sm border border-[#d6c6ad] bg-[#fffbeb] px-2 py-1 text-[11px] font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]"
+							href={collectionHref}
+							prefetch={false}
+						>
+							{highlightMatches(talk.collectionLabel, searchTokens)}
+						</Link>
+					) : onSelectCollection ? (
 						<button
 							aria-label={`${talk.collectionLabel}で絞り込む`}
 							className="rounded-sm border border-[#d6c6ad] bg-[#fffbeb] px-2 py-1 text-[11px] font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]"
@@ -94,7 +129,16 @@ export default function TalkGalleryCard({
 							{highlightMatches(talk.collectionLabel, searchTokens)}
 						</span>
 					)}
-					{talk.seriesId && talk.seriesLabel && onSelectSeries ? (
+					{talk.seriesId && talk.seriesLabel && seriesHref ? (
+						<Link
+							aria-label={`${talk.seriesLabel}で絞り込む`}
+							className="rounded-sm border border-[#d6c6ad] bg-white px-2 py-1 text-[11px] font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]"
+							href={seriesHref}
+							prefetch={false}
+						>
+							{highlightMatches(talk.seriesLabel, searchTokens)}
+						</Link>
+					) : talk.seriesId && talk.seriesLabel && onSelectSeries ? (
 						<button
 							aria-label={`${talk.seriesLabel}で絞り込む`}
 							className="rounded-sm border border-[#d6c6ad] bg-white px-2 py-1 text-[11px] font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]"
@@ -117,7 +161,7 @@ export default function TalkGalleryCard({
 					className="block"
 					href={talkDetailHref}
 					prefetch={false}
-					{...(onNavigateToTalk ? { onClick: onNavigateToTalk } : {})}
+					{...(legacyNavigateToTalk ? { onClick: legacyNavigateToTalk } : {})}
 				>
 					<h2 className="text-lg font-bold text-[#303030] sm:text-xl">
 						{highlightMatches(talk.title, searchTokens)}
@@ -144,12 +188,12 @@ export default function TalkGalleryCard({
 									href={buildTranscriptCueHref(
 										talk.id,
 										snippet.cueIndex,
-										searchQuery,
-										selectedCollectionId,
-										selectedSeriesId,
+										detailOptions,
 									)}
 									key={`${snippet.cueIndex}-${snippet.text}`}
-									onClick={onNavigateToTalk}
+									{...(legacyNavigateToTalk
+										? { onClick: legacyNavigateToTalk }
+										: {})}
 									prefetch={false}
 								>
 									{snippet.startLabel && (

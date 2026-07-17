@@ -8,8 +8,10 @@ import {
 import {
 	buildTalksHref,
 	getFirstSearchParam,
+	parseTalkDetailGalleryPage,
 	parseTranscriptCueIndex,
 	TALK_DETAIL_GALLERY_COLLECTION_PARAM,
+	TALK_DETAIL_GALLERY_PAGE_PARAM,
 	TALK_DETAIL_GALLERY_QUERY_PARAM,
 	TALK_DETAIL_GALLERY_SERIES_PARAM,
 	TALK_DETAIL_TRANSCRIPT_CUE_PARAM,
@@ -33,6 +35,7 @@ type TalkDetailSearchParamName =
 	| typeof TALK_DETAIL_GALLERY_QUERY_PARAM
 	| typeof TALK_DETAIL_GALLERY_COLLECTION_PARAM
 	| typeof TALK_DETAIL_GALLERY_SERIES_PARAM
+	| typeof TALK_DETAIL_GALLERY_PAGE_PARAM
 	| typeof TALK_DETAIL_TRANSCRIPT_QUERY_PARAM
 	| typeof TALK_DETAIL_TRANSCRIPT_CUE_PARAM;
 
@@ -97,7 +100,11 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 	const gallerySeriesId = getFirstSearchParam(
 		resolvedSearchParams?.[TALK_DETAIL_GALLERY_SERIES_PARAM],
 	);
+	const galleryPage = parseTalkDetailGalleryPage(
+		getFirstSearchParam(resolvedSearchParams?.[TALK_DETAIL_GALLERY_PAGE_PARAM]),
+	);
 	const galleryHref = buildTalksHref({
+		page: galleryPage,
 		query: galleryQuery,
 		collectionId: parseContentCollectionId(galleryCollectionId),
 		seriesId: parseContentSeriesId(gallerySeriesId),

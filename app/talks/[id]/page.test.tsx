@@ -83,21 +83,40 @@ describe("TalkDetailPage", () => {
 		expect(html).toContain('href="/talks?query=%E9%A0%90%E6%B5%81%E6%9E%9C"');
 	});
 
-	test("コレクションとシリーズ絞り込みから来た詳細画面は条件付きでギャラリーへ戻る", async () => {
+	test("ページ付きの絞り込みから来た詳細画面は同じ一覧ページへ戻る", async () => {
 		const { default: TalkDetailPage } = await import("./page");
 
 		const html = renderToStaticMarkup(
 			await TalkDetailPage({
 				params: Promise.resolve({ id: "TALK-V-013-1-ADC344BF78FB" }),
 				searchParams: Promise.resolve({
+					galleryQuery: "仏教",
 					galleryCollection: "scripture_commentary",
 					gallerySeries: "abhidhamma",
+					galleryPage: "3",
 				}),
 			}),
 		);
 
 		expect(html).toContain(
-			'href="/talks?collection=scripture_commentary&amp;series=abhidhamma"',
+			'href="/talks/page/3?query=%E4%BB%8F%E6%95%99&amp;collection=scripture_commentary&amp;series=abhidhamma"',
 		);
+	});
+
+	test("不正な一覧ページ番号は 1 ページ目へ戻す", async () => {
+		const { default: TalkDetailPage } = await import("./page");
+
+		const html = renderToStaticMarkup(
+			await TalkDetailPage({
+				params: Promise.resolve({ id: "TALK-V-013-1-ADC344BF78FB" }),
+				searchParams: Promise.resolve({
+					galleryQuery: "仏教",
+					galleryPage: "03",
+				}),
+			}),
+		);
+
+		expect(html).toContain('href="/talks?query=%E4%BB%8F%E6%95%99"');
+		expect(html).not.toContain('href="/talks/page/3');
 	});
 });
