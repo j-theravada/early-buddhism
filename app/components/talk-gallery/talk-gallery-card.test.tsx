@@ -70,19 +70,6 @@ describe("TalkGalleryCard", () => {
 		expect(html).toMatch(/<span[^>]*>アビダンマ<\/span>/);
 		expect(html).not.toContain("月例講演で絞り込む");
 		expect(html).not.toContain("アビダンマで絞り込む");
-	});
-
-	test("旧クライアントギャラリーでは callback 付きバッジを button に保つ", () => {
-		const html = renderToStaticMarkup(
-			<TalkGalleryCard
-				onSelectCollection={() => {}}
-				onSelectSeries={() => {}}
-				searchTokens={[]}
-				talk={talk}
-			/>,
-		);
-
-		expect(html).toContain('<button aria-label="月例講演で絞り込む"');
-		expect(html).toContain('<button aria-label="アビダンマで絞り込む"');
+		expect(html).not.toContain("<button");
 	});
 });

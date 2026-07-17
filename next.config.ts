@@ -4,6 +4,17 @@ const nextConfig: NextConfig = {
 	reactCompiler: true,
 	outputFileTracingIncludes: {
 		"/api/talk-search": ["./app/generated/transcript-search-documents.json"],
+		"/talks": ["./app/generated/transcript-search-documents.json"],
+		"/talks/page/[page]": ["./app/generated/transcript-search-documents.json"],
+	},
+	async redirects() {
+		return [
+			{
+				source: "/talks/page/1",
+				destination: "/talks",
+				permanent: true,
+			},
+		];
 	},
 	images: {
 		remotePatterns: [

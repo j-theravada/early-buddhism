@@ -1,11 +1,7 @@
-import { expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { getTalkArchivePageCount } from "../application/talk/archive";
 import { buildTalkGalleryItems } from "../application/talk/gallery";
-import {
-	buildTalkArchiveHref,
-	buildTalkDetailHref,
-} from "../application/talk/links";
+import { TALK_LISTING_PAGE_SIZE } from "../application/talk/listing";
 import { getTalks } from "../infrastructure/talk/repository";
 
 mock.module("next/navigation", () => ({
@@ -16,67 +12,47 @@ mock.module("next/navigation", () => ({
 	useRouter: () => ({ back: () => {} }),
 }));
 
-function extractHrefs(html: string): string[] {
-	return Array.from(html.matchAll(/href="([^"]+)"/g), (match) => match[1]);
-}
-
-function extractTalkDetailHrefs(html: string): string[] {
-	return extractHrefs(html).filter(
-		(href) => href.startsWith("/talks/") && !href.startsWith("/talks/archive/"),
-	);
-}
-
-function parseArchivePageHref(href: string): number {
-	const match = href.match(/^\/talks\/archive\/(\d+)$/);
-	if (!match) throw new Error(`Unexpected archive href: ${href}`);
-	return Number(match[1]);
-}
-
-test("全法話を動画一覧から2クリック以内の通常リンクでたどれる", async () => {
-	const [{ default: TalksPage }, { default: TalkArchivePage }] =
-		await Promise.all([import("./page"), import("./archive/[page]/page")]);
-	const talks = buildTalkGalleryItems(await getTalks());
-	const expectedDetailHrefs = talks.map((talk) => buildTalkDetailHref(talk.id));
-	const expectedArchiveHrefs = Array.from(
-		{ length: getTalkArchivePageCount(talks.length) },
-		(_, index) => buildTalkArchiveHref(index + 1),
-	);
-	const talksHtml = renderToStaticMarkup(await TalksPage());
-	const talksHrefs = extractHrefs(talksHtml);
-	const previewDetailHrefs = extractTalkDetailHrefs(talksHtml);
-	const linkedArchiveHrefs = new Set(
-		talksHrefs.filter((href) => href.startsWith("/talks/archive/")),
-	);
-
-	expect(previewDetailHrefs).toEqual(expectedDetailHrefs.slice(0, 6));
-	expect([...linkedArchiveHrefs].sort()).toEqual(
-		[...expectedArchiveHrefs].sort(),
-	);
-	expect(talksHtml).toContain("全法話をページ一覧で見る");
-
-	const linkedArchivePages = [...linkedArchiveHrefs]
-		.map(parseArchivePageHref)
-		.sort((left, right) => left - right);
-	const archiveDetailHrefs = (
-		await Promise.all(
-			linkedArchivePages.map(async (page) =>
-				extractTalkDetailHrefs(
-					renderToStaticMarkup(
-						await TalkArchivePage({
-							params: Promise.resolve({ page: String(page) }),
-						}),
-					),
-				),
+function extractTalkDetailIds(html: string): string[] {
+	return [
+		...new Set(
+			Array.from(
+				html.matchAll(/href="\/talks\/([^?/"#]+)(?:\?[^"]*)?"/g),
+				(match) => decodeURIComponent(match[1] ?? ""),
 			),
-		)
-	).flat();
-	const reachableWithinTwoClicks = new Set([
-		...previewDetailHrefs,
-		...archiveDetailHrefs,
-	]);
+		),
+	];
+}
 
-	expect(archiveDetailHrefs).toEqual(expectedDetailHrefs);
-	expect([...reachableWithinTwoClicks].sort()).toEqual(
-		[...expectedDetailHrefs].sort(),
-	);
+describe("TalksPage", () => {
+	test("最初の30件とGET検索フォームを初期HTMLへ直接描画する", async () => {
+		const { default: TalksPage } = await import("./page");
+		const talks = buildTalkGalleryItems(await getTalks());
+		const html = renderToStaticMarkup(await TalksPage({}));
+
+		expect(html.match(/data-talk-gallery-item/g)).toHaveLength(
+			TALK_LISTING_PAGE_SIZE,
+		);
+		expect(extractTalkDetailIds(html)).toEqual(
+			talks.slice(0, TALK_LISTING_PAGE_SIZE).map((talk) => talk.id),
+		);
+		expect(html).toContain('action="/talks"');
+		expect(html).toContain('method="get"');
+		expect(html).toContain('name="query"');
+		expect(html).not.toContain("続きを読み込んでいます。");
+		expect(html).not.toContain("検索と全件表示を読み込み中です。");
+	});
+
+	test("絞り込みなしはself-canonical、条件ありはnoindexでcanonicalを出さない", async () => {
+		const { generateMetadata } = await import("./page");
+		const unfiltered = await generateMetadata({});
+		const filtered = await generateMetadata({
+			searchParams: Promise.resolve({ query: "仏教" }),
+		});
+
+		expect(unfiltered.alternates?.canonical).toBe(
+			"https://early-buddhism.j-theravada.com/talks",
+		);
+		expect(filtered.robots).toEqual({ index: false, follow: true });
+		expect(filtered.alternates).toBeUndefined();
+	});
 });
