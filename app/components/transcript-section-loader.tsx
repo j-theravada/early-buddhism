@@ -1,34 +1,48 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import type { TranscriptCue } from "../domain/transcript/types";
+import { FEEDBACK_FORM_URL } from "../utils/site-links";
 
 const TranscriptSection = dynamic(() => import("./transcript-section"), {
 	loading: () => null,
 });
 
-type LoadState =
-	| {
-			status: "loading";
-			transcript: null;
-	  }
-	| {
-			status: "ready";
-			transcript: TranscriptCue[];
-	  }
-	| {
-			status: "missing" | "error";
-			transcript: null;
-	  };
+export type TranscriptMode = "plain" | "timeline";
+export type TranscriptLoadStatus =
+	| "idle"
+	| "loading"
+	| "ready"
+	| "missing"
+	| "error";
 
 type Props = {
+	children: ReactNode;
 	talkId: string;
 	embedUrlPrefix?: string | null;
 	hasStickyPlayer?: boolean;
 	transcriptHighlightQuery?: string | null;
 	targetCueIndex?: number | null;
 };
+
+type TimelineProps = Pick<
+	Props,
+	"embedUrlPrefix" | "transcriptHighlightQuery" | "targetCueIndex"
+>;
+
+const MODE_OPTIONS: Array<{ mode: TranscriptMode; label: string }> = [
+	{ mode: "plain", label: "読みやすく" },
+	{ mode: "timeline", label: "タイムライン付き" },
+];
+
+function getModeButtonClass(isActive: boolean): string {
+	return `w-full min-w-0 whitespace-nowrap text-center rounded-full px-3 py-1 transition sm:min-w-[8.5rem] sm:px-3.5 sm:py-1.5 ${
+		isActive
+			? "bg-amber-100 text-amber-900"
+			: "text-amber-700 hover:text-amber-900"
+	}`;
+}
 
 function buildTranscriptApiUrl(talkId: string): string {
 	return `/api/transcripts/${encodeURIComponent(talkId)}`;
@@ -38,81 +52,77 @@ function parseTranscriptResponse(value: unknown): TranscriptCue[] {
 	if (typeof value !== "object" || value === null || !("transcript" in value)) {
 		throw new Error("Transcript response must include transcript.");
 	}
-
 	const transcript = (value as { transcript: unknown }).transcript;
 	if (!Array.isArray(transcript)) {
 		throw new Error("Transcript must be an array.");
 	}
-
 	return transcript as TranscriptCue[];
 }
 
-function TranscriptLoadingMessage({ status }: { status: LoadState["status"] }) {
-	if (status === "missing") {
-		return null;
+export function getInitialTranscriptMode(
+	targetCueIndex: number | null | undefined,
+	transcriptHighlightQuery: string | null | undefined,
+): TranscriptMode {
+	return targetCueIndex !== null && targetCueIndex !== undefined
+		? "timeline"
+		: transcriptHighlightQuery?.trim()
+			? "timeline"
+			: "plain";
+}
+
+export function TranscriptContent({
+	children,
+	mode,
+	status,
+	transcript,
+	...timelineProps
+}: {
+	children: ReactNode;
+	mode: TranscriptMode;
+	status: TranscriptLoadStatus;
+	transcript: TranscriptCue[] | null;
+} & TimelineProps) {
+	if (mode === "timeline" && status === "ready" && transcript) {
+		return <TranscriptSection transcript={transcript} {...timelineProps} />;
 	}
 
 	return (
-		<div className="mt-6 border-t border-gray-100 pt-6 text-sm leading-relaxed text-gray-600">
-			{status === "error"
-				? "文字起こしを読み込めませんでした。時間をおいて再度お試しください。"
-				: "文字起こしを読み込み中です。"}
-		</div>
+		<>
+			{mode === "timeline" && status === "loading" && (
+				<p className="mt-4 text-sm text-gray-600">
+					タイムラインを読み込んでいます。
+				</p>
+			)}
+			{mode === "timeline" && (status === "error" || status === "missing") && (
+				<p className="mt-4 text-sm text-red-700">
+					タイムラインを読み込めませんでした。読みやすい全文を表示しています。
+				</p>
+			)}
+			{children}
+		</>
 	);
 }
 
-function hasTargetCueIndex(value: number | null | undefined): value is number {
-	return value !== null && value !== undefined;
-}
-
 export default function TranscriptSectionLoader({
+	children,
 	talkId,
 	embedUrlPrefix,
 	hasStickyPlayer = false,
 	transcriptHighlightQuery,
 	targetCueIndex,
 }: Props) {
-	const containerRef = useRef<HTMLDivElement | null>(null);
-	const [shouldLoad, setShouldLoad] = useState(
-		() =>
-			hasTargetCueIndex(targetCueIndex) ||
-			Boolean(transcriptHighlightQuery?.trim()),
+	const [mode, setMode] = useState<TranscriptMode>(() =>
+		getInitialTranscriptMode(targetCueIndex, transcriptHighlightQuery),
 	);
-	const [loadState, setLoadState] = useState<LoadState>({
-		status: "loading",
-		transcript: null,
-	});
+	const [status, setStatus] = useState<TranscriptLoadStatus>("idle");
+	const [transcript, setTranscript] = useState<TranscriptCue[] | null>(null);
+	const [retryToken, setRetryToken] = useState(0);
 
 	useEffect(() => {
-		if (shouldLoad) {
-			return;
-		}
-
-		const target = containerRef.current;
-		if (!target || !("IntersectionObserver" in window)) {
-			setShouldLoad(true);
-			return;
-		}
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries.some((entry) => entry.isIntersecting)) {
-					setShouldLoad(true);
-				}
-			},
-			{ rootMargin: "0px" },
-		);
-		observer.observe(target);
-
-		return () => observer.disconnect();
-	}, [shouldLoad]);
-
-	useEffect(() => {
-		if (!shouldLoad) {
-			return;
-		}
+		if (mode !== "timeline" || transcript !== null) return;
 
 		const controller = new AbortController();
+		setStatus("loading");
 
 		async function loadTranscript() {
 			try {
@@ -120,52 +130,87 @@ export default function TranscriptSectionLoader({
 					signal: controller.signal,
 				});
 				if (response.status === 404) {
-					setLoadState({
-						status: "missing",
-						transcript: null,
-					});
+					setStatus("missing");
 					return;
 				}
 				if (!response.ok) {
 					throw new Error(`Transcript request failed: ${response.status}`);
 				}
-				setLoadState({
-					status: "ready",
-					transcript: parseTranscriptResponse(await response.json()),
-				});
+				setTranscript(parseTranscriptResponse(await response.json()));
+				setStatus("ready");
 			} catch (error) {
-				if (error instanceof DOMException && error.name === "AbortError") {
+				if (error instanceof DOMException && error.name === "AbortError")
 					return;
-				}
-				setLoadState({
-					status: "error",
-					transcript: null,
-				});
+				setStatus("error");
 			}
 		}
 
 		void loadTranscript();
-
 		return () => controller.abort();
-	}, [shouldLoad, talkId]);
+	}, [mode, retryToken, talkId, transcript]);
 
-	if (loadState.status === "ready") {
-		return (
-			<div ref={containerRef}>
-				<TranscriptSection
-					embedUrlPrefix={embedUrlPrefix}
-					hasStickyPlayer={hasStickyPlayer}
-					targetCueIndex={targetCueIndex}
-					transcript={loadState.transcript}
-					transcriptHighlightQuery={transcriptHighlightQuery}
-				/>
-			</div>
-		);
+	function selectMode(nextMode: TranscriptMode) {
+		if (
+			nextMode === "timeline" &&
+			mode === "timeline" &&
+			(status === "error" || status === "missing")
+		) {
+			setRetryToken((current) => current + 1);
+		}
+		setMode(nextMode);
 	}
 
 	return (
-		<div ref={containerRef}>
-			<TranscriptLoadingMessage status={loadState.status} />
-		</div>
+		<section className="mt-6 border-t border-gray-100 pt-6">
+			<div
+				className={`sticky ${
+					hasStickyPlayer ? "transcript-toolbar-sticky" : "top-0"
+				} z-10 -mx-6 border-y border-amber-100 bg-white/95 px-6 py-2.5 backdrop-blur`}
+			>
+				<div className="flex flex-wrap items-center gap-2.5 lg:flex-nowrap">
+					<h2 className="sr-only">文字起こし表示</h2>
+					<div
+						aria-label="表示モードの切り替え"
+						className="grid w-full grid-cols-2 rounded-full border border-amber-200 bg-white text-xs font-medium text-amber-900 sm:w-auto sm:text-sm"
+						role="tablist"
+					>
+						{MODE_OPTIONS.map((option) => (
+							<button
+								aria-selected={mode === option.mode}
+								className={getModeButtonClass(mode === option.mode)}
+								key={option.mode}
+								onClick={() => selectMode(option.mode)}
+								role="tab"
+								type="button"
+							>
+								{option.label}
+							</button>
+						))}
+					</div>
+					<p className="min-w-0 text-xs text-amber-800 sm:ml-auto lg:whitespace-nowrap">
+						AI文字起こしです。誤りは
+						<a
+							className="mx-0.5 font-medium underline hover:text-amber-700"
+							href={FEEDBACK_FORM_URL}
+							rel="noopener noreferrer"
+							target="_blank"
+						>
+							こちら
+						</a>
+						へ。
+					</p>
+				</div>
+			</div>
+			<TranscriptContent
+				embedUrlPrefix={embedUrlPrefix}
+				mode={mode}
+				status={status}
+				targetCueIndex={targetCueIndex}
+				transcript={transcript}
+				transcriptHighlightQuery={transcriptHighlightQuery}
+			>
+				{children}
+			</TranscriptContent>
+		</section>
 	);
 }

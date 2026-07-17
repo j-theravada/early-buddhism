@@ -15,16 +15,19 @@ import {
 	TALK_DETAIL_TRANSCRIPT_CUE_PARAM,
 	TALK_DETAIL_TRANSCRIPT_QUERY_PARAM,
 } from "../../application/talk/links";
+import { buildTranscriptParagraphs } from "../../application/transcript/presentation";
 import BackToGalleryLink from "../../components/back-to-gallery-link";
 import ContentCard from "../../components/content-card";
 import Footer from "../../components/footer";
 import TalkDetailPlayer from "../../components/talk-detail-player";
+import TranscriptReadable from "../../components/transcript-readable";
 import TranscriptSectionLoader from "../../components/transcript-section-loader";
 import {
 	parseContentCollectionId,
 	parseContentSeriesId,
 } from "../../domain/content/collection";
 import { getTalkById } from "../../infrastructure/talk/repository";
+import { getTranscriptByTalkId } from "../../infrastructure/transcript/repository";
 
 type TalkDetailSearchParamName =
 	| typeof TALK_DETAIL_GALLERY_QUERY_PARAM
@@ -105,14 +108,19 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 		),
 	);
 
-	const talk = await getTalkById(id);
+	const [talk, transcript] = await Promise.all([
+		getTalkById(id),
+		getTranscriptByTalkId(id),
+	]);
 
 	if (!talk) {
 		notFound();
 	}
 
+	const transcriptParagraphs = transcript
+		? buildTranscriptParagraphs(transcript)
+		: [];
 	const pageData = buildTalkDetailPageData(talk);
-	const hasTranscript = Boolean(talk.srtLink);
 
 	return (
 		<div className="min-h-screen bg-white text-gray-900 flex flex-col">
@@ -186,14 +194,17 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 							</div>
 						)}
 
-						{hasTranscript && (
+						{transcriptParagraphs.length > 0 && (
 							<TranscriptSectionLoader
 								embedUrlPrefix={pageData.embedUrlPrefix}
 								hasStickyPlayer={Boolean(pageData.talk.embedUrl)}
+								key={talk.id}
 								talkId={talk.id}
 								targetCueIndex={targetCueIndex}
 								transcriptHighlightQuery={transcriptHighlightQuery}
-							/>
+							>
+								<TranscriptReadable paragraphs={transcriptParagraphs} />
+							</TranscriptSectionLoader>
 						)}
 						{pageData.talk.youtubeUrl && (
 							<div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">

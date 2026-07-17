@@ -51,8 +51,23 @@ describe("TalkDetailPage", () => {
 		expect(html).toContain("talk-detail-player-shell relative mx-auto");
 		expect(html).toContain("talk-detail-player-frame mx-auto");
 		expect(html).toContain("aspect-video");
-		expect(html).toContain("文字起こしを読み込み中です。");
+		expect(html).toContain("で 大体一体全体仏教って何でしょうかと");
+		expect(html).toContain("読みやすく");
+		expect(html).toContain("タイムライン付き");
+		expect(html).not.toContain("文字起こしを読み込み中です。");
 		expect(html).toContain("BreadcrumbList");
+	});
+
+	test("生成済み文字起こしがない法話では文字起こしセクションを出さない", async () => {
+		const { default: TalkDetailPage } = await import("./page");
+		const html = renderToStaticMarkup(
+			await TalkDetailPage({
+				params: Promise.resolve({ id: "TALK-4779A1FF8511" }),
+			}),
+		);
+
+		expect(html).not.toContain("文字起こし表示");
+		expect(html).not.toContain("文字起こしを読み込み中です。");
 	});
 
 	test("検索結果から来た詳細画面は検索条件付きでギャラリーへ戻る", async () => {
