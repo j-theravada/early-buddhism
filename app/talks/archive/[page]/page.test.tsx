@@ -1,7 +1,14 @@
 import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import {
+	getTalkArchivePageCount,
+	TALK_ARCHIVE_PAGE_SIZE,
+} from "../../../application/talk/archive";
 import { buildTalkGalleryItems } from "../../../application/talk/gallery";
-import { buildTalkDetailHref } from "../../../application/talk/links";
+import {
+	buildTalkArchiveHref,
+	buildTalkDetailHref,
+} from "../../../application/talk/links";
 import { getTalks } from "../../../infrastructure/talk/repository";
 
 mock.module("next/navigation", () => ({
@@ -22,27 +29,38 @@ describe("TalkArchivePage", () => {
 		const { default: TalkArchivePage, generateStaticParams } =
 			await import("./page");
 		const talks = buildTalkGalleryItems(await getTalks());
+		const totalPages = getTalkArchivePageCount(talks.length);
+		const finalPage = totalPages;
+		const finalPageOffset = (finalPage - 1) * TALK_ARCHIVE_PAGE_SIZE;
 		const firstPageHtml = renderToStaticMarkup(
 			await TalkArchivePage({ params: Promise.resolve({ page: "1" }) }),
 		);
 		const finalPageHtml = renderToStaticMarkup(
-			await TalkArchivePage({ params: Promise.resolve({ page: "10" }) }),
+			await TalkArchivePage({
+				params: Promise.resolve({ page: String(finalPage) }),
+			}),
 		);
 		const params = await generateStaticParams();
 		const firstPageHrefs = extractTalkDetailHrefs(firstPageHtml);
 		const finalPageHrefs = extractTalkDetailHrefs(finalPageHtml);
 
-		expect(firstPageHrefs).toHaveLength(100);
+		expect(firstPageHrefs).toHaveLength(
+			Math.min(TALK_ARCHIVE_PAGE_SIZE, talks.length),
+		);
 		expect(firstPageHrefs).toEqual(
-			talks.slice(0, 100).map((talk) => buildTalkDetailHref(talk.id)),
+			talks
+				.slice(0, TALK_ARCHIVE_PAGE_SIZE)
+				.map((talk) => buildTalkDetailHref(talk.id)),
 		);
-		expect(finalPageHrefs).toHaveLength(talks.length - 900);
+		expect(finalPageHrefs).toHaveLength(talks.length - finalPageOffset);
 		expect(finalPageHrefs).toEqual(
-			talks.slice(900).map((talk) => buildTalkDetailHref(talk.id)),
+			talks.slice(finalPageOffset).map((talk) => buildTalkDetailHref(talk.id)),
 		);
-		expect(firstPageHtml).toContain('href="/talks/archive/10"');
+		expect(firstPageHtml).toContain(
+			`href="${buildTalkArchiveHref(finalPage)}"`,
+		);
 		expect(params).toEqual(
-			Array.from({ length: 10 }, (_, index) => ({
+			Array.from({ length: totalPages }, (_, index) => ({
 				page: String(index + 1),
 			})),
 		);
@@ -72,8 +90,12 @@ describe("TalkArchivePage", () => {
 
 	test("範囲外ページは404", async () => {
 		const { default: TalkArchivePage } = await import("./page");
+		const outOfRangePage =
+			getTalkArchivePageCount((await getTalks()).length) + 1;
 		await expect(
-			TalkArchivePage({ params: Promise.resolve({ page: "999" }) }),
+			TalkArchivePage({
+				params: Promise.resolve({ page: String(outOfRangePage) }),
+			}),
 		).rejects.toThrow("not found");
 	});
 });

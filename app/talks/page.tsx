@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTalkArchivePageCount } from "../application/talk/archive";
 import { buildTalkGalleryItems } from "../application/talk/gallery";
 import { buildTalkArchiveHref } from "../application/talk/links";
 import ClientHomeActions from "../components/client-home-actions";
@@ -27,6 +28,10 @@ export default async function TalksPage() {
 		0,
 		INITIAL_TALK_PREVIEW_COUNT,
 	);
+	const archivePages = Array.from(
+		{ length: getTalkArchivePageCount(talks.length) },
+		(_, index) => index + 1,
+	);
 
 	return (
 		<div className="min-h-screen flex flex-col bg-white text-[#303030]">
@@ -52,6 +57,22 @@ export default async function TalksPage() {
 								>
 									全法話をページ一覧で見る
 								</Link>
+								<nav
+									aria-label="全法話一覧のページへ移動"
+									className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm"
+								>
+									<span className="text-xs text-gray-500">ページ</span>
+									{archivePages.map((page) => (
+										<Link
+											className="inline-flex min-w-8 items-center justify-center rounded-full border border-amber-200 px-2 py-1 text-amber-800 transition hover:border-amber-300 hover:bg-amber-50"
+											href={buildTalkArchiveHref(page)}
+											key={page}
+											prefetch={false}
+										>
+											{page}
+										</Link>
+									))}
+								</nav>
 							</div>
 						</div>
 					</section>

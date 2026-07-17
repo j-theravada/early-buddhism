@@ -4,7 +4,7 @@
 
 **Goal:** Make each talk's full transcript, every talk link, and the site's official publisher relationship available in crawlable server-rendered HTML without regressing the current gallery and timeline experience.
 
-**Architecture:** Talk detail pages server-render a compact paragraph transcript and fetch cue-level timeline data only when requested. A statically generated, paginated archive provides ordinary links to every talk while leaving the virtualized gallery unchanged. Shared JSON-LD helpers identify 日本テーラワーダ仏教協会 as the publisher of the 初期仏教塾 website and each video.
+**Architecture:** Talk detail pages server-render a compact paragraph transcript and fetch cue-level timeline data only when requested. A statically generated, paginated archive provides ordinary links to every talk, and `/talks` links directly to every archive page so each talk is reachable within two clicks while the virtualized gallery remains unchanged. Shared JSON-LD helpers identify 日本テーラワーダ仏教協会 as the publisher of the 初期仏教塾 website and each video.
 
 **Tech Stack:** Next.js 16 App Router, React 19 Server/Client Components, TypeScript 5.9, Bun test, oxfmt, oxlint.
 
@@ -32,11 +32,12 @@
 - `app/application/talk/archive.test.ts` — archive completeness and boundary tests.
 - `app/talks/archive/[page]/page.tsx` — static, self-canonical archive pages.
 - `app/talks/archive/[page]/page.test.tsx` — archive route rendering and metadata tests.
-- `app/talks/page.test.tsx` — regression test for the existing preview plus archive entry link.
+- `app/talks/page.test.tsx` — rendered-link graph regression for the six-item preview and two-click reachability through every archive page.
 - `app/sitemap.test.ts` — archive and detail URL coverage.
 - `app/components/transcript-readable.tsx` — compact Server Component transcript paragraphs.
 - `app/components/transcript-readable.test.tsx` — compact transcript markup tests.
 - `app/components/transcript-section-loader.test.tsx` — initial mode, fallback, and timeline-load presentation tests.
+- `app/components/transcript-section-loader.client.test.tsx` — mounted React-effect coverage for on-demand fetch, caching, retry, abort, and deep-link prop synchronization.
 - `app/components/footer.test.tsx` — visible operator-label test.
 - `app/about/page.test.tsx` — visible archive/operator copy test.
 
@@ -49,13 +50,15 @@
 - `app/components/footer.tsx` — visible `運営：` label.
 - `app/application/talk/links.ts` — archive URL builder.
 - `app/application/talk/links.test.ts` — archive URL builder test.
-- `app/talks/page.tsx` — ordinary link to archive page 1.
+- `app/talks/page.tsx` — existing archive entry plus compact ordinary links to every archive page.
 - `app/sitemap.ts` — include all archive page URLs.
 - `app/talks/[id]/page.tsx` — read and render generated transcript server-side.
 - `app/talks/[id]/page.test.tsx` — full-text initial HTML and missing-transcript tests.
 - `app/components/transcript-section-loader.tsx` — readable/timeline mode shell and on-demand API fetch.
 - `app/components/transcript-section.tsx` — cue timeline only; no mode or paragraph responsibility.
 - `app/components/transcript-section.test.tsx` — timeline-only contract.
+- `package.json` — dev-only `happy-dom` dependency used by mounted client-effect tests.
+- `bun.lock` — lockfile update for the dev-only DOM test dependency.
 
 ---
 
@@ -307,7 +310,16 @@ Run:
   app/components/footer.tsx \
   app/components/footer.test.tsx
 git diff --check
-git add app
+git add \
+  app/application/seo/site-identity.ts \
+  app/application/seo/site-identity.test.ts \
+  app/layout.tsx \
+  app/application/talk/detail.ts \
+  app/application/talk/detail.test.ts \
+  app/about/page.tsx \
+  app/about/page.test.tsx \
+  app/components/footer.tsx \
+  app/components/footer.test.tsx
 git commit -m "feat: identify the official talk archive publisher"
 ```
 
@@ -475,13 +487,23 @@ export function buildTalkArchiveHref(page: number): string {
 
 Run the Step 2 tests again. Expected: PASS.
 
-- [ ] **Step 4: Write failing route, entry-link, and sitemap tests**
+- [ ] **Step 4: Write failing route, two-click reachability, and sitemap tests**
 
 Create `app/talks/archive/[page]/page.test.tsx`:
 
 ```tsx
 import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import {
+	getTalkArchivePageCount,
+	TALK_ARCHIVE_PAGE_SIZE,
+} from "../../../application/talk/archive";
+import { buildTalkGalleryItems } from "../../../application/talk/gallery";
+import {
+	buildTalkArchiveHref,
+	buildTalkDetailHref,
+} from "../../../application/talk/links";
+import { getTalks } from "../../../infrastructure/talk/repository";
 
 mock.module("next/navigation", () => ({
 	notFound: () => {
@@ -489,19 +511,53 @@ mock.module("next/navigation", () => ({
 	},
 }));
 
+function extractTalkDetailHrefs(html: string): string[] {
+	return Array.from(
+		html.matchAll(/href="(\/talks\/(?!archive\/)[^"]+)"/g),
+		(match) => match[1],
+	);
+}
+
 describe("TalkArchivePage", () => {
-	test("100件の通常リンクと全ページナビゲーションを出す", async () => {
+	test("各ページの全法話を通常リンクで出して静的生成対象を列挙する", async () => {
 		const { default: TalkArchivePage, generateStaticParams } =
 			await import("./page");
-		const html = renderToStaticMarkup(
+		const talks = buildTalkGalleryItems(await getTalks());
+		const totalPages = getTalkArchivePageCount(talks.length);
+		const finalPage = totalPages;
+		const finalPageOffset = (finalPage - 1) * TALK_ARCHIVE_PAGE_SIZE;
+		const firstPageHtml = renderToStaticMarkup(
 			await TalkArchivePage({ params: Promise.resolve({ page: "1" }) }),
 		);
+		const finalPageHtml = renderToStaticMarkup(
+			await TalkArchivePage({
+				params: Promise.resolve({ page: String(finalPage) }),
+			}),
+		);
 		const params = await generateStaticParams();
+		const firstPageHrefs = extractTalkDetailHrefs(firstPageHtml);
+		const finalPageHrefs = extractTalkDetailHrefs(finalPageHtml);
 
-		expect((html.match(/data-talk-archive-item=/g) ?? []).length).toBe(100);
-		expect(html).toContain('href="/talks/');
-		expect(html).toContain('href="/talks/archive/10"');
-		expect(params).toHaveLength(10);
+		expect(firstPageHrefs).toHaveLength(
+			Math.min(TALK_ARCHIVE_PAGE_SIZE, talks.length),
+		);
+		expect(firstPageHrefs).toEqual(
+			talks
+				.slice(0, TALK_ARCHIVE_PAGE_SIZE)
+				.map((talk) => buildTalkDetailHref(talk.id)),
+		);
+		expect(finalPageHrefs).toHaveLength(talks.length - finalPageOffset);
+		expect(finalPageHrefs).toEqual(
+			talks.slice(finalPageOffset).map((talk) => buildTalkDetailHref(talk.id)),
+		);
+		expect(firstPageHtml).toContain(
+			`href="${buildTalkArchiveHref(finalPage)}"`,
+		);
+		expect(params).toEqual(
+			Array.from({ length: totalPages }, (_, index) => ({
+				page: String(index + 1),
+			})),
+		);
 	});
 
 	test("中間ページに前後リンクを出す", async () => {
@@ -528,8 +584,12 @@ describe("TalkArchivePage", () => {
 
 	test("範囲外ページは404", async () => {
 		const { default: TalkArchivePage } = await import("./page");
+		const outOfRangePage =
+			getTalkArchivePageCount((await getTalks()).length) + 1;
 		await expect(
-			TalkArchivePage({ params: Promise.resolve({ page: "999" }) }),
+			TalkArchivePage({
+				params: Promise.resolve({ page: String(outOfRangePage) }),
+			}),
 		).rejects.toThrow("not found");
 	});
 });
@@ -540,19 +600,86 @@ Create `app/talks/page.test.tsx`:
 ```tsx
 import { expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { getTalkArchivePageCount } from "../application/talk/archive";
+import { buildTalkGalleryItems } from "../application/talk/gallery";
+import {
+	buildTalkArchiveHref,
+	buildTalkDetailHref,
+} from "../application/talk/links";
+import { getTalks } from "../infrastructure/talk/repository";
 
 mock.module("next/navigation", () => ({
+	notFound: () => {
+		throw new Error("not found");
+	},
 	usePathname: () => "/talks",
 	useRouter: () => ({ back: () => {} }),
 }));
 
-test("6件プレビューを保ったまま全法話アーカイブへリンクする", async () => {
-	const { default: TalksPage } = await import("./page");
-	const html = renderToStaticMarkup(await TalksPage());
+function extractHrefs(html: string): string[] {
+	return Array.from(html.matchAll(/href="([^"]+)"/g), (match) => match[1]);
+}
 
-	expect((html.match(/href="\/talks\/TALK-/g) ?? []).length).toBe(6);
-	expect(html).toContain('href="/talks/archive/1"');
-	expect(html).toContain("全法話をページ一覧で見る");
+function extractTalkDetailHrefs(html: string): string[] {
+	return extractHrefs(html).filter(
+		(href) => href.startsWith("/talks/") && !href.startsWith("/talks/archive/"),
+	);
+}
+
+function parseArchivePageHref(href: string): number {
+	const match = href.match(/^\/talks\/archive\/(\d+)$/);
+	if (!match) throw new Error(`Unexpected archive href: ${href}`);
+	return Number(match[1]);
+}
+
+test("全法話を動画一覧から2クリック以内の通常リンクでたどれる", async () => {
+	const [{ default: TalksPage }, { default: TalkArchivePage }] =
+		await Promise.all([import("./page"), import("./archive/[page]/page")]);
+	const talks = buildTalkGalleryItems(await getTalks());
+	const expectedDetailHrefs = talks.map((talk) => buildTalkDetailHref(talk.id));
+	const expectedArchiveHrefs = Array.from(
+		{ length: getTalkArchivePageCount(talks.length) },
+		(_, index) => buildTalkArchiveHref(index + 1),
+	);
+	const talksHtml = renderToStaticMarkup(await TalksPage());
+	const previewDetailHrefs = extractTalkDetailHrefs(talksHtml);
+	const linkedArchiveHrefs = new Set(
+		extractHrefs(talksHtml).filter((href) =>
+			href.startsWith("/talks/archive/"),
+		),
+	);
+
+	expect(previewDetailHrefs).toEqual(expectedDetailHrefs.slice(0, 6));
+	expect([...linkedArchiveHrefs].sort()).toEqual(
+		[...expectedArchiveHrefs].sort(),
+	);
+	expect(talksHtml).toContain("全法話をページ一覧で見る");
+
+	const linkedArchivePages = [...linkedArchiveHrefs]
+		.map(parseArchivePageHref)
+		.sort((left, right) => left - right);
+	const archiveDetailHrefs = (
+		await Promise.all(
+			linkedArchivePages.map(async (page) =>
+				extractTalkDetailHrefs(
+					renderToStaticMarkup(
+						await TalkArchivePage({
+							params: Promise.resolve({ page: String(page) }),
+						}),
+					),
+				),
+			),
+		)
+	).flat();
+	const reachableWithinTwoClicks = new Set([
+		...previewDetailHrefs,
+		...archiveDetailHrefs,
+	]);
+
+	expect(archiveDetailHrefs).toEqual(expectedDetailHrefs);
+	expect([...reachableWithinTwoClicks].sort()).toEqual(
+		[...expectedDetailHrefs].sort(),
+	);
 });
 ```
 
@@ -560,18 +687,38 @@ Create `app/sitemap.test.ts`:
 
 ```ts
 import { expect, test } from "bun:test";
+import { getTalkArchivePageCount } from "./application/talk/archive";
+import {
+	buildTalkArchiveHref,
+	buildTalkDetailHref,
+} from "./application/talk/links";
+import { getTalks } from "./infrastructure/talk/repository";
 import sitemap from "./sitemap";
+import { buildCanonicalUrl } from "./utils/seo";
 
 test("全アーカイブページと全法話詳細を含む", async () => {
+	const talks = await getTalks();
 	const entries = await sitemap();
 	const urls = entries.map((entry) => entry.url);
 	const archiveUrls = urls.filter((url) => url.includes("/talks/archive/"));
 	const detailUrls = urls.filter(
 		(url) => url.includes("/talks/") && !url.includes("/talks/archive/"),
 	);
+	const archiveUrlSet = new Set(archiveUrls);
+	const detailUrlSet = new Set(detailUrls);
+	const expectedArchiveUrlSet = new Set(
+		Array.from({ length: getTalkArchivePageCount(talks.length) }, (_, index) =>
+			buildCanonicalUrl(buildTalkArchiveHref(index + 1)),
+		),
+	);
+	const expectedDetailUrlSet = new Set(
+		talks.map((talk) => buildCanonicalUrl(buildTalkDetailHref(talk.id))),
+	);
 
-	expect(archiveUrls).toHaveLength(10);
-	expect(detailUrls).toHaveLength(901);
+	expect(archiveUrls).toHaveLength(archiveUrlSet.size);
+	expect(detailUrls).toHaveLength(detailUrlSet.size);
+	expect([...archiveUrlSet].sort()).toEqual([...expectedArchiveUrlSet].sort());
+	expect([...detailUrlSet].sort()).toEqual([...expectedDetailUrlSet].sort());
 });
 ```
 
@@ -586,7 +733,7 @@ Run:
   app/sitemap.test.ts
 ```
 
-Expected: FAIL because the archive route, entry link, and archive sitemap entries do not exist.
+Expected: FAIL because the archive route, direct links from `/talks` to every archive page, and archive sitemap entries do not exist.
 
 - [ ] **Step 6: Implement the static archive route**
 
@@ -729,9 +876,18 @@ archive page exposes both adjacent links and all page-number links:
 </nav>
 ```
 
-- [ ] **Step 7: Link from `/talks` and include archive pages in sitemap**
+- [ ] **Step 7: Link directly from `/talks` to every archive page and include archive pages in sitemap**
 
-In `app/talks/page.tsx`, import `Link` and `buildTalkArchiveHref()`, then add this outside `TalkGalleryLoader` so it remains server-rendered:
+In `app/talks/page.tsx`, import `Link`, `getTalkArchivePageCount()`, and `buildTalkArchiveHref()`. Derive the page numbers from the current talk count:
+
+```ts
+const archivePages = Array.from(
+	{ length: getTalkArchivePageCount(talks.length) },
+	(_, index) => index + 1,
+);
+```
+
+Then add this outside `TalkGalleryLoader` so both the existing entry point and compact page navigation remain server-rendered ordinary links:
 
 ```tsx
 <div className="mt-10 text-center">
@@ -742,6 +898,22 @@ In `app/talks/page.tsx`, import `Link` and `buildTalkArchiveHref()`, then add th
 	>
 		全法話をページ一覧で見る
 	</Link>
+	<nav
+		aria-label="全法話一覧のページへ移動"
+		className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm"
+	>
+		<span className="text-xs text-gray-500">ページ</span>
+		{archivePages.map((page) => (
+			<Link
+				className="inline-flex min-w-8 items-center justify-center rounded-full border border-amber-200 px-2 py-1 text-amber-800 transition hover:border-amber-300 hover:bg-amber-50"
+				href={buildTalkArchiveHref(page)}
+				key={page}
+				prefetch={false}
+			>
+				{page}
+			</Link>
+		))}
+	</nav>
 </div>
 ```
 
@@ -777,7 +949,7 @@ Run:
   app/sitemap.test.ts
 ```
 
-Expected: all Task 2 tests PASS; page 1 contains 100 ordinary links and static params contain pages 1–10.
+Expected: all Task 2 tests PASS; page 1 contains up to `TALK_ARCHIVE_PAGE_SIZE` ordinary detail links, static params match `getTalkArchivePageCount()`, `/talks` keeps exactly six preview detail links, and every expected detail href is reachable within two edges with no missing or unexpected href.
 
 - [ ] **Step 9: Format, inspect, and commit Task 2**
 
@@ -796,7 +968,17 @@ Run:
   app/sitemap.ts \
   app/sitemap.test.ts
 git diff --check
-git add app
+git add \
+  app/application/talk/archive.ts \
+  app/application/talk/archive.test.ts \
+  app/application/talk/links.ts \
+  app/application/talk/links.test.ts \
+  'app/talks/archive/[page]/page.tsx' \
+  'app/talks/archive/[page]/page.test.tsx' \
+  app/talks/page.tsx \
+  app/talks/page.test.tsx \
+  app/sitemap.ts \
+  app/sitemap.test.ts
 git commit -m "feat: add a crawlable talk archive"
 ```
 
@@ -811,11 +993,14 @@ Expected: commit succeeds and the current client gallery files are untouched.
 - Create: `app/components/transcript-readable.tsx`
 - Create: `app/components/transcript-readable.test.tsx`
 - Create: `app/components/transcript-section-loader.test.tsx`
+- Create: `app/components/transcript-section-loader.client.test.tsx`
 - Modify: `app/talks/[id]/page.tsx`
 - Modify: `app/talks/[id]/page.test.tsx`
 - Modify: `app/components/transcript-section-loader.tsx`
 - Modify: `app/components/transcript-section.tsx`
 - Modify: `app/components/transcript-section.test.tsx`
+- Modify: `package.json`
+- Modify: `bun.lock`
 
 **Interfaces:**
 
@@ -824,6 +1009,7 @@ Expected: commit succeeds and the current client gallery files are untouched.
 - Produces: `TranscriptContent` presentational component that keeps `children` visible unless timeline data is ready.
 - Consumes: `getTranscriptByTalkId(id)` and `buildTranscriptParagraphs(cues)`.
 - Preserves: `GET /api/transcripts/[id] -> { transcript: TranscriptCue[] }`.
+- Tests mounted client effects with dev-only `happy-dom`; it supplies a DOM for React effect/fetch/abort coverage without adding runtime application code or a production dependency.
 
 - [ ] **Step 1: Write failing compact transcript component tests**
 
@@ -909,7 +1095,7 @@ export default function TranscriptReadable({ paragraphs }: Props) {
 }
 ```
 
-- [ ] **Step 4: Write failing shell/timeline responsibility tests**
+- [ ] **Step 4: Write failing shell/timeline and mounted client-effect tests**
 
 Create `app/components/transcript-section-loader.test.tsx`:
 
@@ -963,6 +1149,33 @@ describe("TranscriptSectionLoader", () => {
 });
 ```
 
+Add `happy-dom` as a development-only dependency:
+
+```bash
+/Users/tt/.bun/bin/bun add --dev happy-dom
+```
+
+This updates `package.json` and `bun.lock`. The dependency is only a mounted
+client-test environment: static server rendering cannot run `useEffect`, click
+handlers, request cancellation, or prop-update synchronization, and no DOM
+emulator is shipped to production.
+
+Create `app/components/transcript-section-loader.client.test.tsx` with a real
+`createRoot()` mounted into a `happy-dom` `Window`. Use `act()` around renders
+and button clicks, restore globals/fetch after each test, and cover these
+observable behaviors without mocking the component under test:
+
+- normal plain mode performs no transcript request and keeps the SSR child;
+- selecting timeline fetches once, renders cues, and reuses the fetched data
+  after switching modes;
+- initial cue/query deep links automatically select and load timeline mode;
+- adding a cue prop while the same talk remains mounted switches to timeline,
+  while removing deep-link props does not overwrite a later manual plain-mode
+  choice (one-way prop synchronization);
+- 404/network failures retain the SSR child and a repeated timeline selection
+  retries;
+- changing talks or unmounting aborts an in-flight request.
+
 Update `app/components/transcript-section.test.tsx` so it tests timeline-only
 behavior. Remove assertions for mode buttons, the AI notice, and sticky-toolbar
 layout; retain assertions for cue IDs, timestamps, target highlighting, and
@@ -976,16 +1189,20 @@ Run:
 ```bash
 /Users/tt/.bun/bin/bun test \
   app/components/transcript-section-loader.test.tsx \
+  app/components/transcript-section-loader.client.test.tsx \
   app/components/transcript-section.test.tsx
 ```
 
-Expected: FAIL because the loader has no children/mode shell or `TranscriptContent`, and the existing TranscriptSection still owns both modes.
+Expected: FAIL because the loader has no children/mode shell or `TranscriptContent`, its mounted effects do not yet satisfy the on-demand/deep-link lifecycle, and the existing TranscriptSection still owns both modes.
 
 - [ ] **Step 6: Refactor the loader into the mode shell**
 
 Replace `app/components/transcript-section-loader.tsx` with this complete mode
 shell. It deliberately has no IntersectionObserver; timeline loading is driven
-only by explicit selection or a cue/query deep link.
+only by explicit selection or a cue/query deep link. The prop-synchronization
+effect is intentionally one-way: a cue/query added during same-page navigation
+forces timeline mode, but removing the deep-link props does not force plain mode
+or overwrite the user's later manual selection.
 
 ```tsx
 "use client";
@@ -1107,6 +1324,15 @@ export default function TranscriptSectionLoader({
 	const [status, setStatus] = useState<TranscriptLoadStatus>("idle");
 	const [transcript, setTranscript] = useState<TranscriptCue[] | null>(null);
 	const [retryToken, setRetryToken] = useState(0);
+
+	useEffect(() => {
+		if (
+			getInitialTranscriptMode(targetCueIndex, transcriptHighlightQuery) ===
+			"timeline"
+		) {
+			setMode("timeline");
+		}
+	}, [targetCueIndex, transcriptHighlightQuery]);
 
 	useEffect(() => {
 		if (mode !== "timeline" || transcript !== null) return;
@@ -1359,11 +1585,12 @@ Run:
 /Users/tt/.bun/bin/bun test \
   app/components/transcript-readable.test.tsx \
   app/components/transcript-section-loader.test.tsx \
+  app/components/transcript-section-loader.client.test.tsx \
   app/components/transcript-section.test.tsx \
   'app/talks/[id]/page.test.tsx'
 ```
 
-Expected: all tests PASS. The representative detail HTML contains `で 大体一体全体仏教って何でしょうかと` and does not contain `文字起こしを読み込み中です。`.
+Expected: all tests PASS. The representative detail HTML contains `で 大体一体全体仏教って何でしょうかと` and does not contain `文字起こしを読み込み中です。`; mounted client coverage proves on-demand fetch, cache reuse, retry, abort, and one-way deep-link prop synchronization.
 
 - [ ] **Step 10: Format, inspect, and commit Task 3**
 
@@ -1375,12 +1602,25 @@ Run:
   app/components/transcript-readable.test.tsx \
   app/components/transcript-section-loader.tsx \
   app/components/transcript-section-loader.test.tsx \
+  app/components/transcript-section-loader.client.test.tsx \
   app/components/transcript-section.tsx \
   app/components/transcript-section.test.tsx \
   'app/talks/[id]/page.tsx' \
-  'app/talks/[id]/page.test.tsx'
+  'app/talks/[id]/page.test.tsx' \
+  package.json
 git diff --check
-git add app
+git add \
+  app/components/transcript-readable.tsx \
+  app/components/transcript-readable.test.tsx \
+  app/components/transcript-section-loader.tsx \
+  app/components/transcript-section-loader.test.tsx \
+  app/components/transcript-section-loader.client.test.tsx \
+  app/components/transcript-section.tsx \
+  app/components/transcript-section.test.tsx \
+  'app/talks/[id]/page.tsx' \
+  'app/talks/[id]/page.test.tsx' \
+  package.json \
+  bun.lock
 git commit -m "feat: expose transcripts in initial talk HTML"
 ```
 
@@ -1405,12 +1645,13 @@ Expected: commit succeeds; `app/api/transcripts/[id]/route.ts` remains unchanged
 Run:
 
 ```bash
+/Users/tt/.bun/bin/bun test app/components/transcript-section-loader.client.test.tsx
 /Users/tt/.bun/bin/bun test
 /Users/tt/.bun/bin/bun run format:check
 /Users/tt/.bun/bin/bun run lint
 ```
 
-Expected: all tests PASS, formatting reports no changes, lint exits 0 with no errors.
+Expected: the mounted client-effect test and the complete suite PASS, formatting reports no changes, and lint exits 0 with no errors.
 
 - [ ] **Step 2: Build the production application**
 
@@ -1436,7 +1677,7 @@ Then run:
 curl -sS http://localhost:3100/talks/TALK-V-013-1-ADC344BF78FB > /tmp/early-buddhism-talk.html
 rg -n "で 大体一体全体仏教って何でしょうかと|文字起こしを読み込み中です" /tmp/early-buddhism-talk.html
 curl -sS http://localhost:3100/talks > /tmp/early-buddhism-talks.html
-rg -n 'href="/talks/archive/1"' /tmp/early-buddhism-talks.html
+rg -o 'href="/talks/archive/[0-9]+"' /tmp/early-buddhism-talks.html | sort -u
 curl -sS http://localhost:3100/ > /tmp/early-buddhism-home.html
 rg -n '日本テーラワーダ仏教協会|https://j-theravada.com/#organization' /tmp/early-buddhism-home.html
 ```
@@ -1445,7 +1686,7 @@ Expected:
 
 - Representative talk HTML contains the known transcript text.
 - Representative talk HTML has no loading-placeholder match.
-- `/talks` contains the archive page 1 href.
+- `/talks` contains direct ordinary hrefs for every current archive page.
 - Homepage JSON-LD contains the association name and Organization ID.
 
 - [ ] **Step 4: Verify archive reachability and completeness**
@@ -1455,21 +1696,59 @@ Run this read-only Node check against the local production server:
 ```bash
 /Users/tt/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node <<'NODE'
 (async () => {
-  const expected = require("./app/generated/talks.json").map((talk) => talk.id);
+  const baseUrl = "http://localhost:3100";
+  const expected = require("./app/generated/talks.json").map(
+    (talk) => `/talks/${encodeURIComponent(talk.id)}`,
+  );
+  const talksHtml = await fetch(`${baseUrl}/talks`).then((response) => {
+    if (!response.ok) throw new Error(`/talks: ${response.status}`);
+    return response.text();
+  });
+  const previewHrefs = Array.from(
+    talksHtml.matchAll(/href="(\/talks\/(?!archive\/)[^"?#]+)"/g),
+    (match) => match[1],
+  );
+  const archiveHrefs = Array.from(
+    new Set(
+      Array.from(
+        talksHtml.matchAll(/href="(\/talks\/archive\/\d+)"/g),
+        (match) => match[1],
+      ),
+    ),
+  );
   const found = new Set();
-  for (let page = 1; page <= 10; page += 1) {
-    const html = await fetch(`http://localhost:3100/talks/archive/${page}`).then((r) => {
-      if (!r.ok) throw new Error(`archive ${page}: ${r.status}`);
-      return r.text();
+  for (const href of archiveHrefs) {
+    const html = await fetch(new URL(href, baseUrl)).then((response) => {
+      if (!response.ok) throw new Error(`${href}: ${response.status}`);
+      return response.text();
     });
-    for (const match of html.matchAll(/href="\/talks\/(?!archive\/)([^"?#]+)"/g)) {
-      found.add(decodeURIComponent(match[1]));
+    for (const match of html.matchAll(/href="(\/talks\/(?!archive\/)[^"?#]+)"/g)) {
+      found.add(match[1]);
     }
   }
   const missing = expected.filter((id) => !found.has(id));
   const unexpected = [...found].filter((id) => !expected.includes(id));
-  console.log(JSON.stringify({ expected: expected.length, found: found.size, missing, unexpected }, null, 2));
-  if (missing.length || unexpected.length || found.size !== expected.length) process.exit(1);
+  console.log(
+    JSON.stringify(
+      {
+        previewLinks: previewHrefs.length,
+        archivePagesLinkedFromTalks: archiveHrefs.length,
+        expected: expected.length,
+        found: found.size,
+        missing,
+        unexpected,
+      },
+      null,
+      2,
+    ),
+  );
+  if (
+    previewHrefs.length !== 6 ||
+    archiveHrefs.length === 0 ||
+    missing.length ||
+    unexpected.length ||
+    found.size !== expected.length
+  ) process.exit(1);
 })().catch((error) => {
   console.error(error);
   process.exit(1);
@@ -1477,16 +1756,10 @@ Run this read-only Node check against the local production server:
 NODE
 ```
 
-Expected:
-
-```json
-{
-	"expected": 901,
-	"found": 901,
-	"missing": [],
-	"unexpected": []
-}
-```
+Expected: `previewLinks` is exactly 6, the archive-page link count is derived
+from rendered `/talks`, `found` equals the current repository talk count, and
+both `missing` and `unexpected` are empty. This is the production equivalent of
+the two-edge rendered-link graph test.
 
 - [ ] **Step 5: Verify the timeline interaction in a real browser**
 
@@ -1520,9 +1793,12 @@ Expected:
 Run:
 
 ```bash
+BASE_SHA=$(git merge-base HEAD main)
 git status --short
-git log -4 --oneline
-git diff HEAD~3..HEAD --stat
+git log --oneline "$BASE_SHA"..HEAD
+git diff --stat "$BASE_SHA"..HEAD
+git diff --name-status "$BASE_SHA"..HEAD
+git diff "$BASE_SHA"..HEAD
 ```
 
 Read the design spec line by line and confirm:
@@ -1533,7 +1809,11 @@ Read the design spec line by line and confirm:
 - site/operator/publisher identity is consistent;
 - monthly collection pages, search algorithms, and transcript APIs were not expanded.
 
-Expected: working tree clean and exactly three implementation commits after the design/plan documentation commits.
+Expected: working tree clean. Task commits may be followed by one or more
+review-fix commits; do not require exactly three implementation commits.
+Instead, inspect the complete merge-base-to-HEAD log, file list, and diff to
+confirm that all intended content is present, every changed path belongs to the
+enumerated task/review-fix scope, and no prohibited surface changed.
 
 ---
 
@@ -1541,8 +1821,13 @@ Expected: working tree clean and exactly three implementation commits after the 
 
 After a separately requested push/deployment:
 
-1. Wait until the Vercel production deployment is `Ready`.
-2. Repeat the HTML checks against `https://early-buddhism.j-theravada.com`.
-3. Validate homepage and representative talk JSON-LD.
-4. Use Search Console URL Inspection for `/`, `/talks`, `/talks/archive/1`, and a representative talk.
-5. Request indexing and monitor queries, impressions, clicks, and average position; do not treat immediate ranking changes as an implementation pass/fail condition.
+1. On an authorized preview deployment, request an invalid archive route and
+   inspect deployment logs. A correct 404 is already the required behavior;
+   record whether the local Next.js `NoFallbackError` noise reproduces, but do
+   not make speculative product changes unless the preview response itself is
+   wrong.
+2. Wait until the Vercel production deployment is `Ready`.
+3. Repeat the HTML checks against `https://early-buddhism.j-theravada.com`.
+4. Validate homepage and representative talk JSON-LD.
+5. Use Search Console URL Inspection for `/`, `/talks`, `/talks/archive/1`, and a representative talk.
+6. Request indexing and monitor queries, impressions, clicks, and average position; do not treat immediate ranking changes as an implementation pass/fail condition.
