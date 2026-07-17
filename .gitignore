@@ -47,3 +47,4 @@ next-env.d.ts
 .github/skills/
 .opencode/
 .windsurf/
+/.worktrees/
