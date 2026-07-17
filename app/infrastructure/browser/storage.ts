@@ -1,5 +1,3 @@
-import type { StateSnapshot } from "react-virtuoso";
-
 export type ScrollPositions = Record<string, number>;
 
 export function readSessionStorage(key: string): string | null {
@@ -39,20 +37,5 @@ export function parseScrollPositions(raw: string | null): ScrollPositions {
 		return parsed as ScrollPositions;
 	} catch {
 		return {};
-	}
-}
-
-export function parseVirtuosoRestoreSnapshot(
-	raw: string | null,
-	isRestorePending: boolean,
-): StateSnapshot | undefined {
-	if (!isRestorePending || !raw) {
-		return undefined;
-	}
-
-	try {
-		return JSON.parse(raw) as StateSnapshot;
-	} catch {
-		return undefined;
 	}
 }
