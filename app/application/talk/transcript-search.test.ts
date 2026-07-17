@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { Talk } from "../../domain/talk/types";
 import {
+	buildTranscriptSnippetsByTalkId,
 	buildTranscriptAwareSearchData,
+	findTranscriptAwareTalkIds,
 	hasTranscriptAwareSearchQuery,
 	searchTranscriptAwareTalks,
 } from "./transcript-search";
@@ -113,5 +115,70 @@ describe("transcript-aware talk search", () => {
 			talkIds: [],
 			results: [],
 		});
+	});
+
+	test("一致IDを新しい順のまま返す", () => {
+		const searchData = buildTranscriptAwareSearchData(
+			[
+				createTalk({
+					id: "TALK-NEW",
+					title: "慈悲の話",
+					recordedOnDate: new Date("2024-01-01T00:00:00.000Z"),
+				}),
+				createTalk({
+					id: "TALK-OLD",
+					title: "慈悲の実践",
+					recordedOnDate: new Date("2020-01-01T00:00:00.000Z"),
+				}),
+			],
+			[],
+		);
+
+		expect(findTranscriptAwareTalkIds(searchData, "慈悲")).toEqual([
+			"TALK-NEW",
+			"TALK-OLD",
+		]);
+	});
+
+	test("指定された表示IDだけの文字起こしスニペットを作る", () => {
+		const talks = [
+			createTalk({ id: "TALK-1", title: "第一講" }),
+			createTalk({ id: "TALK-2", title: "第二講" }),
+		];
+		const cues = (text: string) => [
+			{
+				index: 3,
+				start: 12,
+				end: 18,
+				startLabel: "00:00:12",
+				endLabel: "00:00:18",
+				text,
+			},
+		];
+		const searchData = buildTranscriptAwareSearchData(talks, [
+			{ talkId: "TALK-1", text: "慈悲", cues: cues("第一講の慈悲") },
+			{ talkId: "TALK-2", text: "慈悲", cues: cues("第二講の慈悲") },
+		]);
+
+		const snippets = buildTranscriptSnippetsByTalkId(searchData, "慈悲", [
+			"TALK-2",
+		]);
+
+		expect([...snippets.keys()]).toEqual(["TALK-2"]);
+		expect(snippets.get("TALK-2")?.[0]?.text).toBe("第二講の慈悲");
+	});
+
+	test("メタデータだけの一致には文字起こしスニペットを作らない", () => {
+		const searchData = buildTranscriptAwareSearchData(
+			[createTalk({ id: "TALK-META", title: "慈悲の講演" })],
+			[],
+		);
+
+		expect(findTranscriptAwareTalkIds(searchData, "慈悲")).toEqual([
+			"TALK-META",
+		]);
+		expect(
+			buildTranscriptSnippetsByTalkId(searchData, "慈悲", ["TALK-META"]),
+		).toEqual(new Map());
 	});
 });

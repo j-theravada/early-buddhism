@@ -8,6 +8,7 @@ import {
 	normalizeForSearch,
 	tokenizeSearchQuery,
 	type IndexedTalk,
+	type TranscriptSearchSnippet,
 } from "./search";
 import {
 	buildEmptyTalkSearchApiResponse,
@@ -151,39 +152,57 @@ function hasTranscriptTokenMatch(
 	);
 }
 
+export function findTranscriptAwareTalkIds(
+	searchData: TranscriptAwareSearchData,
+	query: string,
+): string[] {
+	const tokens = tokenizeSearchQuery(query);
+	if (tokens.length === 0) return [];
+
+	return filterTranscriptAwareTalks(searchData, tokens).map((talk) => talk.id);
+}
+
+export function buildTranscriptSnippetsByTalkId(
+	searchData: TranscriptAwareSearchData,
+	query: string,
+	talkIds: readonly string[],
+): Map<string, TranscriptSearchSnippet[]> {
+	const tokens = tokenizeSearchQuery(query);
+	const snippetsByTalkId = new Map<string, TranscriptSearchSnippet[]>();
+	if (tokens.length === 0) return snippetsByTalkId;
+
+	for (const talkId of talkIds) {
+		if (!hasTranscriptTokenMatch(searchData, talkId, tokens)) continue;
+		const snippets = buildTranscriptSearchSnippets(
+			searchData.transcriptDocumentByTalkId.get(talkId)?.cues ?? [],
+			tokens,
+		);
+		if (snippets.length > 0) {
+			snippetsByTalkId.set(talkId, snippets);
+		}
+	}
+
+	return snippetsByTalkId;
+}
+
 export function searchTranscriptAwareTalks(
 	searchData: TranscriptAwareSearchData,
 	query: string,
 ): TalkSearchApiResponse {
-	const tokens = tokenizeSearchQuery(query);
-	if (tokens.length === 0) {
+	const talkIds = findTranscriptAwareTalkIds(searchData, query);
+	if (talkIds.length === 0) {
 		return buildEmptyTalkSearchApiResponse();
 	}
-
-	const talks = filterTranscriptAwareTalks(searchData, tokens);
-	const results: TalkSearchApiResponse["results"] = [];
-
-	for (const talk of talks) {
-		if (!hasTranscriptTokenMatch(searchData, talk.id, tokens)) {
-			continue;
-		}
-
-		const transcriptSnippets = buildTranscriptSearchSnippets(
-			searchData.transcriptDocumentByTalkId.get(talk.id)?.cues ?? [],
-			tokens,
-		);
-		if (transcriptSnippets.length === 0) {
-			continue;
-		}
-
-		results.push({
-			talkId: talk.id,
-			transcriptSnippets,
-		});
-	}
-
+	const snippetsByTalkId = buildTranscriptSnippetsByTalkId(
+		searchData,
+		query,
+		talkIds,
+	);
 	return {
-		talkIds: talks.map((talk) => talk.id),
-		results,
+		talkIds,
+		results: talkIds.flatMap((talkId) => {
+			const transcriptSnippets = snippetsByTalkId.get(talkId);
+			return transcriptSnippets ? [{ talkId, transcriptSnippets }] : [];
+		}),
 	};
 }
