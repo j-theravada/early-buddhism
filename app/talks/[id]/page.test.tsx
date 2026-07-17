@@ -5,6 +5,9 @@ mock.module("next/navigation", () => ({
 	notFound: () => {
 		throw new Error("not found");
 	},
+	permanentRedirect: (href: string) => {
+		throw new Error(`permanent redirect: ${href}`);
+	},
 	useRouter: () => ({
 		back: () => {},
 	}),

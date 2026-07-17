@@ -8,6 +8,9 @@ mock.module("next/navigation", () => ({
 	notFound: () => {
 		throw new Error("not found");
 	},
+	permanentRedirect: (href: string) => {
+		throw new Error(`permanent redirect: ${href}`);
+	},
 	usePathname: () => "/talks/page/2",
 	useRouter: () => ({ back: () => {} }),
 }));

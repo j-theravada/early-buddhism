@@ -1,9 +1,6 @@
 import type { MetadataRoute } from "next";
-import { getTalkArchivePageCount } from "./application/talk/archive";
-import {
-	buildTalkArchiveHref,
-	buildTalkDetailHref,
-} from "./application/talk/links";
+import { TALK_LISTING_PAGE_SIZE } from "./application/talk/listing";
+import { buildTalkDetailHref, buildTalksHref } from "./application/talk/links";
 import { getTalks } from "./infrastructure/talk/repository";
 import { buildCanonicalUrl } from "./utils/seo";
 
@@ -38,10 +35,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	];
 
 	const talks = await getTalks();
-	const archivePages: MetadataRoute.Sitemap = Array.from(
-		{ length: getTalkArchivePageCount(talks.length) },
+	const totalListingPages = Math.max(
+		1,
+		Math.ceil(talks.length / TALK_LISTING_PAGE_SIZE),
+	);
+	const listingPages: MetadataRoute.Sitemap = Array.from(
+		{ length: Math.max(0, totalListingPages - 1) },
 		(_, index) => ({
-			url: buildCanonicalUrl(buildTalkArchiveHref(index + 1)),
+			url: buildCanonicalUrl(buildTalksHref({ page: index + 2 })),
 			changeFrequency: "weekly",
 			priority: 0.5,
 		}),
@@ -53,5 +54,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		priority: 0.6,
 	}));
 
-	return [...staticPages, ...archivePages, ...talkPages];
+	return [...staticPages, ...listingPages, ...talkPages];
 }

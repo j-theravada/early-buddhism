@@ -1,101 +1,65 @@
-import { describe, expect, mock, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
-import {
-	getTalkArchivePageCount,
-	TALK_ARCHIVE_PAGE_SIZE,
-} from "../../../application/talk/archive";
-import { buildTalkGalleryItems } from "../../../application/talk/gallery";
-import {
-	buildTalkArchiveHref,
-	buildTalkDetailHref,
-} from "../../../application/talk/links";
-import { getTalks } from "../../../infrastructure/talk/repository";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("next/navigation", () => ({
-	notFound: () => {
-		throw new Error("not found");
-	},
-}));
+const notFound = mock(() => {
+	throw new Error("not found");
+});
+const permanentRedirect = mock((href: string) => {
+	throw new Error(`permanent redirect: ${href}`);
+});
 
-function extractTalkDetailHrefs(html: string): string[] {
-	return Array.from(
-		html.matchAll(/href="(\/talks\/(?!archive\/)[^"]+)"/g),
-		(match) => match[1],
-	);
-}
+describe("LegacyTalkArchivePage", () => {
+	beforeEach(() => {
+		notFound.mockClear();
+		permanentRedirect.mockClear();
+		mock.module("next/navigation", () => ({ notFound, permanentRedirect }));
+	});
 
-describe("TalkArchivePage", () => {
-	test("各ページの全法話を通常リンクで出して静的生成対象を列挙する", async () => {
-		const { default: TalkArchivePage, generateStaticParams } =
+	test("旧アーカイブ10ページを対応する新一覧へ恒久リダイレクトする", async () => {
+		const { default: LegacyTalkArchivePage, generateStaticParams } =
 			await import("./page");
-		const talks = buildTalkGalleryItems(await getTalks());
-		const totalPages = getTalkArchivePageCount(talks.length);
-		const finalPage = totalPages;
-		const finalPageOffset = (finalPage - 1) * TALK_ARCHIVE_PAGE_SIZE;
-		const firstPageHtml = renderToStaticMarkup(
-			await TalkArchivePage({ params: Promise.resolve({ page: "1" }) }),
-		);
-		const finalPageHtml = renderToStaticMarkup(
-			await TalkArchivePage({
-				params: Promise.resolve({ page: String(finalPage) }),
-			}),
-		);
-		const params = await generateStaticParams();
-		const firstPageHrefs = extractTalkDetailHrefs(firstPageHtml);
-		const finalPageHrefs = extractTalkDetailHrefs(finalPageHtml);
+		const targets = [
+			"/talks",
+			"/talks/page/4",
+			"/talks/page/7",
+			"/talks/page/11",
+			"/talks/page/14",
+			"/talks/page/17",
+			"/talks/page/21",
+			"/talks/page/24",
+			"/talks/page/27",
+			"/talks/page/31",
+		];
 
-		expect(firstPageHrefs).toHaveLength(
-			Math.min(TALK_ARCHIVE_PAGE_SIZE, talks.length),
-		);
-		expect(firstPageHrefs).toEqual(
-			talks
-				.slice(0, TALK_ARCHIVE_PAGE_SIZE)
-				.map((talk) => buildTalkDetailHref(talk.id)),
-		);
-		expect(finalPageHrefs).toHaveLength(talks.length - finalPageOffset);
-		expect(finalPageHrefs).toEqual(
-			talks.slice(finalPageOffset).map((talk) => buildTalkDetailHref(talk.id)),
-		);
-		expect(firstPageHtml).toContain(
-			`href="${buildTalkArchiveHref(finalPage)}"`,
-		);
-		expect(params).toEqual(
-			Array.from({ length: totalPages }, (_, index) => ({
+		for (const [index, target] of targets.entries()) {
+			await expect(
+				LegacyTalkArchivePage({
+					params: Promise.resolve({ page: String(index + 1) }),
+				}),
+			).rejects.toThrow(`permanent redirect: ${target}`);
+		}
+
+		expect(permanentRedirect).toHaveBeenCalledTimes(10);
+		expect(permanentRedirect).toHaveBeenNthCalledWith(1, "/talks");
+		expect(permanentRedirect).toHaveBeenNthCalledWith(2, "/talks/page/4");
+		expect(permanentRedirect).toHaveBeenNthCalledWith(10, "/talks/page/31");
+		expect(await generateStaticParams()).toEqual(
+			Array.from({ length: 10 }, (_, index) => ({
 				page: String(index + 1),
 			})),
 		);
+		expect(notFound).not.toHaveBeenCalled();
 	});
 
-	test("中間ページに前後リンクを出す", async () => {
-		const { default: TalkArchivePage } = await import("./page");
-		const html = renderToStaticMarkup(
-			await TalkArchivePage({ params: Promise.resolve({ page: "2" }) }),
-		);
+	test("非正規表記と範囲外ページを404にする", async () => {
+		const { default: LegacyTalkArchivePage } = await import("./page");
 
-		expect(html).toContain('href="/talks/archive/1"');
-		expect(html).toContain("← 前へ");
-		expect(html).toContain('href="/talks/archive/3"');
-		expect(html).toContain("次へ →");
-	});
+		for (const page of ["0", "02", "11", "x"]) {
+			await expect(
+				LegacyTalkArchivePage({ params: Promise.resolve({ page }) }),
+			).rejects.toThrow("not found");
+		}
 
-	test("ページごとにself-canonicalを返す", async () => {
-		const { generateMetadata } = await import("./page");
-		const metadata = await generateMetadata({
-			params: Promise.resolve({ page: "2" }),
-		});
-		expect(metadata.alternates?.canonical).toBe(
-			"https://early-buddhism.j-theravada.com/talks/archive/2",
-		);
-	});
-
-	test("範囲外ページは404", async () => {
-		const { default: TalkArchivePage } = await import("./page");
-		const outOfRangePage =
-			getTalkArchivePageCount((await getTalks()).length) + 1;
-		await expect(
-			TalkArchivePage({
-				params: Promise.resolve({ page: String(outOfRangePage) }),
-			}),
-		).rejects.toThrow("not found");
+		expect(notFound).toHaveBeenCalledTimes(4);
+		expect(permanentRedirect).not.toHaveBeenCalled();
 	});
 });
