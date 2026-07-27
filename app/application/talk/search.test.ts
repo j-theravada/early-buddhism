@@ -121,7 +121,7 @@ describe("talk search helpers", () => {
 		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);
 	});
 
-	test("検索対象を指定しない場合は全ての項目を対象にする", () => {
+	test("検索対象を指定しない場合はタイトル、解説、文字起こしを対象にする", () => {
 		const talks = [
 			createDisplayTalk({
 				id: "TALK-1",
@@ -133,7 +133,7 @@ describe("talk search helpers", () => {
 
 		expect(
 			filterTalksByQuery(indexedTalks, tokenizeSearchQuery("検索対象の話者")),
-		).toHaveLength(1);
+		).toHaveLength(0);
 	});
 
 	test("検索対象を指定すると選択した項目だけを対象にする", () => {

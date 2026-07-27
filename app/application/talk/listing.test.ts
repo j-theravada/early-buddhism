@@ -137,7 +137,7 @@ describe("talk listing model", () => {
 		expect(normalized?.conditions.query).toBe("慈".repeat(120));
 	});
 
-	test("検索対象は指定なしなら全て、指定時は選択項目だけにする", () => {
+	test("検索対象はタイトル、解説、文字起こしを初期値にし指定時は選択項目だけにする", () => {
 		const items = [createItem(1)];
 		const all = normalizeTalkListingRequest(items, { page: "1" });
 		const limited = normalizeTalkListingRequest(items, {
@@ -145,7 +145,11 @@ describe("talk listing model", () => {
 			searchFields: ["title", "transcript", "invalid"],
 		});
 
-		expect(all?.conditions.searchFields).toContain("speaker");
+		expect(all?.conditions.searchFields).toEqual([
+			"title",
+			"description",
+			"transcript",
+		]);
 		expect(limited?.conditions.searchFields).toEqual(["title", "transcript"]);
 	});
 

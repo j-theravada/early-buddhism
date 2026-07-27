@@ -16,16 +16,8 @@ export type ContentSearchItem = ContentItemBase & {
 };
 
 export const SEARCH_FIELD_OPTIONS = [
-	{ id: "classification", label: "分類・シリーズ" },
-	{ id: "dvd", label: "DVD番号" },
 	{ id: "title", label: "タイトル" },
 	{ id: "description", label: "解説" },
-	{ id: "event", label: "イベント" },
-	{ id: "venue", label: "会場" },
-	{ id: "speaker", label: "話者" },
-	{ id: "language", label: "言語" },
-	{ id: "date", label: "収録日" },
-	{ id: "theme", label: "テーマ" },
 	{ id: "transcript", label: "文字起こし" },
 ] as const;
 
@@ -108,24 +100,8 @@ function buildSearchTextByField(
 	extraSearchText = "",
 ): Record<SearchField, string> {
 	return {
-		classification: normalizeSearchParts([
-			item.collectionLabel,
-			item.seriesLabel,
-			item.kind === "talk" ? "法話 講演 動画" : "テキスト 経典",
-		]),
-		dvd: normalizeSearchParts([item.dvdId]),
 		title: normalizeSearchParts([item.title]),
 		description: normalizeSearchParts([item.description, item.subtitle]),
-		event: normalizeSearchParts([item.event]),
-		venue: normalizeSearchParts([item.venue]),
-		speaker: normalizeSearchParts([item.speaker]),
-		language: normalizeSearchParts([item.language]),
-		date: normalizeSearchParts([
-			item.recordedOnFormatted,
-			item.recordedOnRaw,
-			item.decadeLabel,
-		]),
-		theme: normalizeSearchParts([item.themeLabel]),
 		transcript: normalizeSearchParts([extraSearchText]),
 	};
 }

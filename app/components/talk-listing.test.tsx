@@ -77,6 +77,25 @@ describe("TalkListing", () => {
 		expect(html).toContain("galleryPage=2");
 	});
 
+	test("検索対象にはタイトル、解説、文字起こしだけを表示する", () => {
+		const html = renderToStaticMarkup(
+			<TalkListing listing={createListing()} />,
+		);
+
+		expect(html).toMatch(
+			/<input type="checkbox" name="fields" value="title"\/>/,
+		);
+		expect(html).toMatch(
+			/<input type="checkbox" name="fields" value="description"\/>/,
+		);
+		expect(html).toMatch(
+			/<input type="checkbox" name="fields" value="transcript"\/>/,
+		);
+		expect(html).not.toContain('value="speaker"');
+		expect(html).not.toContain('value="classification"');
+		expect(html).not.toContain('value="theme"');
+	});
+
 	test("検索対象のチェック状態をフォームに反映する", () => {
 		const html = renderToStaticMarkup(
 			<TalkListing
