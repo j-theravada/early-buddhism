@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	WATCH_HISTORY_LIMIT,
 	WATCH_HISTORY_MINIMUM_SECONDS,
+	WATCH_HISTORY_STORAGE_KEY,
 	getResumeSeconds,
 	isPlaybackCompleted,
 	parseWatchHistory,
@@ -66,6 +67,29 @@ describe("parseWatchHistory", () => {
 			newer,
 			older,
 		]);
+	});
+
+	test("caps persisted history at the newest 200 entries", () => {
+		const persisted = Object.fromEntries(
+			Array.from({ length: WATCH_HISTORY_LIMIT + 1 }, (_, index) => {
+				const persistedEntry = {
+					...entry,
+					talkId: `persisted-${index}`,
+					lastWatchedAt: new Date(Date.UTC(2026, 0, 1, 0, index)).toISOString(),
+				};
+				return [persistedEntry.talkId, persistedEntry];
+			}),
+		);
+
+		const result = parseWatchHistory(JSON.stringify(persisted));
+
+		expect(result).toHaveLength(WATCH_HISTORY_LIMIT);
+		expect(result[0]?.talkId).toBe("persisted-200");
+		expect(result.some(({ talkId }) => talkId === "persisted-0")).toBe(false);
+	});
+
+	test("exposes the versioned storage key", () => {
+		expect(WATCH_HISTORY_STORAGE_KEY).toBe("early-buddhism:watch-history:v1");
 	});
 });
 

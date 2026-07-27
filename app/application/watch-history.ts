@@ -1,5 +1,6 @@
 export const WATCH_HISTORY_LIMIT = 200;
 export const WATCH_HISTORY_MINIMUM_SECONDS = 30;
+export const WATCH_HISTORY_STORAGE_KEY = "early-buddhism:watch-history:v1";
 
 export type WatchHistoryEntry = {
 	talkId: string;
@@ -59,9 +60,8 @@ export const parseWatchHistory = (raw: string): WatchHistoryEntry[] => {
 		return Object.entries(parsed)
 			.filter(([key, value]) => isWatchHistoryEntry(key, value))
 			.map(([, value]) => value)
-			.sort(
-				(a, b) => Date.parse(b.lastWatchedAt) - Date.parse(a.lastWatchedAt),
-			);
+			.sort((a, b) => Date.parse(b.lastWatchedAt) - Date.parse(a.lastWatchedAt))
+			.slice(0, WATCH_HISTORY_LIMIT);
 	} catch {
 		return [];
 	}
