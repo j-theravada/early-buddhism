@@ -30,8 +30,13 @@ const getSearchData = createSearchDataLoader(() =>
 
 export const readTalkListingPage = createTalkListingReader({
 	loadItems: async () => buildTalkGalleryItems(await getTalks()),
-	findMatchingTalkIds: async (query) =>
-		findTranscriptAwareTalkIds(await getSearchData(), query),
-	buildTranscriptSnippets: async (query, talkIds) =>
-		buildTranscriptSnippetsByTalkId(await getSearchData(), query, talkIds),
+	findMatchingTalkIds: async (query, searchFields) =>
+		findTranscriptAwareTalkIds(await getSearchData(), query, searchFields),
+	buildTranscriptSnippets: async (query, talkIds, searchFields) =>
+		buildTranscriptSnippetsByTalkId(
+			await getSearchData(),
+			query,
+			talkIds,
+			searchFields,
+		),
 });

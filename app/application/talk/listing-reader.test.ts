@@ -98,6 +98,27 @@ describe("talk listing reader", () => {
 		expect(matchCalls).toBe(2);
 	});
 
+	test("検索対象が違う場合は同じqueryでも検索結果を共有しない", async () => {
+		let matchCalls = 0;
+		const fieldInputs: string[][] = [];
+		const items = createItems(1);
+		const reader = createTalkListingReader({
+			loadItems: async () => items,
+			findMatchingTalkIds: async (_query, fields) => {
+				matchCalls += 1;
+				fieldInputs.push([...fields]);
+				return items.map((item) => item.id);
+			},
+			buildTranscriptSnippets: async () => new Map(),
+		});
+
+		await reader({ page: "1", query: "慈悲", searchFields: ["title"] });
+		await reader({ page: "1", query: "慈悲", searchFields: ["transcript"] });
+
+		expect(matchCalls).toBe(2);
+		expect(fieldInputs).toEqual([["title"], ["transcript"]]);
+	});
+
 	test("同じ正規化queryの同時missは1回の検索を共有する", async () => {
 		let matchCalls = 0;
 		const items = createItems(1);

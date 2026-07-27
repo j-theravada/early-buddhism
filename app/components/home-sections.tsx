@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
 import { buildTalksHref } from "../application/talk/links";
+import { SEARCH_FIELD_OPTIONS } from "../application/talk/search";
 import type { NewsItem } from "../domain/news/types";
 import {
 	SUMANASARA_JA_NAME,
@@ -252,9 +253,34 @@ export function TalkSearchSection() {
 						className="search-cancel-none w-full rounded-[30px] border border-[#9d7e4c] bg-white px-5 py-[15px] text-[16px] leading-8 text-[#303030] outline-none placeholder:text-[#888] focus:border-[#d6c6ad] focus:ring-2 focus:ring-[#9d7e4c]/15"
 						id="home-talk-search"
 						name="query"
-						placeholder="キーワード・文字起こしで検索"
+						placeholder="キーワードで検索"
 						type="search"
 					/>
+					<fieldset className="mx-auto mt-3 rounded-sm border border-[#eadfce] bg-white/80 px-3 py-2 text-left">
+						<legend className="px-1 text-xs font-semibold text-[#5f5144]">
+							検索対象
+						</legend>
+						<p className="mb-2 text-[11px] text-[#887966]">
+							「全て」を外すと、選択した項目だけを検索します。
+						</p>
+						<div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-[#5f5144]">
+							<label className="inline-flex items-center gap-1.5">
+								<input
+									defaultChecked
+									name="fields"
+									type="checkbox"
+									value="all"
+								/>
+								全て
+							</label>
+							{SEARCH_FIELD_OPTIONS.map(({ id, label }) => (
+								<label className="inline-flex items-center gap-1.5" key={id}>
+									<input name="fields" type="checkbox" value={id} />
+									{label}
+								</label>
+							))}
+						</div>
+					</fieldset>
 					<button className="sr-only" type="submit">
 						検索する
 					</button>

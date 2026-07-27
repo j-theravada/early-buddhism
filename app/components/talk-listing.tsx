@@ -7,7 +7,12 @@ import {
 	buildTalkListingSections,
 	type TalkListingPage,
 } from "../application/talk/listing";
-import { tokenizeSearchQuery } from "../application/talk/search";
+import {
+	areAllSearchFieldsSelected,
+	normalizeSearchFields,
+	SEARCH_FIELD_OPTIONS,
+	tokenizeSearchQuery,
+} from "../application/talk/search";
 import DecadeJumpNav from "./talk-gallery/decade-jump-nav";
 import TalkGalleryCard from "./talk-gallery/talk-gallery-card";
 import TalkGallerySectionHeader from "./talk-gallery/talk-gallery-section-header";
@@ -21,12 +26,19 @@ const filterLinkClass =
 export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 	const { conditions } = listing;
 	const searchTokens = tokenizeSearchQuery(conditions.query);
+	const selectedSearchFields = normalizeSearchFields(conditions.searchFields);
+	const allSearchFieldsSelected =
+		areAllSearchFieldsSelected(selectedSearchFields);
+	const selectedSearchFieldLabels = SEARCH_FIELD_OPTIONS.filter(({ id }) =>
+		selectedSearchFields.includes(id),
+	).map(({ label }) => label);
 	const sections = buildTalkListingSections(listing.items);
 	const galleryOptions: TalkGalleryHrefOptions = {
 		page: listing.page,
 		query: conditions.query,
 		collectionId: conditions.collectionId,
 		seriesId: conditions.seriesId,
+		searchFields: conditions.searchFields,
 	};
 	const collectionLabel = listing.collectionOptions.find(
 		({ id }) => id === conditions.collectionId,
@@ -38,15 +50,23 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 	return (
 		<div className="flex flex-col gap-10">
 			<div className="sticky top-16 z-10 -mx-5 bg-white/95 px-5 py-4 backdrop-blur sm:-mx-8 sm:px-8 lg:top-20">
-				<form action="/talks" className="flex gap-2" method="get">
-					<input
-						aria-label="法話を検索"
-						className="search-cancel-none w-full min-w-0 rounded-sm border border-[#d6c6ad] bg-white py-3 pl-4 pr-10 text-sm text-[#303030] placeholder:text-[#888] focus:border-[#9d7e4c] focus:outline-none focus:ring-2 focus:ring-[#9d7e4c]/15"
-						defaultValue={conditions.query}
-						name="query"
-						placeholder="キーワード・文字起こしで検索"
-						type="search"
-					/>
+				<form action="/talks" className="space-y-3" method="get">
+					<div className="flex gap-2">
+						<input
+							aria-label="法話を検索"
+							className="search-cancel-none w-full min-w-0 rounded-sm border border-[#d6c6ad] bg-white py-3 pl-4 pr-10 text-sm text-[#303030] placeholder:text-[#888] focus:border-[#9d7e4c] focus:outline-none focus:ring-2 focus:ring-[#9d7e4c]/15"
+							defaultValue={conditions.query}
+							name="query"
+							placeholder="キーワードで検索"
+							type="search"
+						/>
+						<button
+							className="min-w-20 shrink-0 rounded-sm border border-[#9d7e4c] bg-white px-4 py-3 text-sm font-medium text-[#303030] transition hover:bg-[#9d7e4c] hover:text-white focus-visible:bg-[#9d7e4c] focus-visible:text-white focus-visible:outline-none sm:min-w-48"
+							type="submit"
+						>
+							検索
+						</button>
+					</div>
 					{conditions.collectionId && (
 						<input
 							name="collection"
@@ -57,19 +77,60 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 					{conditions.seriesId && (
 						<input name="series" type="hidden" value={conditions.seriesId} />
 					)}
-					<button
-						className="min-w-20 shrink-0 rounded-sm border border-[#9d7e4c] bg-white px-4 py-3 text-sm font-medium text-[#303030] transition hover:bg-[#9d7e4c] hover:text-white focus-visible:bg-[#9d7e4c] focus-visible:text-white focus-visible:outline-none sm:min-w-48"
-						type="submit"
-					>
-						検索
-					</button>
+					<fieldset className="rounded-sm border border-[#eadfce] bg-[#fffcf5] px-3 py-2.5">
+						<legend className="px-1 text-xs font-semibold text-[#5f5144]">
+							検索対象
+						</legend>
+						<p className="mb-2 text-[11px] text-[#887966]">
+							「全て」を外すと、選択した項目だけを検索します。
+						</p>
+						<div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-[#5f5144]">
+							<label className="inline-flex items-center gap-1.5">
+								<input
+									defaultChecked={allSearchFieldsSelected}
+									name="fields"
+									type="checkbox"
+									value="all"
+								/>
+								全て
+							</label>
+							{SEARCH_FIELD_OPTIONS.map(({ id, label }) => (
+								<label className="inline-flex items-center gap-1.5" key={id}>
+									<input
+										defaultChecked={
+											!allSearchFieldsSelected &&
+											selectedSearchFields.includes(id)
+										}
+										name="fields"
+										type="checkbox"
+										value={id}
+									/>
+									{label}
+								</label>
+							))}
+						</div>
+					</fieldset>
 				</form>
 
 				<div className="mt-3 flex flex-wrap gap-2">
+					{!allSearchFieldsSelected && (
+						<Link
+							className={activeConditionClass}
+							href={buildTalksHref({
+								query: conditions.query,
+								collectionId: conditions.collectionId,
+								seriesId: conditions.seriesId,
+							})}
+							prefetch={false}
+						>
+							検索対象: {selectedSearchFieldLabels.join("・")} ×
+						</Link>
+					)}
 					{conditions.query && (
 						<Link
 							className={activeConditionClass}
 							href={buildTalksHref({
+								searchFields: conditions.searchFields,
 								collectionId: conditions.collectionId,
 								seriesId: conditions.seriesId,
 							})}
@@ -81,7 +142,10 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 					{collectionLabel && (
 						<Link
 							className={activeConditionClass}
-							href={buildTalksHref({ query: conditions.query })}
+							href={buildTalksHref({
+								query: conditions.query,
+								searchFields: conditions.searchFields,
+							})}
 							prefetch={false}
 						>
 							{collectionLabel} ×
@@ -93,6 +157,7 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 							href={buildTalksHref({
 								query: conditions.query,
 								collectionId: conditions.collectionId,
+								searchFields: conditions.searchFields,
 							})}
 							prefetch={false}
 						>
@@ -101,7 +166,8 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 					)}
 					{(conditions.query ||
 						conditions.collectionId ||
-						conditions.seriesId) && (
+						conditions.seriesId ||
+						!allSearchFieldsSelected) && (
 						<Link
 							className="inline-flex items-center px-1 text-xs font-medium text-gray-500 underline-offset-4 transition hover:text-gray-900 hover:underline"
 							href="/talks"
@@ -121,6 +187,7 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 							className={filterLinkClass}
 							href={buildTalksHref({
 								query: conditions.query,
+								searchFields: conditions.searchFields,
 								collectionId: option.id,
 								seriesId:
 									option.id === "scripture_commentary"
@@ -151,6 +218,7 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 										query: conditions.query,
 										collectionId: "scripture_commentary",
 										seriesId: option.id,
+										searchFields: conditions.searchFields,
 									})}
 									key={option.id}
 									prefetch={false}

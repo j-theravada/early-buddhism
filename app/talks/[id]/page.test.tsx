@@ -106,6 +106,23 @@ describe("TalkDetailPage", () => {
 		);
 	});
 
+	test("詳細画面から戻るときに検索対象も引き継ぐ", async () => {
+		const { default: TalkDetailPage } = await import("./page");
+		const html = renderToStaticMarkup(
+			await TalkDetailPage({
+				params: Promise.resolve({ id: "TALK-V-013-1-ADC344BF78FB" }),
+				searchParams: Promise.resolve({
+					galleryQuery: "仏教",
+					galleryFields: ["title", "transcript"],
+				}),
+			}),
+		);
+
+		expect(html).toContain(
+			'href="/talks?query=%E4%BB%8F%E6%95%99&amp;fields=title&amp;fields=transcript"',
+		);
+	});
+
 	test("不正な一覧ページ番号は 1 ページ目へ戻す", async () => {
 		const { default: TalkDetailPage } = await import("./page");
 

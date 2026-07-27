@@ -137,6 +137,18 @@ describe("talk listing model", () => {
 		expect(normalized?.conditions.query).toBe("慈".repeat(120));
 	});
 
+	test("検索対象は指定なしなら全て、指定時は選択項目だけにする", () => {
+		const items = [createItem(1)];
+		const all = normalizeTalkListingRequest(items, { page: "1" });
+		const limited = normalizeTalkListingRequest(items, {
+			page: "1",
+			searchFields: ["title", "transcript", "invalid"],
+		});
+
+		expect(all?.conditions.searchFields).toContain("speaker");
+		expect(limited?.conditions.searchFields).toEqual(["title", "transcript"]);
+	});
+
 	test("年代リンクとページ内セクションは入力順を変えない", () => {
 		const items = [
 			...Array.from({ length: 31 }, (_, index) => createItem(index + 1)),

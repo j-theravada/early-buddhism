@@ -14,6 +14,7 @@ import {
 	TALK_DETAIL_TRANSCRIPT_QUERY_PARAM,
 	TALK_GALLERY_COLLECTION_PARAM,
 	TALK_GALLERY_QUERY_PARAM,
+	TALK_GALLERY_SEARCH_FIELDS_PARAM,
 } from "./links";
 
 describe("talk link helpers", () => {
@@ -41,6 +42,14 @@ describe("talk link helpers", () => {
 			`/talks?${TALK_GALLERY_COLLECTION_PARAM}=monthly_talk`,
 		);
 		expect(buildTalksHref("   ")).toBe("/talks");
+		expect(
+			buildTalksHref({
+				query: "慈悲",
+				searchFields: ["title", "transcript"],
+			}),
+		).toBe(
+			`/talks?${TALK_GALLERY_QUERY_PARAM}=%E6%85%88%E6%82%B2&${TALK_GALLERY_SEARCH_FIELDS_PARAM}=title&${TALK_GALLERY_SEARCH_FIELDS_PARAM}=transcript`,
+		);
 	});
 
 	test("講演詳細への戻り検索条件付きリンクを組み立てる", () => {
@@ -71,6 +80,14 @@ describe("talk link helpers", () => {
 			`/talks/TALK-V-001?${TALK_DETAIL_GALLERY_COLLECTION_PARAM}=monthly_talk`,
 		);
 		expect(buildTalkDetailHref("TALK-V-001")).toBe("/talks/TALK-V-001");
+		expect(
+			buildTalkDetailHref("TALK-V-001", {
+				query: "慈悲",
+				searchFields: ["title", "transcript"],
+			}),
+		).toBe(
+			"/talks/TALK-V-001?galleryQuery=%E6%85%88%E6%82%B2&galleryFields=title&galleryFields=transcript",
+		);
 	});
 
 	test("文字起こし cue へのリンクを組み立てる", () => {

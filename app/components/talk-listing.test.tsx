@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { TalkListingPage } from "../application/talk/listing";
+import { ALL_SEARCH_FIELDS } from "../application/talk/search";
 import type { TalkGalleryItem } from "../domain/talk/types";
 import TalkListing from "./talk-listing";
 import { buildVisibleTalkListingPages } from "./talk-listing-pagination";
@@ -33,6 +34,7 @@ function createListing(
 			query: "仏教",
 			collectionId: "monthly_talk",
 			seriesId: "",
+			searchFields: [...ALL_SEARCH_FIELDS],
 		},
 		page: 2,
 		pageSize: 30,
@@ -60,6 +62,8 @@ describe("TalkListing", () => {
 		expect(html).toContain('action="/talks"');
 		expect(html).toContain('method="get"');
 		expect(html).toContain('name="query"');
+		expect(html).toContain('name="fields"');
+		expect(html).toContain("検索対象");
 		expect(html).toContain('type="hidden" name="collection"');
 		expect(html).toContain("検索");
 		expect(html).toContain("w-full min-w-0");
@@ -73,11 +77,42 @@ describe("TalkListing", () => {
 		expect(html).toContain("galleryPage=2");
 	});
 
+	test("検索対象のチェック状態をフォームに反映する", () => {
+		const html = renderToStaticMarkup(
+			<TalkListing
+				listing={createListing({
+					conditions: {
+						query: "仏教",
+						collectionId: "",
+						seriesId: "",
+						searchFields: ["title", "transcript"],
+					},
+				})}
+			/>,
+		);
+
+		expect(html).toMatch(
+			/<input type="checkbox" name="fields" checked="" value="title"\/>/,
+		);
+		expect(html).toMatch(
+			/<input type="checkbox" name="fields" checked="" value="transcript"\/>/,
+		);
+		expect(html).not.toMatch(
+			/<input type="checkbox" name="fields" checked="" value="speaker"\/>/,
+		);
+		expect(html).toContain("検索対象: タイトル・文字起こし");
+	});
+
 	test("年代リンクと対象セクションのアンカーを通常リンクで結ぶ", () => {
 		const html = renderToStaticMarkup(
 			<TalkListing
 				listing={createListing({
-					conditions: { query: "", collectionId: "", seriesId: "" },
+					conditions: {
+						query: "",
+						collectionId: "",
+						seriesId: "",
+						searchFields: [...ALL_SEARCH_FIELDS],
+					},
 					items: [
 						createTalk("TALK-31", "2010年代"),
 						createTalk("TALK-32", "2000年代"),

@@ -7,7 +7,12 @@ import type {
 	ContentSeriesId,
 } from "../../domain/content/types";
 import type { TalkGalleryItem } from "../../domain/talk/types";
-import type { TranscriptSearchSnippet } from "./search";
+import {
+	areAllSearchFieldsSelected,
+	normalizeSearchFields,
+	type SearchField,
+	type TranscriptSearchSnippet,
+} from "./search";
 
 export const TALK_LISTING_PAGE_SIZE = 30;
 export const TALK_LISTING_MAX_QUERY_LENGTH = 120;
@@ -17,12 +22,14 @@ export type TalkListingRequest = {
 	query?: string;
 	collectionId?: string;
 	seriesId?: string;
+	searchFields?: string[];
 };
 
 export type TalkListingConditions = {
 	query: string;
 	collectionId: ContentCollectionId | "";
 	seriesId: ContentSeriesId | "";
+	searchFields: SearchField[];
 };
 
 export type TalkListingOption<TId extends string> = {
@@ -146,6 +153,7 @@ export function normalizeTalkListingRequest(
 				.slice(0, TALK_LISTING_MAX_QUERY_LENGTH),
 			collectionId: parsedCollectionId || seriesOption?.collectionId || "",
 			seriesId: seriesOption?.id ?? "",
+			searchFields: normalizeSearchFields(request.searchFields),
 		},
 		collectionOptions,
 		seriesOptions,
@@ -232,7 +240,10 @@ export function buildTalkListingPage(
 		),
 	);
 	const hasConditions = Boolean(
-		conditions.query || conditions.collectionId || conditions.seriesId,
+		conditions.query ||
+		conditions.collectionId ||
+		conditions.seriesId ||
+		!areAllSearchFieldsSelected(conditions.searchFields),
 	);
 
 	return {

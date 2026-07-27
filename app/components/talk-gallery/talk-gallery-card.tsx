@@ -36,6 +36,7 @@ export default function TalkGalleryCard({
 					talk.collectionId === "scripture_commentary"
 						? galleryOptions.seriesId
 						: "",
+				searchFields: galleryOptions.searchFields,
 			})
 		: null;
 	const seriesHref =
@@ -44,6 +45,7 @@ export default function TalkGalleryCard({
 					query: galleryOptions.query,
 					collectionId: "scripture_commentary",
 					seriesId: talk.seriesId,
+					searchFields: galleryOptions.searchFields,
 				})
 			: null;
 	return (

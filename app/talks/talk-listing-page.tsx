@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getFirstSearchParam, buildTalksHref } from "../application/talk/links";
+import {
+	getFirstSearchParam,
+	getSearchParamValues,
+	buildTalksHref,
+} from "../application/talk/links";
+import { areAllSearchFieldsSelected } from "../application/talk/search";
 import ClientHomeActions from "../components/client-home-actions";
 import Footer from "../components/footer";
 import Header from "../components/header";
@@ -9,7 +14,10 @@ import { readTalkListingPage } from "../infrastructure/talk/listing-reader";
 import { buildCanonicalUrl } from "../utils/seo";
 
 export type TalkListingSearchParams = Partial<
-	Record<"query" | "collection" | "series", string | string[] | undefined>
+	Record<
+		"query" | "collection" | "series" | "fields",
+		string | string[] | undefined
+	>
 >;
 
 export async function renderTalkListingPage({
@@ -25,6 +33,7 @@ export async function renderTalkListingPage({
 		query: getFirstSearchParam(params.query),
 		collectionId: getFirstSearchParam(params.collection),
 		seriesId: getFirstSearchParam(params.series),
+		searchFields: getSearchParamValues(params.fields),
 	});
 	if (!listing) notFound();
 
@@ -58,11 +67,13 @@ export function buildTalkListingMetadata(
 	page: number,
 	params: TalkListingSearchParams,
 ): Metadata {
-	const hasConditions = [
-		getFirstSearchParam(params.query),
-		getFirstSearchParam(params.collection),
-		getFirstSearchParam(params.series),
-	].some((value) => value.trim().length > 0);
+	const hasConditions =
+		[
+			getFirstSearchParam(params.query),
+			getFirstSearchParam(params.collection),
+			getFirstSearchParam(params.series),
+		].some((value) => value.trim().length > 0) ||
+		!areAllSearchFieldsSelected(getSearchParamValues(params.fields));
 	const title = page > 1 ? `動画一覧 ${page}ページ目` : "動画一覧";
 	const base = {
 		title,

@@ -5,9 +5,12 @@ import { buildTalkGalleryTalks } from "./gallery";
 import {
 	buildSearchIndex,
 	buildTranscriptSearchSnippets,
+	filterTalksByQuery,
 	normalizeForSearch,
+	normalizeSearchFields,
 	tokenizeSearchQuery,
 	type IndexedTalk,
+	type SearchField,
 	type TranscriptSearchSnippet,
 } from "./search";
 import {
@@ -106,44 +109,29 @@ export function buildTranscriptAwareSearchData(
 		);
 
 	return {
-		indexedTalks: buildSearchIndex(talksForDisplay),
+		indexedTalks: buildSearchIndex(talksForDisplay, {
+			extraSearchTextByTalkId: transcriptSearchTextByTalkId,
+		}),
 		transcriptDocumentByTalkId,
 		transcriptSearchTextByTalkId,
 	};
 }
 
-function matchesTranscriptAwareSearch(
-	searchData: TranscriptAwareSearchData,
-	indexedTalk: IndexedTalk,
-	tokens: string[],
-): boolean {
-	const transcriptSearchText = searchData.transcriptSearchTextByTalkId.get(
-		indexedTalk.data.id,
-	);
-
-	return tokens.every(
-		(token) =>
-			indexedTalk.searchText.includes(token) ||
-			transcriptSearchText?.includes(token) === true,
-	);
-}
-
 function filterTranscriptAwareTalks(
 	searchData: TranscriptAwareSearchData,
 	tokens: string[],
+	fields?: readonly string[],
 ): TalkForDisplay[] {
-	return searchData.indexedTalks
-		.filter((indexedTalk) =>
-			matchesTranscriptAwareSearch(searchData, indexedTalk, tokens),
-		)
-		.map((indexedTalk) => indexedTalk.data);
+	return filterTalksByQuery(searchData.indexedTalks, tokens, fields);
 }
 
 function hasTranscriptTokenMatch(
 	searchData: TranscriptAwareSearchData,
 	talkId: string,
 	tokens: string[],
+	fields?: readonly string[],
 ): boolean {
+	if (!normalizeSearchFields(fields).includes("transcript")) return false;
 	const transcriptSearchText =
 		searchData.transcriptSearchTextByTalkId.get(talkId);
 	return (
@@ -155,24 +143,28 @@ function hasTranscriptTokenMatch(
 export function findTranscriptAwareTalkIds(
 	searchData: TranscriptAwareSearchData,
 	query: string,
+	fields?: readonly string[],
 ): string[] {
 	const tokens = tokenizeSearchQuery(query);
 	if (tokens.length === 0) return [];
 
-	return filterTranscriptAwareTalks(searchData, tokens).map((talk) => talk.id);
+	return filterTranscriptAwareTalks(searchData, tokens, fields).map(
+		(talk) => talk.id,
+	);
 }
 
 export function buildTranscriptSnippetsByTalkId(
 	searchData: TranscriptAwareSearchData,
 	query: string,
 	talkIds: readonly string[],
+	fields?: readonly string[],
 ): Map<string, TranscriptSearchSnippet[]> {
 	const tokens = tokenizeSearchQuery(query);
 	const snippetsByTalkId = new Map<string, TranscriptSearchSnippet[]>();
 	if (tokens.length === 0) return snippetsByTalkId;
 
 	for (const talkId of talkIds) {
-		if (!hasTranscriptTokenMatch(searchData, talkId, tokens)) continue;
+		if (!hasTranscriptTokenMatch(searchData, talkId, tokens, fields)) continue;
 		const snippets = buildTranscriptSearchSnippets(
 			searchData.transcriptDocumentByTalkId.get(talkId)?.cues ?? [],
 			tokens,
@@ -188,8 +180,9 @@ export function buildTranscriptSnippetsByTalkId(
 export function searchTranscriptAwareTalks(
 	searchData: TranscriptAwareSearchData,
 	query: string,
+	fields?: readonly SearchField[],
 ): TalkSearchApiResponse {
-	const talkIds = findTranscriptAwareTalkIds(searchData, query);
+	const talkIds = findTranscriptAwareTalkIds(searchData, query, fields);
 	if (talkIds.length === 0) {
 		return buildEmptyTalkSearchApiResponse();
 	}
@@ -197,6 +190,7 @@ export function searchTranscriptAwareTalks(
 		searchData,
 		query,
 		talkIds,
+		fields,
 	);
 	return {
 		talkIds,

@@ -15,9 +15,50 @@ export type ContentSearchItem = ContentItemBase & {
 	themeLabel?: string;
 };
 
+export const SEARCH_FIELD_OPTIONS = [
+	{ id: "classification", label: "分類・シリーズ" },
+	{ id: "dvd", label: "DVD番号" },
+	{ id: "title", label: "タイトル" },
+	{ id: "description", label: "解説" },
+	{ id: "event", label: "イベント" },
+	{ id: "venue", label: "会場" },
+	{ id: "speaker", label: "話者" },
+	{ id: "language", label: "言語" },
+	{ id: "date", label: "収録日" },
+	{ id: "theme", label: "テーマ" },
+	{ id: "transcript", label: "文字起こし" },
+] as const;
+
+export type SearchField = (typeof SEARCH_FIELD_OPTIONS)[number]["id"];
+
+export const ALL_SEARCH_FIELDS: readonly SearchField[] =
+	SEARCH_FIELD_OPTIONS.map(({ id }) => id);
+
+export function normalizeSearchFields(
+	fields?: readonly string[],
+): SearchField[] {
+	if (!fields || fields.length === 0 || fields.includes("all")) {
+		return [...ALL_SEARCH_FIELDS];
+	}
+
+	const validFields = fields.filter((field): field is SearchField =>
+		SEARCH_FIELD_OPTIONS.some(({ id }) => id === field),
+	);
+	return validFields.length > 0
+		? [...new Set(validFields)]
+		: [...ALL_SEARCH_FIELDS];
+}
+
+export function areAllSearchFieldsSelected(
+	fields?: readonly string[],
+): boolean {
+	return normalizeSearchFields(fields).length === ALL_SEARCH_FIELDS.length;
+}
+
 export type IndexedContentItem<TItem extends ContentSearchItem> = {
 	data: TItem;
 	searchText: string;
+	searchTextByField: Record<SearchField, string>;
 };
 
 export type IndexedTalk = IndexedContentItem<TalkForDisplay>;
@@ -58,31 +99,42 @@ export function normalizeForSearch(value: string): string {
 	return value.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-function buildSearchText(
+function normalizeSearchParts(values: (string | undefined)[]): string {
+	return normalizeForSearch(values.filter(Boolean).join(" "));
+}
+
+function buildSearchTextByField(
 	item: ContentSearchItem,
 	extraSearchText = "",
-): string {
-	return normalizeForSearch(
-		[
+): Record<SearchField, string> {
+	return {
+		classification: normalizeSearchParts([
 			item.collectionLabel,
 			item.seriesLabel,
 			item.kind === "talk" ? "法話 講演 動画" : "テキスト 経典",
-			item.dvdId,
-			item.title,
-			item.description,
-			item.subtitle,
-			item.event,
-			item.venue,
-			item.speaker,
-			item.language,
+		]),
+		dvd: normalizeSearchParts([item.dvdId]),
+		title: normalizeSearchParts([item.title]),
+		description: normalizeSearchParts([item.description, item.subtitle]),
+		event: normalizeSearchParts([item.event]),
+		venue: normalizeSearchParts([item.venue]),
+		speaker: normalizeSearchParts([item.speaker]),
+		language: normalizeSearchParts([item.language]),
+		date: normalizeSearchParts([
 			item.recordedOnFormatted,
 			item.recordedOnRaw,
 			item.decadeLabel,
-			item.themeLabel,
-			extraSearchText,
-		]
-			.filter(Boolean)
-			.join(" "),
+		]),
+		theme: normalizeSearchParts([item.themeLabel]),
+		transcript: normalizeSearchParts([extraSearchText]),
+	};
+}
+
+function buildSearchText(
+	searchTextByField: Record<SearchField, string>,
+): string {
+	return normalizeSearchParts(
+		ALL_SEARCH_FIELDS.map((field) => searchTextByField[field]),
 	);
 }
 
@@ -311,13 +363,17 @@ export function buildSearchIndex<TItem extends ContentSearchItem>(
 	items: TItem[],
 	options: BuildSearchIndexOptions = {},
 ): IndexedContentItem<TItem>[] {
-	return items.map((item) => ({
-		data: item,
-		searchText: buildSearchText(
+	return items.map((item) => {
+		const searchTextByField = buildSearchTextByField(
 			item,
 			options.extraSearchTextByTalkId?.get(item.id),
-		),
-	}));
+		);
+		return {
+			data: item,
+			searchText: buildSearchText(searchTextByField),
+			searchTextByField,
+		};
+	});
 }
 
 export function tokenizeSearchQuery(query: string): string[] {
@@ -336,14 +392,20 @@ export function tokenizeSearchQuery(query: string): string[] {
 export function filterContentItemsByQuery<TItem extends ContentSearchItem>(
 	indexedItems: IndexedContentItem<TItem>[],
 	tokens: string[],
+	fields?: readonly string[],
 ): TItem[] {
 	if (tokens.length === 0) {
 		return indexedItems.map((item) => item.data);
 	}
+	const selectedFields = normalizeSearchFields(fields);
 
 	return indexedItems
-		.filter(({ searchText }) =>
-			tokens.every((token) => fuzzyMatch(searchText, token)),
+		.filter(({ searchTextByField }) =>
+			tokens.every((token) =>
+				selectedFields.some((field) =>
+					fuzzyMatch(searchTextByField[field], token),
+				),
+			),
 		)
 		.map(({ data }) => data);
 }
@@ -351,6 +413,7 @@ export function filterContentItemsByQuery<TItem extends ContentSearchItem>(
 export function filterTalksByQuery(
 	indexedTalks: IndexedTalk[],
 	tokens: string[],
+	fields?: readonly string[],
 ): TalkForDisplay[] {
-	return filterContentItemsByQuery(indexedTalks, tokens);
+	return filterContentItemsByQuery(indexedTalks, tokens, fields);
 }

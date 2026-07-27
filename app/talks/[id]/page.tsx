@@ -8,12 +8,14 @@ import {
 import {
 	buildTalksHref,
 	getFirstSearchParam,
+	getSearchParamValues,
 	parseTalkDetailGalleryPage,
 	parseTranscriptCueIndex,
 	TALK_DETAIL_GALLERY_COLLECTION_PARAM,
 	TALK_DETAIL_GALLERY_PAGE_PARAM,
 	TALK_DETAIL_GALLERY_QUERY_PARAM,
 	TALK_DETAIL_GALLERY_SERIES_PARAM,
+	TALK_DETAIL_GALLERY_SEARCH_FIELDS_PARAM,
 	TALK_DETAIL_TRANSCRIPT_CUE_PARAM,
 	TALK_DETAIL_TRANSCRIPT_QUERY_PARAM,
 } from "../../application/talk/links";
@@ -35,6 +37,7 @@ type TalkDetailSearchParamName =
 	| typeof TALK_DETAIL_GALLERY_QUERY_PARAM
 	| typeof TALK_DETAIL_GALLERY_COLLECTION_PARAM
 	| typeof TALK_DETAIL_GALLERY_SERIES_PARAM
+	| typeof TALK_DETAIL_GALLERY_SEARCH_FIELDS_PARAM
 	| typeof TALK_DETAIL_GALLERY_PAGE_PARAM
 	| typeof TALK_DETAIL_TRANSCRIPT_QUERY_PARAM
 	| typeof TALK_DETAIL_TRANSCRIPT_CUE_PARAM;
@@ -100,6 +103,9 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 	const gallerySeriesId = getFirstSearchParam(
 		resolvedSearchParams?.[TALK_DETAIL_GALLERY_SERIES_PARAM],
 	);
+	const gallerySearchFields = getSearchParamValues(
+		resolvedSearchParams?.[TALK_DETAIL_GALLERY_SEARCH_FIELDS_PARAM],
+	);
 	const galleryPage = parseTalkDetailGalleryPage(
 		getFirstSearchParam(resolvedSearchParams?.[TALK_DETAIL_GALLERY_PAGE_PARAM]),
 	);
@@ -108,6 +114,7 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 		query: galleryQuery,
 		collectionId: parseContentCollectionId(galleryCollectionId),
 		seriesId: parseContentSeriesId(gallerySeriesId),
+		searchFields: gallerySearchFields,
 	});
 	const targetCueIndex = parseTranscriptCueIndex(
 		getFirstSearchParam(

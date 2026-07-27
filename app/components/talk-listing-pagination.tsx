@@ -50,6 +50,7 @@ function buildPageHref(
 		query: conditions.query,
 		collectionId: conditions.collectionId,
 		seriesId: conditions.seriesId,
+		searchFields: conditions.searchFields,
 	};
 	return buildTalksHref(options);
 }

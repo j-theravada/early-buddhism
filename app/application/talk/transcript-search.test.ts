@@ -106,6 +106,51 @@ describe("transcript-aware talk search", () => {
 		});
 	});
 
+	test("選択した検索対象だけでメタデータと文字起こしを絞り込む", () => {
+		const searchData = buildTranscriptAwareSearchData(
+			[
+				createTalk({
+					title: "タイトル一致",
+					speaker: "話者一致",
+				}),
+			],
+			[
+				{
+					talkId: "TALK-V-001",
+					text: "文字起こし一致",
+					cues: [
+						{
+							index: 1,
+							start: 0,
+							end: 5,
+							startLabel: "00:00:00",
+							endLabel: "00:00:05",
+							text: "文字起こし一致",
+						},
+					],
+				},
+			],
+		);
+
+		expect(
+			findTranscriptAwareTalkIds(searchData, "話者一致", ["title"]),
+		).toEqual([]);
+		expect(
+			findTranscriptAwareTalkIds(searchData, "文字起こし一致", ["title"]),
+		).toEqual([]);
+		expect(
+			findTranscriptAwareTalkIds(searchData, "文字起こし一致", ["transcript"]),
+		).toEqual(["TALK-V-001"]);
+		expect(
+			buildTranscriptSnippetsByTalkId(
+				searchData,
+				"文字起こし一致",
+				["TALK-V-001"],
+				["transcript"],
+			),
+		).toHaveProperty("size", 1);
+	});
+
 	test("空のクエリはデータ読み込み前に空結果として判定できる", () => {
 		const searchData = buildTranscriptAwareSearchData([createTalk()], []);
 

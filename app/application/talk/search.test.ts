@@ -71,7 +71,9 @@ function createTalk(overrides: Partial<Talk> = {}): Talk {
 describe("talk search helpers", () => {
 	test("検索クエリを正規化してトークを絞り込む", () => {
 		const talks = [
-			createDisplayTalk(),
+			createDisplayTalk({
+				title: "東京の心と病気の関係",
+			}),
 			createDisplayTalk({
 				id: "TALK-2",
 				title: "無常観",
@@ -119,60 +121,46 @@ describe("talk search helpers", () => {
 		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);
 	});
 
-	test("コレクション名を検索対象に含める", () => {
+	test("検索対象を指定しない場合は全ての項目を対象にする", () => {
 		const talks = [
 			createDisplayTalk({
 				id: "TALK-1",
-				collectionId: "scripture_commentary",
-				collectionLabel: "経典解説",
-				seriesId: "dhammapada",
-				seriesLabel: "ダンマパダ",
-				title: "第一章",
-				subtitle: "",
-			}),
-			createDisplayTalk({
-				id: "TALK-2",
-				collectionId: "monthly_talk",
-				collectionLabel: "月例講演会",
-				title: "心と病気の関係",
-				subtitle: "",
+				speaker: "検索対象の話者",
 			}),
 		];
 
 		const indexedTalks = buildSearchIndex(talks);
-		const result = filterTalksByQuery(
-			indexedTalks,
-			tokenizeSearchQuery("ダンマパダ"),
-		);
 
-		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);
+		expect(
+			filterTalksByQuery(indexedTalks, tokenizeSearchQuery("検索対象の話者")),
+		).toHaveLength(1);
 	});
 
-	test("シリーズ名を検索対象に含める", () => {
+	test("検索対象を指定すると選択した項目だけを対象にする", () => {
 		const talks = [
 			createDisplayTalk({
 				id: "TALK-1",
-				collectionId: "scripture_commentary",
-				collectionLabel: "経典解説",
-				seriesId: "abhidhamma",
-				seriesLabel: "アビダンマ",
-				title: "第一講",
-				subtitle: "",
-			}),
-			createDisplayTalk({
-				id: "TALK-2",
-				title: "心と病気の関係",
-				subtitle: "",
+				speaker: "限定対象外の話者",
 			}),
 		];
+		const indexedTalks = buildSearchIndex(talks, {
+			extraSearchTextByTalkId: new Map([["TALK-1", "限定対象の文字起こし"]]),
+		});
 
-		const indexedTalks = buildSearchIndex(talks);
-		const result = filterTalksByQuery(
-			indexedTalks,
-			tokenizeSearchQuery("アビダンマ"),
-		);
-
-		expect(result.map((talk) => talk.id)).toEqual(["TALK-1"]);
+		expect(
+			filterTalksByQuery(
+				indexedTalks,
+				tokenizeSearchQuery("限定対象の文字起こし"),
+				["title"],
+			),
+		).toEqual([]);
+		expect(
+			filterTalksByQuery(
+				indexedTalks,
+				tokenizeSearchQuery("限定対象の文字起こし"),
+				["title", "transcript"],
+			),
+		).toHaveLength(1);
 	});
 
 	test("文字起こしの一致箇所からスニペットを作る", () => {

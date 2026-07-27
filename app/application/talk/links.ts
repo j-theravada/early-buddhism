@@ -2,13 +2,16 @@ import type {
 	ContentCollectionId,
 	ContentSeriesId,
 } from "../../domain/content/types";
+import { areAllSearchFieldsSelected, normalizeSearchFields } from "./search";
 
 export const TALK_GALLERY_QUERY_PARAM = "query";
 export const TALK_GALLERY_COLLECTION_PARAM = "collection";
 export const TALK_GALLERY_SERIES_PARAM = "series";
+export const TALK_GALLERY_SEARCH_FIELDS_PARAM = "fields";
 export const TALK_DETAIL_GALLERY_QUERY_PARAM = "galleryQuery";
 export const TALK_DETAIL_GALLERY_COLLECTION_PARAM = "galleryCollection";
 export const TALK_DETAIL_GALLERY_SERIES_PARAM = "gallerySeries";
+export const TALK_DETAIL_GALLERY_SEARCH_FIELDS_PARAM = "galleryFields";
 export const TALK_DETAIL_GALLERY_PAGE_PARAM = "galleryPage";
 export const TALK_DETAIL_TRANSCRIPT_QUERY_PARAM = "transcriptQuery";
 export const TALK_DETAIL_TRANSCRIPT_CUE_PARAM = "transcriptCue";
@@ -20,6 +23,12 @@ export function getFirstSearchParam(
 		return value[0] ?? "";
 	}
 	return value ?? "";
+}
+
+export function getSearchParamValues(
+	value: string | string[] | undefined,
+): string[] {
+	return (Array.isArray(value) ? value : [value ?? ""]).filter(Boolean);
 }
 
 export function parseTranscriptCueIndex(value: string): number | null {
@@ -50,6 +59,7 @@ export type TalkGalleryHrefOptions = {
 	query?: string;
 	collectionId?: ContentCollectionId | "";
 	seriesId?: ContentSeriesId | "";
+	searchFields?: readonly string[];
 };
 
 function normalizeGalleryPage(page: number | undefined): number {
@@ -68,9 +78,25 @@ function appendGalleryDetailParams(
 	if (options.seriesId) {
 		params.set(TALK_DETAIL_GALLERY_SERIES_PARAM, options.seriesId);
 	}
+	appendSearchFieldParams(
+		params,
+		options.searchFields,
+		TALK_DETAIL_GALLERY_SEARCH_FIELDS_PARAM,
+	);
 	const page = normalizeGalleryPage(options.page);
 	if (page > 1) {
 		params.set(TALK_DETAIL_GALLERY_PAGE_PARAM, String(page));
+	}
+}
+
+function appendSearchFieldParams(
+	params: URLSearchParams,
+	searchFields: readonly string[] | undefined,
+	paramName: string,
+) {
+	if (!searchFields || areAllSearchFieldsSelected(searchFields)) return;
+	for (const field of normalizeSearchFields(searchFields)) {
+		params.append(paramName, field);
 	}
 }
 
@@ -94,6 +120,11 @@ export function buildTalksHref(
 	if (options.seriesId) {
 		params.set(TALK_GALLERY_SERIES_PARAM, options.seriesId);
 	}
+	appendSearchFieldParams(
+		params,
+		options.searchFields,
+		TALK_GALLERY_SEARCH_FIELDS_PARAM,
+	);
 	const search = params.toString();
 	return search ? `${path}?${search}` : path;
 }
