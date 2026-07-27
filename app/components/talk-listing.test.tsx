@@ -160,6 +160,39 @@ describe("TalkListing", () => {
 		);
 	});
 
+	test("検索時の年代リンクに現在の検索条件を引き継ぐ", () => {
+		const html = renderToStaticMarkup(
+			<TalkListing
+				listing={createListing({
+					conditions: {
+						query: "仏教",
+						collectionId: "scripture_commentary",
+						seriesId: "abhidhamma",
+						searchFields: ["title", "transcript"],
+					},
+					decadeTargets: [
+						{
+							label: "2000年代",
+							count: 31,
+							page: 2,
+							anchorId: "talk-decade-2000",
+						},
+						{
+							label: "2010年代",
+							count: 1,
+							page: 3,
+							anchorId: "talk-decade-2010",
+						},
+					],
+				})}
+			/>,
+		);
+
+		expect(html).toContain(
+			'href="/talks/page/2?query=%E4%BB%8F%E6%95%99&amp;collection=scripture_commentary&amp;series=abhidhamma&amp;fields=title&amp;fields=transcript#talk-decade-2000"',
+		);
+	});
+
 	test("1ページだけの結果にはページナビゲーションを出さない", () => {
 		const html = renderToStaticMarkup(
 			<TalkListing

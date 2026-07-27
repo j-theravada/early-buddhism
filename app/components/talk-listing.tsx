@@ -234,7 +234,10 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 						? "全0件"
 						: `全${listing.totalItems}件中 ${listing.rangeStart}〜${listing.rangeEnd}件`}
 				</p>
-				<DecadeJumpNav targets={listing.decadeTargets} />
+				<DecadeJumpNav
+					conditions={conditions}
+					targets={listing.decadeTargets}
+				/>
 			</div>
 
 			{sections.length === 0 ? (

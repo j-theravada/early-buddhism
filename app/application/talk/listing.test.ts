@@ -153,6 +153,38 @@ describe("talk listing model", () => {
 		expect(limited?.conditions.searchFields).toEqual(["title", "transcript"]);
 	});
 
+	test("検索結果全体から年代別の件数と先頭ページを作る", () => {
+		const items = [
+			...Array.from({ length: 31 }, (_, index) =>
+				createItem(index + 1, { decadeLabel: "2000年代" }),
+			),
+			createItem(32, { decadeLabel: "2010年代" }),
+			createItem(33, { decadeLabel: "2020年代" }),
+		];
+		const normalized = normalizeTalkListingRequest(items, {
+			page: "1",
+			query: "慈悲",
+		});
+		const matched = items.slice(0, 32).map((item) => item.id);
+
+		expect(
+			buildTalkListingPage(items, normalized!, matched)?.decadeTargets,
+		).toEqual([
+			{
+				label: "2000年代",
+				count: 31,
+				page: 1,
+				anchorId: "talk-decade-2000",
+			},
+			{
+				label: "2010年代",
+				count: 1,
+				page: 2,
+				anchorId: "talk-decade-2010",
+			},
+		]);
+	});
+
 	test("年代リンクとページ内セクションは入力順を変えない", () => {
 		const items = [
 			...Array.from({ length: 31 }, (_, index) => createItem(index + 1)),

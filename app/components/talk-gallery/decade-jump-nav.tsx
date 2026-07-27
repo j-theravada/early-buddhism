@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { buildTalksHref } from "../../application/talk/links";
-import type { TalkListingDecadeTarget } from "../../application/talk/listing";
+import type {
+	TalkListingConditions,
+	TalkListingDecadeTarget,
+} from "../../application/talk/listing";
 
 type Props = {
+	conditions: TalkListingConditions;
 	targets: TalkListingDecadeTarget[];
 };
 
-export default function DecadeJumpNav({ targets }: Props) {
+export default function DecadeJumpNav({ conditions, targets }: Props) {
 	if (targets.length <= 1) {
 		return null;
 	}
@@ -19,7 +23,13 @@ export default function DecadeJumpNav({ targets }: Props) {
 			{targets.map((target) => (
 				<Link
 					className="shrink-0 text-xs font-medium text-gray-500 underline-offset-4 transition hover:text-gray-900 hover:underline"
-					href={`${buildTalksHref({ page: target.page })}#${target.anchorId}`}
+					href={`${buildTalksHref({
+						page: target.page,
+						query: conditions.query,
+						collectionId: conditions.collectionId,
+						seriesId: conditions.seriesId,
+						searchFields: conditions.searchFields,
+					})}#${target.anchorId}`}
 					key={target.label}
 					prefetch={false}
 				>

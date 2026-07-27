@@ -8,7 +8,6 @@ import type {
 } from "../../domain/content/types";
 import type { TalkGalleryItem } from "../../domain/talk/types";
 import {
-	areAllSearchFieldsSelected,
 	normalizeSearchFields,
 	type SearchField,
 	type TranscriptSearchSnippet,
@@ -239,12 +238,6 @@ export function buildTalkListingPage(
 			visibleIds.has(talkId),
 		),
 	);
-	const hasConditions = Boolean(
-		conditions.query ||
-		conditions.collectionId ||
-		conditions.seriesId ||
-		!areAllSearchFieldsSelected(conditions.searchFields),
-	);
 
 	return {
 		conditions,
@@ -260,6 +253,6 @@ export function buildTalkListingPage(
 		transcriptSnippetsByTalkId: visibleSnippets,
 		collectionOptions: normalized.collectionOptions,
 		seriesOptions: normalized.seriesOptions,
-		decadeTargets: hasConditions ? [] : buildDecadeTargets(allItems),
+		decadeTargets: buildDecadeTargets(filteredItems),
 	};
 }
