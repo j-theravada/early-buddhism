@@ -62,7 +62,7 @@ Cover malformed JSON, malformed entries, duplicate replacement, newest-first ord
 expect(parseWatchHistory("invalid")).toEqual([]);
 expect(upsertWatchHistory([], { ...snapshot, positionSeconds: 29 })).toEqual([]);
 expect(isPlaybackCompleted(90, 100)).toBe(true);
-expect(isPlaybackCompleted(69, 100)).toBe(true);
+expect(isPlaybackCompleted(70, 100)).toBe(true);
 expect(getResumeSeconds({ ...entry, positionSeconds: 125 })).toBe(122);
 expect(getResumeSeconds({ ...entry, completed: true })).toBe(0);
 ```
