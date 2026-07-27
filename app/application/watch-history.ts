@@ -58,7 +58,9 @@ export const parseWatchHistory = (raw: string): WatchHistoryEntry[] => {
 		if (!isRecord(parsed)) return [];
 
 		return Object.entries(parsed)
-			.filter(([key, value]) => isWatchHistoryEntry(key, value))
+			.filter((entry): entry is [string, WatchHistoryEntry] =>
+				isWatchHistoryEntry(entry[0], entry[1]),
+			)
 			.map(([, value]) => value)
 			.sort((a, b) => Date.parse(b.lastWatchedAt) - Date.parse(a.lastWatchedAt))
 			.slice(0, WATCH_HISTORY_LIMIT);
