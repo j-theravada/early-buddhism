@@ -57,6 +57,8 @@ export const loadYouTubeIframeApi = (): Promise<YouTubeIframeApi> => {
 		const script = existingScript ?? document.createElement("script");
 		const createdScript = existingScript === null;
 		let settled = false;
+		let handleReady: () => void;
+		let handleError: () => void;
 
 		const restorePreviousReady = () => {
 			if (youtubeWindow.onYouTubeIframeAPIReady === handleReady) {
@@ -64,36 +66,39 @@ export const loadYouTubeIframeApi = (): Promise<YouTubeIframeApi> => {
 			}
 		};
 
-		const settle = (callback: () => void) => {
+		const resolveApi = (api: YouTubeIframeApi) => {
 			if (settled) return;
 			settled = true;
 			script.removeEventListener("error", handleError);
-			callback();
+			resolve(api);
 		};
 
-		const handleReady = () => {
+		const rejectApi = (error: Error) => {
+			if (settled) return;
+			settled = true;
+			script.removeEventListener("error", handleError);
+			restorePreviousReady();
+			failedScripts.add(script);
+			if (createdScript) script.remove();
+			reject(error);
+		};
+
+		handleReady = () => {
 			try {
 				previousReady?.();
 			} catch {
 				// A foreign callback must not leave this shared loader pending.
 			}
-			settle(() => {
-				const api = youtubeWindow.YT;
-				if (api?.Player) {
-					resolve(api);
-					return;
-				}
-				reject(new Error("YouTube iframe API did not provide Player."));
-			});
+			const api = youtubeWindow.YT;
+			if (api?.Player) {
+				resolveApi(api);
+				return;
+			}
+			rejectApi(new Error("YouTube iframe API did not provide Player."));
 		};
 
-		const handleError = () => {
-			settle(() => {
-				restorePreviousReady();
-				failedScripts.add(script);
-				if (createdScript) script.remove();
-				reject(new Error("Failed to load the YouTube iframe API."));
-			});
+		handleError = () => {
+			rejectApi(new Error("Failed to load the YouTube iframe API."));
 		};
 
 		youtubeWindow.onYouTubeIframeAPIReady = handleReady;

@@ -110,7 +110,10 @@ export default function LiteYouTubeEmbed({
 		(event: { data: number }) => {
 			if (event.data === YouTubePlayerState.PLAYING) {
 				if (intervalRef.current === null) {
-					intervalRef.current = window.setInterval(saveProgress, 15_000);
+					intervalRef.current = window.setInterval(
+						() => saveProgressRef.current(),
+						15_000,
+					);
 				}
 				return;
 			}
@@ -172,6 +175,7 @@ export default function LiteYouTubeEmbed({
 				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 				allowFullScreen
 				className="absolute inset-0 h-full w-full"
+				key={playerSrc ?? "about:blank"}
 				name="talk-player"
 				onLoad={() => void initializePlayer()}
 				ref={iframeRef}

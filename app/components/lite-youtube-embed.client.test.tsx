@@ -38,6 +38,8 @@ type FakeYouTubeApi = {
 };
 
 type FakePlayerOptions = {
+	assertConnectedIframe?: boolean;
+	destroyRemovesIframe?: boolean;
 	getCurrentTime?: () => number;
 	getDuration?: () => number;
 };
@@ -76,20 +78,29 @@ function getWindowWithYouTube() {
 }
 
 function installFakeApi({
+	assertConnectedIframe = false,
+	destroyRemovesIframe = false,
 	getCurrentTime = () => 63,
 	getDuration = () => 120,
 }: FakePlayerOptions = {}) {
 	class Player implements FakePlayer {
+		private readonly iframe: HTMLIFrameElement;
+
 		getCurrentTime = getCurrentTime;
 		getDuration = getDuration;
 		destroy = () => {
 			destroyCalls += 1;
+			if (destroyRemovesIframe) this.iframe.remove();
 		};
 
 		constructor(
 			_iframe: HTMLIFrameElement,
 			options: { events?: { onStateChange?: PlayerStateChange } },
 		) {
+			if (assertConnectedIframe && !_iframe.isConnected) {
+				throw new Error("Player requires a connected iframe.");
+			}
+			this.iframe = _iframe;
 			playerCreations += 1;
 			fakePlayer = this;
 			stateChange = options.events?.onStateChange ?? null;
@@ -203,6 +214,13 @@ function savedPosition(): number | null {
 	if (!raw) return null;
 	const entries = JSON.parse(raw) as Record<string, WatchHistoryEntry>;
 	return entries["TALK-1"]?.positionSeconds ?? null;
+}
+
+function savedEntry(talkId: string): WatchHistoryEntry | null {
+	const raw = localStorage.getItem(WATCH_HISTORY_STORAGE_KEY);
+	if (!raw) return null;
+	const entries = JSON.parse(raw) as Record<string, WatchHistoryEntry>;
+	return entries[talkId] ?? null;
 }
 
 function requireScript(
@@ -430,6 +448,63 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 
 		expect(playerCreations).toBe(1);
 		expect(destroyCalls).toBe(0);
+	});
+
+	test("source切替は新しい接続済みiframeでプレーヤーを再初期化する", async () => {
+		installFakeApi({
+			assertConnectedIframe: true,
+			destroyRemovesIframe: true,
+		});
+		await mountEmbed();
+		await clickPlayButton();
+		await loadIframe();
+		const firstIframe = getIframe();
+
+		await act(async () => {
+			window.dispatchEvent(
+				new CustomEvent(LOAD_TALK_PLAYER_EVENT, {
+					detail: {
+						src: "https://www.youtube.com/embed/example?autoplay=1&start=12",
+					},
+				}),
+			);
+		});
+		await loadIframe();
+
+		expect(getIframe()).not.toBe(firstIframe);
+		expect(getIframe().isConnected).toBe(true);
+		expect(playerCreations).toBe(2);
+		expect(destroyCalls).toBe(1);
+	});
+
+	test("再描画後の定期保存は最新の法話メタデータを使う", async () => {
+		installFakeApi();
+		window.setInterval = ((callback: () => void) => {
+			intervalCallback = callback;
+			return 1;
+		}) as typeof window.setInterval;
+		await mountEmbed({
+			talkId: "TALK-1",
+			thumbnailUrl: null,
+			title: "更新前",
+		});
+		await clickPlayButton();
+		await loadIframe();
+		stateChange?.({ data: 1 });
+
+		await rerenderEmbed({
+			talkId: "TALK-2",
+			thumbnailUrl: "https://example.com/new.jpg",
+			title: "更新後",
+		});
+		await act(async () => intervalCallback?.());
+
+		expect(savedEntry("TALK-2")).toMatchObject({
+			talkId: "TALK-2",
+			thumbnailUrl: "https://example.com/new.jpg",
+			title: "更新後",
+		});
+		expect(savedEntry("TALK-1")).toBeNull();
 	});
 
 	test("アンマウント時だけ保存し、解除後のpagehideでは保存しない", async () => {

@@ -73,7 +73,10 @@ describe("loadYouTubeIframeApi", () => {
 		let existingScript: HTMLScriptElement | null = null;
 		document.head.append = ((...nodes: Node[]) => {
 			for (const node of nodes) {
-				if (node instanceof HTMLScriptElement) appended.push(node);
+				if (node instanceof HTMLScriptElement) {
+					appended.push(node);
+					existingScript = node;
+				}
 			}
 		}) as typeof document.head.append;
 		document.querySelector = ((selector: string) =>
@@ -86,10 +89,19 @@ describe("loadYouTubeIframeApi", () => {
 		expect(second).toBe(first);
 		expect(appended).toHaveLength(1);
 
+		youtubeWindow.onYouTubeIframeAPIReady?.();
+		await expect(first).rejects.toThrow(
+			"YouTube iframe API did not provide Player.",
+		);
+
+		const retryAfterReady = loadYouTubeIframeApi();
+		expect(appended).toHaveLength(2);
 		const concurrentCallback = () => {};
 		youtubeWindow.onYouTubeIframeAPIReady = concurrentCallback;
-		appended[0]?.dispatchEvent(new Event("error"));
-		await expect(first).rejects.toThrow("Failed to load the YouTube iframe API.");
+		appended[1]?.dispatchEvent(new Event("error"));
+		await expect(retryAfterReady).rejects.toThrow(
+			"Failed to load the YouTube iframe API.",
+		);
 		expect(youtubeWindow.onYouTubeIframeAPIReady).toBe(concurrentCallback);
 
 		existingScript = document.createElement("script");
@@ -101,7 +113,7 @@ describe("loadYouTubeIframeApi", () => {
 		};
 
 		const retry = loadYouTubeIframeApi();
-		expect(appended).toHaveLength(1);
+		expect(appended).toHaveLength(2);
 		const api = createApi();
 		youtubeWindow.YT = api;
 		expect(() => youtubeWindow.onYouTubeIframeAPIReady?.()).not.toThrow();
