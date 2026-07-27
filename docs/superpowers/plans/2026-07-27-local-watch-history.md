@@ -13,7 +13,7 @@
 - Use the versioned storage key `early-buddhism:watch-history:v1`.
 - Record only playback positions of at least 30 seconds.
 - Save during playback at 15-second intervals and on pause, end, page hide, and component cleanup.
-- Treat playback as completed at 90 percent or when 30 seconds or less remain.
+- Treat playback as completed only at 90 percent or more.
 - Resume unfinished playback three seconds before the saved position.
 - Keep at most 200 entries, newest first.
 - Load the YouTube iframe and IFrame Player API only after explicit playback or transcript-cue activation.
@@ -61,8 +61,8 @@ Cover malformed JSON, malformed entries, duplicate replacement, newest-first ord
 ```ts
 expect(parseWatchHistory("invalid")).toEqual([]);
 expect(upsertWatchHistory([], { ...snapshot, positionSeconds: 29 })).toEqual([]);
+expect(isPlaybackCompleted(89, 100)).toBe(false);
 expect(isPlaybackCompleted(90, 100)).toBe(true);
-expect(isPlaybackCompleted(70, 100)).toBe(true);
 expect(getResumeSeconds({ ...entry, positionSeconds: 125 })).toBe(122);
 expect(getResumeSeconds({ ...entry, completed: true })).toBe(0);
 ```
