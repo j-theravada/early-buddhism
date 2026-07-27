@@ -46,6 +46,9 @@ describe("WatchHistoryEntries", () => {
 		expect(html).toContain(
 			'src="https://img.youtube.com/vi/unfinished/hqdefault.jpg"',
 		);
+		expect(html).toMatch(
+			/<a[^>]*href="\/talks\/TALK-UNFINISHED"[^>]*><img[^>]*alt="続きの法話"/,
+		);
 		expect(html).toContain("01:05 / 10:00");
 		expect(html).toContain("最終視聴: 2026年7月27日");
 		expect(html).toContain("視聴済み");

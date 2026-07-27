@@ -47,6 +47,7 @@ export function WatchHistoryEntries({
 				<Link
 					className="mt-4 inline-flex rounded-full border border-[#9d7e4c] bg-white px-5 py-2.5 text-sm font-medium text-[#5f5144] transition hover:bg-[#fffbeb]"
 					href="/talks"
+					prefetch={false}
 				>
 					動画一覧を見る
 				</Link>
@@ -77,7 +78,7 @@ export function WatchHistoryEntries({
 									prefetch={false}
 								>
 									<Image
-										alt=""
+										alt={entry.title}
 										className="aspect-video w-full rounded-sm object-cover sm:w-48"
 										height={108}
 										src={entry.thumbnailUrl}
