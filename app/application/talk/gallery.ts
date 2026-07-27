@@ -7,9 +7,9 @@ import type {
 
 export function buildTalkGalleryTalks(talks: Talk[]): TalkForDisplay[] {
 	const sortedTalks = [...talks].sort((a, b) => {
-		const aTime = a.recordedOnDate?.getTime() ?? 0;
-		const bTime = b.recordedOnDate?.getTime() ?? 0;
-		return bTime - aTime;
+		const aTime = a.recordedOnDate?.getTime() ?? Number.POSITIVE_INFINITY;
+		const bTime = b.recordedOnDate?.getTime() ?? Number.POSITIVE_INFINITY;
+		return aTime - bTime;
 	});
 
 	return sortedTalks.map((talk, index) => transformTalkToDisplay(talk, index));

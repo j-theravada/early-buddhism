@@ -224,7 +224,7 @@ describe("talk search helpers", () => {
 		]);
 	});
 
-	test("ギャラリー表示用トークを日付降順で並べる", () => {
+	test("ギャラリー表示用トークを日付昇順で並べ不明日付は最後にする", () => {
 		const talks = [
 			createTalk({
 				id: "TALK-OLD",
@@ -234,10 +234,19 @@ describe("talk search helpers", () => {
 				id: "TALK-NEW",
 				recordedOnDate: new Date("1996-09-09T00:00:00.000Z"),
 			}),
+			createTalk({
+				id: "TALK-UNKNOWN",
+				recordedOn: "",
+				recordedOnDate: null,
+			}),
 		];
 
 		const result = buildTalkGalleryTalks(talks);
 
-		expect(result.map((talk) => talk.id)).toEqual(["TALK-NEW", "TALK-OLD"]);
+		expect(result.map((talk) => talk.id)).toEqual([
+			"TALK-OLD",
+			"TALK-NEW",
+			"TALK-UNKNOWN",
+		]);
 	});
 });

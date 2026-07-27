@@ -348,7 +348,7 @@ Expected: commit succeeds and contains only Task 1 files.
 - Produces: `getTalkArchivePageCount(totalItems: number): number`
 - Produces: `buildTalkArchivePage(items: TalkGalleryItem[], page: number): TalkArchivePage | null`
 - Produces: `buildTalkArchiveHref(page: number): string`
-- Consumes: `buildTalkGalleryItems(talks)` and its newest-first order.
+- Consumes: `buildTalkGalleryItems(talks)` and its oldest-first order.
 
 - [ ] **Step 1: Write failing pagination and link tests**
 

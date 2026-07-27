@@ -117,7 +117,7 @@ describe("transcript-aware talk search", () => {
 		});
 	});
 
-	test("一致IDを新しい順のまま返す", () => {
+	test("一致IDを古い順のまま返す", () => {
 		const searchData = buildTranscriptAwareSearchData(
 			[
 				createTalk({
@@ -135,8 +135,8 @@ describe("transcript-aware talk search", () => {
 		);
 
 		expect(findTranscriptAwareTalkIds(searchData, "慈悲")).toEqual([
-			"TALK-NEW",
 			"TALK-OLD",
+			"TALK-NEW",
 		]);
 	});
 

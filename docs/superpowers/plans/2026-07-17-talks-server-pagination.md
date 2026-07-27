@@ -4,14 +4,14 @@
 
 **Goal:** Replace the six-item preview, deferred 901-item client gallery, and separate static archive with one server-rendered, searchable, 30-item paginated talk listing.
 
-**Architecture:** Pure application functions validate URL state, preserve newest-first order, filter before pagination, and split transcript matching from page-only snippet generation. A dependency-injected reader owns the five-minute ID cache and lazily binds the 86 MB transcript read model only when `query` is active. Shared Server Components render the root and numbered routes, while normal links carry filters and detail-return state without Virtuoso or client gallery APIs.
+**Architecture:** Pure application functions validate URL state, preserve oldest-first order, filter before pagination, and split transcript matching from page-only snippet generation. A dependency-injected reader owns the five-minute ID cache and lazily binds the 86 MB transcript read model only when `query` is active. Shared Server Components render the root and numbered routes, while normal links carry filters and detail-return state without Virtuoso or client gallery APIs.
 
 **Tech Stack:** Next.js 16 App Router, React 19 Server Components, TypeScript 5.9, Bun test, oxfmt, oxlint, Vercel.
 
 ## Global Constraints
 
 - Render exactly 30 talks per normal page; `/talks` is page 1 and `/talks/page/N` is page N for N greater than 1.
-- Keep newest-first order from `buildTalkGalleryItems()`; never pass paged items through the current `buildDecadeSections()` because it reorders older decades.
+- Keep oldest-first order from `buildTalkGalleryItems()`; never pass paged items through the current `buildDecadeSections()` because it reorders older decades.
 - Keep GET parameter names `query`, `collection`, and `series`, with query trimmed and capped at 120 characters.
 - Search, collection, and series filtering happen over the full matching set before slicing the requested page.
 - Valid page-1 searches with zero matches return 200 and an empty result; malformed pages, unknown filters, contradictory series parents, and out-of-range pages return 404.
@@ -101,7 +101,7 @@ Keep `app/application/talk/search-api.ts` because the preserved SQLite/Turso sea
 Add imports for the two new functions and append these tests inside the existing describe block:
 
 ```ts
-test("一致IDを新しい順のまま返す", () => {
+test("一致IDを古い順のまま返す", () => {
 	const searchData = buildTranscriptAwareSearchData(
 		[
 			createTalk({
@@ -306,7 +306,7 @@ function createItem(index: number, overrides: Partial<TalkGalleryItem> = {}) {
 }
 
 describe("talk listing model", () => {
-	test("901件を新しい順のまま30件ずつ31ページへ分ける", () => {
+	test("901件を古い順のまま30件ずつ31ページへ分ける", () => {
 		const items = Array.from({ length: 901 }, (_, index) =>
 			createItem(index + 1),
 		);
@@ -2684,7 +2684,7 @@ Do not report completion until the visual browser flow, JavaScript-disabled set 
 - Queryless requests do not invoke transcript search dependencies.
 - Search result IDs are cached, and snippets exist only for visible cards.
 - Detail and cue links return to the exact page and filters.
-- Decade links and page sections preserve newest-first source order.
+- Decade links and page sections preserve oldest-first source order.
 - Every unfiltered listing page is self-canonical and present once in the sitemap.
 - Every filtered page is noindex and absent from the sitemap.
 - Legacy archive URLs permanently redirect near their previous offsets.

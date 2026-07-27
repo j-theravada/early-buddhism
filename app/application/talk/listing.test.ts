@@ -29,7 +29,7 @@ function createItem(index: number, overrides: Partial<TalkGalleryItem> = {}) {
 }
 
 describe("talk listing model", () => {
-	test("901件を新しい順のまま30件ずつ31ページへ分ける", () => {
+	test("901件を入力順のまま30件ずつ31ページへ分ける", () => {
 		const items = Array.from({ length: 901 }, (_, index) =>
 			createItem(index + 1),
 		);
