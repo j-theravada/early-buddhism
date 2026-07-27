@@ -9,7 +9,7 @@ const unfinished: WatchHistoryEntry = {
 	thumbnailUrl: "https://img.youtube.com/vi/unfinished/hqdefault.jpg",
 	positionSeconds: 65,
 	durationSeconds: 600,
-	lastWatchedAt: "2026-07-26T15:30:00.000Z",
+	lastWatchedAt: new Date(2026, 6, 26, 15, 30).toISOString(),
 	completed: false,
 };
 
@@ -19,7 +19,7 @@ const completed: WatchHistoryEntry = {
 	thumbnailUrl: null,
 	positionSeconds: 600,
 	durationSeconds: 600,
-	lastWatchedAt: "2026-07-27T01:45:00.000Z",
+	lastWatchedAt: new Date(2026, 6, 27, 13, 45).toISOString(),
 	completed: true,
 };
 

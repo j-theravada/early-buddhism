@@ -113,5 +113,19 @@ export const upsertWatchHistory = (
 		.slice(0, WATCH_HISTORY_LIMIT);
 };
 
-export const getResumeSeconds = (entry: WatchHistoryEntry): number =>
-	entry.completed ? 0 : Math.max(0, entry.positionSeconds - 3);
+export const getResumeSeconds = (entry: WatchHistoryEntry): number => {
+	if (
+		!Number.isFinite(entry.positionSeconds) ||
+		entry.positionSeconds < WATCH_HISTORY_MINIMUM_SECONDS ||
+		entry.completed ||
+		isPlaybackCompleted(entry.positionSeconds, entry.durationSeconds)
+	) {
+		return 0;
+	}
+
+	// YouTube start accepts whole seconds; floor only after applying the rewind.
+	const resumeSeconds = Math.floor(entry.positionSeconds - 3);
+	return Number.isSafeInteger(resumeSeconds) && resumeSeconds > 0
+		? resumeSeconds
+		: 0;
+};

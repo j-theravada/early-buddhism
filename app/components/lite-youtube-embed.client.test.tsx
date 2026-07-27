@@ -306,6 +306,16 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 		expect(getIframe().src).toContain("start=60");
 	});
 
+	test("小数の保存位置から整数秒だけをYouTube開始位置へ渡す", async () => {
+		installFakeApi();
+		writeHistory(63.9);
+		await mountEmbed();
+
+		await clickPlayButton();
+
+		expect(new URL(getIframe().src).searchParams.get("start")).toBe("60");
+	});
+
 	test("文字起こしで指定した開始位置は保存済み履歴より優先する", async () => {
 		installFakeApi();
 		writeHistory(63);

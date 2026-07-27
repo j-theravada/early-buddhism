@@ -150,9 +150,58 @@ describe("playback rules", () => {
 		expect(isPlaybackCompleted(90, 0)).toBe(false);
 	});
 
-	test("rewinds incomplete playback by three seconds and resets completed playback", () => {
-		expect(getResumeSeconds({ ...entry, positionSeconds: 125 })).toBe(122);
-		expect(getResumeSeconds({ ...entry, positionSeconds: 2 })).toBe(0);
+	test("rewinds normal incomplete playback by three seconds", () => {
+		expect(getResumeSeconds({ ...entry, positionSeconds: 63 })).toBe(60);
+	});
+
+	test("floors fractional resume positions after the three-second rewind", () => {
+		expect(getResumeSeconds({ ...entry, positionSeconds: 63.9 })).toBe(60);
+	});
+
+	test("resets positions below the 30-second history minimum", () => {
+		expect(getResumeSeconds({ ...entry, positionSeconds: 29.9 })).toBe(0);
+	});
+
+	test("resets entries marked completed", () => {
 		expect(getResumeSeconds({ ...entry, completed: true })).toBe(0);
+	});
+
+	test("resets an inconsistent incomplete entry at exactly 90 percent", () => {
+		expect(
+			getResumeSeconds({
+				...entry,
+				completed: false,
+				durationSeconds: 100,
+				positionSeconds: 90,
+			}),
+		).toBe(0);
+	});
+
+	test("resets an out-of-duration position even when completed is false", () => {
+		expect(
+			getResumeSeconds({
+				...entry,
+				completed: false,
+				durationSeconds: 100,
+				positionSeconds: 125,
+			}),
+		).toBe(0);
+	});
+
+	test("resumes an incomplete entry when duration is unavailable", () => {
+		expect(
+			getResumeSeconds({
+				...entry,
+				durationSeconds: null,
+				positionSeconds: 63,
+			}),
+		).toBe(60);
+	});
+
+	test("resets non-finite positions supplied directly", () => {
+		expect(getResumeSeconds({ ...entry, positionSeconds: Number.NaN })).toBe(0);
+		expect(
+			getResumeSeconds({ ...entry, positionSeconds: Number.POSITIVE_INFINITY }),
+		).toBe(0);
 	});
 });
