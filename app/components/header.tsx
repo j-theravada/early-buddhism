@@ -7,6 +7,7 @@ import { SUMANASARA_JA_NAME } from "../domain/teacher/sumanasara";
 
 const navLinks = [
 	{ href: "/talks", label: "動画一覧" },
+	{ href: "/history", label: "視聴履歴" },
 	{ href: "/about/early-buddhism", label: "初期仏教とは" },
 	{ href: "/about/vipassana", label: "ヴィパッサナー瞑想とは" },
 	{ href: "/about/sumanasara", label: SUMANASARA_JA_NAME },
