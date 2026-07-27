@@ -37,6 +37,11 @@ type FakeYouTubeApi = {
 	) => FakePlayer;
 };
 
+type FakePlayerOptions = {
+	getCurrentTime?: () => number;
+	getDuration?: () => number;
+};
+
 const testWindow = new Window({ url: "http://localhost" });
 const originalGlobals = new Map<string, PropertyDescriptor | undefined>();
 
@@ -49,6 +54,8 @@ let stateChange: PlayerStateChange | null = null;
 let intervalCallback: (() => void) | null = null;
 let intervalStarts = 0;
 let clearIntervalCalls = 0;
+let destroyCalls = 0;
+let playerCreations = 0;
 let originalSetInterval: typeof window.setInterval;
 let originalClearInterval: typeof window.clearInterval;
 
@@ -68,16 +75,22 @@ function getWindowWithYouTube() {
 	};
 }
 
-function installFakeApi(currentTime = 63, duration = 120) {
+function installFakeApi({
+	getCurrentTime = () => 63,
+	getDuration = () => 120,
+}: FakePlayerOptions = {}) {
 	class Player implements FakePlayer {
-		getCurrentTime = () => currentTime;
-		getDuration = () => duration;
-		destroy = () => {};
+		getCurrentTime = getCurrentTime;
+		getDuration = getDuration;
+		destroy = () => {
+			destroyCalls += 1;
+		};
 
 		constructor(
 			_iframe: HTMLIFrameElement,
 			options: { events?: { onStateChange?: PlayerStateChange } },
 		) {
+			playerCreations += 1;
 			fakePlayer = this;
 			stateChange = options.events?.onStateChange ?? null;
 		}
@@ -107,6 +120,18 @@ async function mountEmbed(props: EmbedProps = {}) {
 	document.body.append(currentContainer);
 	currentRoot = createRoot(currentContainer);
 
+	await renderEmbed(props);
+
+	return currentContainer;
+}
+
+async function rerenderEmbed(props: EmbedProps = {}) {
+	await renderEmbed(props);
+}
+
+async function renderEmbed(props: EmbedProps) {
+	if (!currentRoot) throw new Error("Embed is not mounted.");
+
 	await act(async () => {
 		currentRoot?.render(
 			<LiteYouTubeEmbed
@@ -117,8 +142,6 @@ async function mountEmbed(props: EmbedProps = {}) {
 			/>,
 		);
 	});
-
-	return currentContainer;
 }
 
 async function unmountEmbed() {
@@ -228,6 +251,8 @@ afterEach(async () => {
 	intervalCallback = null;
 	intervalStarts = 0;
 	clearIntervalCalls = 0;
+	destroyCalls = 0;
+	playerCreations = 0;
 });
 
 afterAll(async () => {
@@ -331,6 +356,81 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 			expect(clearIntervalCalls).toBe(1);
 		});
 	}
+
+	for (const [state, label] of [
+		[2, "一時停止"],
+		[0, "終了"],
+	] as const) {
+		test(`getterが失敗しても${label}時に定期保存を止める`, async () => {
+			installFakeApi({
+				getCurrentTime: () => {
+					throw new Error("current time failed");
+				},
+				getDuration: () => {
+					throw new Error("duration failed");
+				},
+			});
+			window.setInterval = ((callback: () => void) => {
+				intervalCallback = callback;
+				return 1;
+			}) as typeof window.setInterval;
+			window.clearInterval = (() => {
+				clearIntervalCalls += 1;
+			}) as typeof window.clearInterval;
+			await mountEmbed();
+			await clickPlayButton();
+			await loadIframe();
+
+			stateChange?.({ data: 1 });
+			expect(() => stateChange?.({ data: state })).not.toThrow();
+			expect(clearIntervalCalls).toBe(1);
+		});
+	}
+
+	test("getterが失敗してもアンマウント時にプレーヤーとリスナーを解除する", async () => {
+		let getterCalls = 0;
+		installFakeApi({
+			getCurrentTime: () => {
+				getterCalls += 1;
+				throw new Error("current time failed");
+			},
+			getDuration: () => {
+				getterCalls += 1;
+				throw new Error("duration failed");
+			},
+		});
+		window.setInterval = ((callback: () => void) => {
+			intervalCallback = callback;
+			return 1;
+		}) as typeof window.setInterval;
+		window.clearInterval = (() => {
+			clearIntervalCalls += 1;
+		}) as typeof window.clearInterval;
+		await mountEmbed();
+		await clickPlayButton();
+		await loadIframe();
+		stateChange?.({ data: 1 });
+
+		await expect(unmountEmbed()).resolves.toBeUndefined();
+		expect(clearIntervalCalls).toBe(1);
+		expect(destroyCalls).toBe(1);
+		const callsAfterUnmount = getterCalls;
+		expect(() => window.dispatchEvent(new Event("pagehide"))).not.toThrow();
+		expect(getterCalls).toBe(callsAfterUnmount);
+	});
+
+	test("通常のprops再描画では追跡中のプレーヤーを破棄しない", async () => {
+		installFakeApi();
+		await mountEmbed({ title: "更新前" });
+		await clickPlayButton();
+		await loadIframe();
+		stateChange?.({ data: 1 });
+
+		await rerenderEmbed({ title: "更新後" });
+
+		expect(playerCreations).toBe(1);
+		expect(destroyCalls).toBe(0);
+	});
 
 	test("アンマウント時だけ保存し、解除後のpagehideでは保存しない", async () => {
 		installFakeApi();

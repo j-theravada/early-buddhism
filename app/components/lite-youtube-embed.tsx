@@ -62,6 +62,7 @@ export default function LiteYouTubeEmbed({
 	const playerRef = useRef<YouTubePlayer | null>(null);
 	const intervalRef = useRef<number | null>(null);
 	const saveProgressRef = useRef<() => void>(() => {});
+	const cleanupPlayerRef = useRef<() => void>(() => {});
 
 	const clearProgressInterval = useCallback(() => {
 		if (intervalRef.current === null) return;
@@ -73,16 +74,37 @@ export default function LiteYouTubeEmbed({
 		const player = playerRef.current;
 		if (!player) return;
 
-		saveWatchProgress({
-			durationSeconds: player.getDuration() || null,
-			positionSeconds: player.getCurrentTime(),
-			talkId,
-			thumbnailUrl: thumbnailUrl ?? null,
-			title,
-		});
+		try {
+			saveWatchProgress({
+				durationSeconds: player.getDuration() || null,
+				positionSeconds: player.getCurrentTime(),
+				talkId,
+				thumbnailUrl: thumbnailUrl ?? null,
+				title,
+			});
+		} catch {
+			// Playback must remain usable when YouTube getter calls fail.
+		}
 	}, [talkId, thumbnailUrl, title]);
 
 	saveProgressRef.current = saveProgress;
+
+	const cleanupPlayer = useCallback(() => {
+		const player = playerRef.current;
+		try {
+			saveProgressRef.current();
+		} finally {
+			clearProgressInterval();
+			playerRef.current = null;
+			try {
+				player?.destroy();
+			} catch {
+				// The iframe remains available even when the API player cannot destroy.
+			}
+		}
+	}, [clearProgressInterval]);
+
+	cleanupPlayerRef.current = cleanupPlayer;
 
 	const handlePlayerStateChange = useCallback(
 		(event: { data: number }) => {
@@ -97,34 +119,38 @@ export default function LiteYouTubeEmbed({
 				event.data === YouTubePlayerState.PAUSED ||
 				event.data === YouTubePlayerState.ENDED
 			) {
-				saveProgress();
-				clearProgressInterval();
+				try {
+					saveProgressRef.current();
+				} finally {
+					clearProgressInterval();
+				}
 			}
 		},
-		[clearProgressInterval, saveProgress],
+		[clearProgressInterval],
 	);
 
 	const initializePlayer = useCallback(async () => {
 		const iframe = iframeRef.current;
-		if (!iframe || !playerSrc || playerRef.current) return;
+		if (!iframe || !playerSrc) return;
 
 		try {
 			const youtube = await loadYouTubeIframeApi();
-			if (iframe !== iframeRef.current || playerRef.current) return;
+			if (iframe !== iframeRef.current) return;
+			cleanupPlayer();
 			playerRef.current = new youtube.Player(iframe, {
 				events: { onStateChange: handlePlayerStateChange },
 			});
 		} catch {
 			// The iframe keeps its normal autoplay URL when tracking is unavailable.
 		}
-	}, [handlePlayerStateChange, playerSrc]);
+	}, [cleanupPlayer, handlePlayerStateChange, playerSrc]);
 
 	useEffect(() => {
 		const handleLoadPlayer = (event: Event) => {
-		const detail = readPlayerEventDetail(event);
-		if (detail) {
-			setPlayerSrc(enableYouTubeApi(detail.src));
-		}
+			const detail = readPlayerEventDetail(event);
+			if (detail) {
+				setPlayerSrc(enableYouTubeApi(detail.src));
+			}
 		};
 
 		window.addEventListener(LOAD_TALK_PLAYER_EVENT, handleLoadPlayer);
@@ -138,15 +164,7 @@ export default function LiteYouTubeEmbed({
 		return () => window.removeEventListener("pagehide", handlePageHide);
 	}, []);
 
-	useEffect(
-		() => () => {
-			saveProgress();
-			clearProgressInterval();
-			playerRef.current?.destroy();
-			playerRef.current = null;
-		},
-		[clearProgressInterval, playerSrc, saveProgress],
-	);
+	useEffect(() => () => cleanupPlayerRef.current(), []);
 
 	return (
 		<div className="relative w-full aspect-video overflow-hidden rounded-lg bg-gray-100 shadow-sm">

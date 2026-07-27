@@ -31,6 +31,15 @@ type YouTubeWindow = Window & {
 };
 
 let iframeApiPromise: Promise<YouTubeIframeApi> | null = null;
+const failedScripts = new WeakSet<HTMLScriptElement>();
+const IFRAME_API_SRC = "https://www.youtube.com/iframe_api";
+
+const findIframeApiScript = (): HTMLScriptElement | null => {
+	const script = document.querySelector<HTMLScriptElement>(
+		`script[src="${IFRAME_API_SRC}"]`,
+	);
+	return script && !failedScripts.has(script) ? script : null;
+};
 
 export const loadYouTubeIframeApi = (): Promise<YouTubeIframeApi> => {
 	const youtubeWindow = window as YouTubeWindow;
@@ -44,17 +53,30 @@ export const loadYouTubeIframeApi = (): Promise<YouTubeIframeApi> => {
 
 	iframeApiPromise = new Promise<YouTubeIframeApi>((resolve, reject) => {
 		const previousReady = youtubeWindow.onYouTubeIframeAPIReady;
-		const script = document.createElement("script");
+		const existingScript = findIframeApiScript();
+		const script = existingScript ?? document.createElement("script");
+		const createdScript = existingScript === null;
 		let settled = false;
+
+		const restorePreviousReady = () => {
+			if (youtubeWindow.onYouTubeIframeAPIReady === handleReady) {
+				youtubeWindow.onYouTubeIframeAPIReady = previousReady ?? null;
+			}
+		};
 
 		const settle = (callback: () => void) => {
 			if (settled) return;
 			settled = true;
+			script.removeEventListener("error", handleError);
 			callback();
 		};
 
-		youtubeWindow.onYouTubeIframeAPIReady = () => {
-			previousReady?.();
+		const handleReady = () => {
+			try {
+				previousReady?.();
+			} catch {
+				// A foreign callback must not leave this shared loader pending.
+			}
 			settle(() => {
 				const api = youtubeWindow.YT;
 				if (api?.Player) {
@@ -65,17 +87,21 @@ export const loadYouTubeIframeApi = (): Promise<YouTubeIframeApi> => {
 			});
 		};
 
-		script.onerror = () => {
+		const handleError = () => {
 			settle(() => {
-				if (youtubeWindow.onYouTubeIframeAPIReady) {
-					youtubeWindow.onYouTubeIframeAPIReady = previousReady ?? null;
-				}
-				script.remove();
+				restorePreviousReady();
+				failedScripts.add(script);
+				if (createdScript) script.remove();
 				reject(new Error("Failed to load the YouTube iframe API."));
 			});
 		};
-		script.src = "https://www.youtube.com/iframe_api";
-		document.head.append(script);
+
+		youtubeWindow.onYouTubeIframeAPIReady = handleReady;
+		script.addEventListener("error", handleError, { once: true });
+		if (createdScript) {
+			script.src = IFRAME_API_SRC;
+			document.head.append(script);
+		}
 	}).catch((error: unknown) => {
 		iframeApiPromise = null;
 		throw error;
