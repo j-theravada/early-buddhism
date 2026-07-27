@@ -156,6 +156,7 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 
 				<TalkDetailPlayer
 					embedUrl={pageData.talk.embedUrl}
+					talkId={talk.id}
 					thumbnailUrl={pageData.talk.thumbnailUrl}
 					title={pageData.talk.title}
 				>

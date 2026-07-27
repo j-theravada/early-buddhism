@@ -8,6 +8,7 @@ describe("TalkDetailPlayer", () => {
 			<TalkDetailPlayer
 				embedUrl="https://www.youtube.com/embed/example"
 				thumbnailUrl="https://img.youtube.com/vi/example/hqdefault.jpg"
+				talkId="TALK-1"
 				title="テスト動画"
 			>
 				<div>本文</div>
@@ -20,11 +21,14 @@ describe("TalkDetailPlayer", () => {
 		expect(html).not.toContain('aria-label="動画サイズ"');
 		expect(html).not.toContain("小さく");
 		expect(html).toContain("本文");
+		expect(html).toContain('src="about:blank"');
+		expect(html).toContain('aria-label="テスト動画を再生"');
+		expect(html).not.toContain("youtube.com/iframe_api");
 	});
 
 	test("動画がない場合も本文だけを表示する", () => {
 		const html = renderToStaticMarkup(
-			<TalkDetailPlayer title="音声のみ">
+			<TalkDetailPlayer talkId="TALK-2" title="音声のみ">
 				<div>本文</div>
 			</TalkDetailPlayer>,
 		);

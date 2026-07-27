@@ -2,20 +2,38 @@
 
 import { Play } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getResumeSeconds } from "../application/watch-history";
 import {
 	LOAD_TALK_PLAYER_EVENT,
 	type LoadTalkPlayerEventDetail,
 } from "../application/talk/player-events";
+import {
+	loadYouTubeIframeApi,
+	YouTubePlayerState,
+	type YouTubePlayer,
+} from "../infrastructure/youtube/iframe-api";
+import {
+	findWatchHistory,
+	saveWatchProgress,
+} from "../infrastructure/browser/watch-history-storage";
 
 type Props = {
 	embedUrl: string;
+	talkId: string;
 	thumbnailUrl?: string | null;
 	title: string;
 };
 
-function buildAutoplayUrl(embedUrl: string): string {
-	return `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}autoplay=1`;
+function buildAutoplayUrl(embedUrl: string, resumeSeconds: number): string {
+	const separator = embedUrl.includes("?") ? "&" : "?";
+	const start = resumeSeconds > 0 ? `&start=${resumeSeconds}` : "";
+	return `${embedUrl}${separator}autoplay=1&enablejsapi=1${start}`;
+}
+
+function enableYouTubeApi(embedUrl: string): string {
+	if (/[?&]enablejsapi=/.test(embedUrl)) return embedUrl;
+	return `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}enablejsapi=1`;
 }
 
 function readPlayerEventDetail(event: Event): LoadTalkPlayerEventDetail | null {
@@ -28,24 +46,107 @@ function readPlayerEventDetail(event: Event): LoadTalkPlayerEventDetail | null {
 
 export default function LiteYouTubeEmbed({
 	embedUrl,
+	talkId,
 	thumbnailUrl,
 	title,
 }: Props) {
-	const autoplayUrl = useMemo(() => buildAutoplayUrl(embedUrl), [embedUrl]);
+	const autoplayUrl = useMemo(() => {
+		const history = findWatchHistory(talkId);
+		return buildAutoplayUrl(
+			embedUrl,
+			history ? getResumeSeconds(history) : 0,
+		);
+	}, [embedUrl, talkId]);
 	const [playerSrc, setPlayerSrc] = useState<string | null>(null);
+	const iframeRef = useRef<HTMLIFrameElement | null>(null);
+	const playerRef = useRef<YouTubePlayer | null>(null);
+	const intervalRef = useRef<number | null>(null);
+	const saveProgressRef = useRef<() => void>(() => {});
+
+	const clearProgressInterval = useCallback(() => {
+		if (intervalRef.current === null) return;
+		window.clearInterval(intervalRef.current);
+		intervalRef.current = null;
+	}, []);
+
+	const saveProgress = useCallback(() => {
+		const player = playerRef.current;
+		if (!player) return;
+
+		saveWatchProgress({
+			durationSeconds: player.getDuration() || null,
+			positionSeconds: player.getCurrentTime(),
+			talkId,
+			thumbnailUrl: thumbnailUrl ?? null,
+			title,
+		});
+	}, [talkId, thumbnailUrl, title]);
+
+	saveProgressRef.current = saveProgress;
+
+	const handlePlayerStateChange = useCallback(
+		(event: { data: number }) => {
+			if (event.data === YouTubePlayerState.PLAYING) {
+				if (intervalRef.current === null) {
+					intervalRef.current = window.setInterval(saveProgress, 15_000);
+				}
+				return;
+			}
+
+			if (
+				event.data === YouTubePlayerState.PAUSED ||
+				event.data === YouTubePlayerState.ENDED
+			) {
+				saveProgress();
+				clearProgressInterval();
+			}
+		},
+		[clearProgressInterval, saveProgress],
+	);
+
+	const initializePlayer = useCallback(async () => {
+		const iframe = iframeRef.current;
+		if (!iframe || !playerSrc || playerRef.current) return;
+
+		try {
+			const youtube = await loadYouTubeIframeApi();
+			if (iframe !== iframeRef.current || playerRef.current) return;
+			playerRef.current = new youtube.Player(iframe, {
+				events: { onStateChange: handlePlayerStateChange },
+			});
+		} catch {
+			// The iframe keeps its normal autoplay URL when tracking is unavailable.
+		}
+	}, [handlePlayerStateChange, playerSrc]);
 
 	useEffect(() => {
 		const handleLoadPlayer = (event: Event) => {
-			const detail = readPlayerEventDetail(event);
-			if (detail) {
-				setPlayerSrc(detail.src);
-			}
+		const detail = readPlayerEventDetail(event);
+		if (detail) {
+			setPlayerSrc(enableYouTubeApi(detail.src));
+		}
 		};
 
 		window.addEventListener(LOAD_TALK_PLAYER_EVENT, handleLoadPlayer);
 		return () =>
 			window.removeEventListener(LOAD_TALK_PLAYER_EVENT, handleLoadPlayer);
 	}, []);
+
+	useEffect(() => {
+		const handlePageHide = () => saveProgressRef.current();
+		window.addEventListener("pagehide", handlePageHide);
+		return () => window.removeEventListener("pagehide", handlePageHide);
+	}, []);
+
+	useEffect(
+		() => () => {
+			saveProgress();
+			clearProgressInterval();
+			playerRef.current?.destroy();
+			playerRef.current = null;
+		},
+		[clearProgressInterval, playerSrc, saveProgress],
+	);
 
 	return (
 		<div className="relative w-full aspect-video overflow-hidden rounded-lg bg-gray-100 shadow-sm">
@@ -54,6 +155,8 @@ export default function LiteYouTubeEmbed({
 				allowFullScreen
 				className="absolute inset-0 h-full w-full"
 				name="talk-player"
+				onLoad={() => void initializePlayer()}
+				ref={iframeRef}
 				src={playerSrc ?? "about:blank"}
 				title={title}
 			/>
