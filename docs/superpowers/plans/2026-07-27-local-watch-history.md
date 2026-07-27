@@ -47,10 +47,12 @@
 ### Task 1: Pure Watch-History Rules
 
 **Files:**
+
 - Create: `app/application/watch-history.ts`
 - Test: `app/application/watch-history.test.ts`
 
 **Interfaces:**
+
 - Produces: `WatchHistoryEntry`, `WatchHistorySnapshot`, `WATCH_HISTORY_LIMIT`, `WATCH_HISTORY_MINIMUM_SECONDS`, `parseWatchHistory(raw)`, `upsertWatchHistory(entries, snapshot)`, `isPlaybackCompleted(positionSeconds, durationSeconds)`, and `getResumeSeconds(entry)`.
 - Consumes: no browser or React APIs.
 
@@ -60,7 +62,9 @@ Cover malformed JSON, malformed entries, duplicate replacement, newest-first ord
 
 ```ts
 expect(parseWatchHistory("invalid")).toEqual([]);
-expect(upsertWatchHistory([], { ...snapshot, positionSeconds: 29 })).toEqual([]);
+expect(upsertWatchHistory([], { ...snapshot, positionSeconds: 29 })).toEqual(
+	[],
+);
 expect(isPlaybackCompleted(89, 100)).toBe(false);
 expect(isPlaybackCompleted(90, 100)).toBe(true);
 expect(getResumeSeconds({ ...entry, positionSeconds: 125 })).toBe(122);
@@ -114,10 +118,12 @@ git commit -m "feat: define local watch history rules"
 ### Task 2: Safe localStorage Adapter
 
 **Files:**
+
 - Create: `app/infrastructure/browser/watch-history-storage.ts`
 - Test: `app/infrastructure/browser/watch-history-storage.test.ts`
 
 **Interfaces:**
+
 - Consumes: `WatchHistoryEntry`, `WatchHistorySnapshot`, `parseWatchHistory`, and `upsertWatchHistory` from Task 1.
 - Produces: `readWatchHistory(): WatchHistoryEntry[]`, `findWatchHistory(talkId): WatchHistoryEntry | null`, and `saveWatchProgress(snapshot): WatchHistoryEntry[]`.
 
@@ -143,14 +149,13 @@ Expected: FAIL because the storage adapter does not exist.
 Use:
 
 ```ts
-export const WATCH_HISTORY_STORAGE_KEY =
-	"early-buddhism:watch-history:v1";
+export const WATCH_HISTORY_STORAGE_KEY = "early-buddhism:watch-history:v1";
 ```
 
 Wrap every localStorage access in `try/catch`. Serialize entries as:
 
 ```ts
-Object.fromEntries(entries.map((entry) => [entry.talkId, entry]))
+Object.fromEntries(entries.map((entry) => [entry.talkId, entry]));
 ```
 
 If reading or writing fails, return the last computed list or an empty list and never throw.
@@ -171,6 +176,7 @@ git commit -m "feat: persist watch history in local storage"
 ### Task 3: Lazy YouTube Playback Tracking
 
 **Files:**
+
 - Create: `app/infrastructure/youtube/iframe-api.ts`
 - Create: `app/components/lite-youtube-embed.client.test.tsx`
 - Modify: `app/components/lite-youtube-embed.tsx`
@@ -179,6 +185,7 @@ git commit -m "feat: persist watch history in local storage"
 - Modify: `app/talks/[id]/page.tsx`
 
 **Interfaces:**
+
 - Consumes: `findWatchHistory`, `saveWatchProgress`, and `getResumeSeconds`.
 - Produces: `loadYouTubeIframeApi(): Promise<YouTubeIframeApi>` and a `LiteYouTubeEmbed` accepting `talkId`, `title`, `thumbnailUrl`, and `embedUrl`.
 
@@ -270,6 +277,7 @@ git commit -m "feat: save and resume YouTube playback"
 ### Task 4: User-Visible History Page
 
 **Files:**
+
 - Create: `app/history/watch-history-list.tsx`
 - Create: `app/history/watch-history-list.test.tsx`
 - Create: `app/history/page.tsx`
@@ -278,6 +286,7 @@ git commit -m "feat: save and resume YouTube playback"
 - Create: `app/components/header.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `readWatchHistory`, `WatchHistoryEntry`, and `buildTalkDetailHref`.
 - Produces: `/history` with a client-populated list and `robots: { index: false, follow: false }`.
 
@@ -339,9 +348,11 @@ git commit -m "feat: add local watch history page"
 ### Task 5: Full Verification and Regression Check
 
 **Files:**
+
 - Modify only files required to fix failures caused by Tasks 1–4.
 
 **Interfaces:**
+
 - Consumes: completed watch-history feature.
 - Produces: verified build with no unrelated changes included.
 

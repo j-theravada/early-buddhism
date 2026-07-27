@@ -223,9 +223,7 @@ function savedEntry(talkId: string): WatchHistoryEntry | null {
 	return entries[talkId] ?? null;
 }
 
-function requireScript(
-	script: HTMLScriptElement | null,
-): HTMLScriptElement {
+function requireScript(script: HTMLScriptElement | null): HTMLScriptElement {
 	if (!script) throw new Error("YouTube API script not found.");
 	return script;
 }
@@ -289,7 +287,11 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 	test("再生ボタンを押すまでYouTube APIを読み込まない", async () => {
 		await mountEmbed();
 
-		expect(document.querySelector('script[src="https://www.youtube.com/iframe_api"]')).toBeNull();
+		expect(
+			document.querySelector(
+				'script[src="https://www.youtube.com/iframe_api"]',
+			),
+		).toBeNull();
 	});
 
 	test("保存済みの未完了再生位置から3秒戻して開始する", async () => {
@@ -347,7 +349,6 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 
 		await act(async () => intervalCallback?.());
 		expect(savedPosition()).toBe(63);
-
 	});
 
 	for (const [state, label] of [
@@ -544,7 +545,7 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 		await clickPlayButton();
 		await loadIframe();
 
-	await waitFor(() => {
+		await waitFor(() => {
 			expect(apiScript).not.toBeNull();
 		});
 		requireScript(apiScript).dispatchEvent(new Event("error"));

@@ -82,7 +82,10 @@ describe("loadYouTubeIframeApi", () => {
 		document.querySelector = ((selector: string) =>
 			selector === 'script[src="https://www.youtube.com/iframe_api"]'
 				? existingScript
-				: originalQuerySelector.call(document, selector)) as typeof document.querySelector;
+				: originalQuerySelector.call(
+						document,
+						selector,
+					)) as typeof document.querySelector;
 
 		const first = loadYouTubeIframeApi();
 		const second = loadYouTubeIframeApi();

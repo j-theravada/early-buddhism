@@ -52,10 +52,7 @@ export default function LiteYouTubeEmbed({
 }: Props) {
 	const autoplayUrl = useMemo(() => {
 		const history = findWatchHistory(talkId);
-		return buildAutoplayUrl(
-			embedUrl,
-			history ? getResumeSeconds(history) : 0,
-		);
+		return buildAutoplayUrl(embedUrl, history ? getResumeSeconds(history) : 0);
 	}, [embedUrl, talkId]);
 	const [playerSrc, setPlayerSrc] = useState<string | null>(null);
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
