@@ -78,165 +78,167 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 									type="search"
 								/>
 							</label>
-							<button
-								aria-label="検索"
-								className="flex h-11 w-11 shrink-0 items-center justify-center border-l border-[#eadfce] text-[#5f5144] transition hover:bg-[#9d7e4c] hover:text-white focus-visible:bg-[#9d7e4c] focus-visible:text-white focus-visible:outline-none"
-								title="検索"
-								type="submit"
-							>
-								<Search
-									aria-hidden="true"
-									className="h-[18px] w-[18px]"
-									strokeWidth={1.8}
-								/>
-								<span className="sr-only">検索</span>
-							</button>
-							<details className="group relative shrink-0">
-								<summary
-									aria-label={`検索設定${hasActiveConditions ? "（条件あり）" : ""}`}
-									className="relative flex h-11 w-11 cursor-pointer list-none items-center justify-center border-l border-[#eadfce] text-[#5f5144] transition hover:bg-[#fffcf5] hover:text-[#303030] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#9d7e4c]/40 [&::-webkit-details-marker]:hidden"
-									title="検索設定"
+							<div className="relative flex shrink-0 items-stretch">
+								<details className="group shrink-0">
+									<summary
+										aria-label={`検索設定${hasActiveConditions ? "（条件あり）" : ""}`}
+										className="relative flex h-11 w-11 cursor-pointer list-none items-center justify-center border-l border-[#eadfce] text-[#5f5144] transition hover:bg-[#fffcf5] hover:text-[#303030] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#9d7e4c]/40 [&::-webkit-details-marker]:hidden"
+										title="検索設定"
+									>
+										<SlidersHorizontal
+											aria-hidden="true"
+											className="h-[18px] w-[18px]"
+											strokeWidth={1.8}
+										/>
+										{hasActiveConditions && (
+											<span
+												aria-hidden="true"
+												className="absolute right-2.5 top-2 h-1.5 w-1.5 rounded-full bg-[#9d7e4c]"
+											/>
+										)}
+										<span className="sr-only">検索設定</span>
+									</summary>
+									<div className="absolute right-0 top-full z-30 mt-2 max-h-[min(70svh,36rem)] w-[min(92vw,34rem)] max-w-[calc(100vw-2.5rem)] overflow-y-auto rounded-md border border-[#d6c6ad] bg-[#fffcf5] p-3 shadow-[0_10px_30px_rgba(95,81,68,0.16)]">
+										<div className="mb-3 flex items-center justify-between gap-3">
+											<p className="text-xs font-semibold text-[#5f5144]">
+												検索設定
+											</p>
+											<p className="text-[11px] text-[#887966]">
+												条件を選んで検索
+											</p>
+										</div>
+										<fieldset className="border-0 p-0">
+											<legend className="p-0 text-xs font-semibold text-[#5f5144]">
+												検索対象
+											</legend>
+											<p className="mb-2 text-[11px] text-[#887966]">
+												「全て」を外すと、選択した項目だけを検索します。
+											</p>
+											<div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-[#5f5144]">
+												<label className="inline-flex items-center gap-1.5">
+													<input
+														defaultChecked={allSearchFieldsSelected}
+														name="fields"
+														type="checkbox"
+														value="all"
+													/>
+													全て
+												</label>
+												{SEARCH_FIELD_OPTIONS.map(({ id, label }) => (
+													<label
+														className="inline-flex items-center gap-1.5"
+														key={id}
+													>
+														<input
+															defaultChecked={
+																!allSearchFieldsSelected &&
+																selectedSearchFields.includes(id)
+															}
+															name="fields"
+															type="checkbox"
+															value={id}
+														/>
+														{label}
+													</label>
+												))}
+											</div>
+										</fieldset>
+
+										<div className="mt-3">
+											<p className="mb-2 text-xs font-semibold text-[#5f5144]">
+												分類
+											</p>
+											<nav
+												aria-label="分類で絞り込む"
+												className="scrollbar-none flex gap-2 overflow-x-auto"
+											>
+												{listing.collectionOptions.map((option) => (
+													<Link
+														className={
+															option.id === conditions.collectionId
+																? activeFilterLinkClass
+																: filterLinkClass
+														}
+														href={buildTalksHref({
+															query: conditions.query,
+															searchFields: conditions.searchFields,
+															collectionId: option.id,
+															seriesId:
+																option.id === "scripture_commentary"
+																	? conditions.seriesId
+																	: "",
+														})}
+														aria-current={
+															option.id === conditions.collectionId
+																? "page"
+																: undefined
+														}
+														key={option.id}
+														prefetch={false}
+													>
+														{option.label}
+													</Link>
+												))}
+											</nav>
+										</div>
+
+										{conditions.collectionId === "scripture_commentary" && (
+											<div className="mt-3">
+												<p className="mb-2 text-xs font-semibold text-[#5f5144]">
+													シリーズ
+												</p>
+												<nav
+													aria-label="シリーズで絞り込む"
+													className="scrollbar-none flex gap-2 overflow-x-auto"
+												>
+													{listing.seriesOptions
+														.filter(
+															(option) =>
+																option.collectionId === "scripture_commentary",
+														)
+														.map((option) => (
+															<Link
+																className={
+																	option.id === conditions.seriesId
+																		? activeFilterLinkClass
+																		: filterLinkClass
+																}
+																href={buildTalksHref({
+																	query: conditions.query,
+																	collectionId: "scripture_commentary",
+																	seriesId: option.id,
+																	searchFields: conditions.searchFields,
+																})}
+																aria-current={
+																	option.id === conditions.seriesId
+																		? "page"
+																		: undefined
+																}
+																key={option.id}
+																prefetch={false}
+															>
+																{option.label}
+															</Link>
+														))}
+												</nav>
+											</div>
+										)}
+									</div>
+								</details>
+								<button
+									aria-label="検索"
+									className="flex h-11 w-11 shrink-0 items-center justify-center border-l border-[#eadfce] text-[#5f5144] transition hover:bg-[#9d7e4c] hover:text-white focus-visible:bg-[#9d7e4c] focus-visible:text-white focus-visible:outline-none"
+									title="検索"
+									type="submit"
 								>
-									<SlidersHorizontal
+									<Search
 										aria-hidden="true"
 										className="h-[18px] w-[18px]"
 										strokeWidth={1.8}
 									/>
-									{hasActiveConditions && (
-										<span
-											aria-hidden="true"
-											className="absolute right-2.5 top-2 h-1.5 w-1.5 rounded-full bg-[#9d7e4c]"
-										/>
-									)}
-									<span className="sr-only">検索設定</span>
-								</summary>
-								<div className="absolute right-0 top-full z-30 mt-2 max-h-[min(70svh,36rem)] w-[min(92vw,34rem)] max-w-[calc(100vw-2.5rem)] overflow-y-auto rounded-md border border-[#d6c6ad] bg-[#fffcf5] p-3 shadow-[0_10px_30px_rgba(95,81,68,0.16)]">
-									<div className="mb-3 flex items-center justify-between gap-3">
-										<p className="text-xs font-semibold text-[#5f5144]">
-											検索設定
-										</p>
-										<p className="text-[11px] text-[#887966]">
-											条件を選んで検索
-										</p>
-									</div>
-									<fieldset className="rounded-sm border border-[#eadfce] bg-white/70 px-3 py-2.5">
-										<legend className="px-1 text-xs font-semibold text-[#5f5144]">
-											検索対象
-										</legend>
-										<p className="mb-2 text-[11px] text-[#887966]">
-											「全て」を外すと、選択した項目だけを検索します。
-										</p>
-										<div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-[#5f5144]">
-											<label className="inline-flex items-center gap-1.5">
-												<input
-													defaultChecked={allSearchFieldsSelected}
-													name="fields"
-													type="checkbox"
-													value="all"
-												/>
-												全て
-											</label>
-											{SEARCH_FIELD_OPTIONS.map(({ id, label }) => (
-												<label
-													className="inline-flex items-center gap-1.5"
-													key={id}
-												>
-													<input
-														defaultChecked={
-															!allSearchFieldsSelected &&
-															selectedSearchFields.includes(id)
-														}
-														name="fields"
-														type="checkbox"
-														value={id}
-													/>
-													{label}
-												</label>
-											))}
-										</div>
-									</fieldset>
-
-									<div className="mt-3">
-										<p className="mb-2 text-xs font-semibold text-[#5f5144]">
-											分類
-										</p>
-										<nav
-											aria-label="分類で絞り込む"
-											className="scrollbar-none flex gap-2 overflow-x-auto"
-										>
-											{listing.collectionOptions.map((option) => (
-												<Link
-													className={
-														option.id === conditions.collectionId
-															? activeFilterLinkClass
-															: filterLinkClass
-													}
-													href={buildTalksHref({
-														query: conditions.query,
-														searchFields: conditions.searchFields,
-														collectionId: option.id,
-														seriesId:
-															option.id === "scripture_commentary"
-																? conditions.seriesId
-																: "",
-													})}
-													aria-current={
-														option.id === conditions.collectionId
-															? "page"
-															: undefined
-													}
-													key={option.id}
-													prefetch={false}
-												>
-													{option.label}
-												</Link>
-											))}
-										</nav>
-									</div>
-
-									{conditions.collectionId === "scripture_commentary" && (
-										<div className="mt-3">
-											<p className="mb-2 text-xs font-semibold text-[#5f5144]">
-												シリーズ
-											</p>
-											<nav
-												aria-label="シリーズで絞り込む"
-												className="scrollbar-none flex gap-2 overflow-x-auto"
-											>
-												{listing.seriesOptions
-													.filter(
-														(option) =>
-															option.collectionId === "scripture_commentary",
-													)
-													.map((option) => (
-														<Link
-															className={
-																option.id === conditions.seriesId
-																	? activeFilterLinkClass
-																	: filterLinkClass
-															}
-															href={buildTalksHref({
-																query: conditions.query,
-																collectionId: "scripture_commentary",
-																seriesId: option.id,
-																searchFields: conditions.searchFields,
-															})}
-															aria-current={
-																option.id === conditions.seriesId
-																	? "page"
-																	: undefined
-															}
-															key={option.id}
-															prefetch={false}
-														>
-															{option.label}
-														</Link>
-													))}
-											</nav>
-										</div>
-									)}
-								</div>
-							</details>
+									<span className="sr-only">検索</span>
+								</button>
+							</div>
 						</div>
 					</div>
 					{conditions.collectionId && (

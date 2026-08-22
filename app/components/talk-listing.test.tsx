@@ -72,6 +72,13 @@ describe("TalkListing", () => {
 		expect(html).toContain('title="検索"');
 		expect(html).toContain('aria-label="検索設定（条件あり）"');
 		expect(html).toContain("lucide-sliders-horizontal");
+		const queryControlIndex = html.indexOf('name="query"');
+		const settingsControlIndex = html.indexOf(
+			'aria-label="検索設定（条件あり）"',
+		);
+		const searchControlIndex = html.indexOf('aria-label="検索"');
+		expect(queryControlIndex).toBeLessThan(settingsControlIndex);
+		expect(settingsControlIndex).toBeLessThan(searchControlIndex);
 		const noConditionsHtml = renderToStaticMarkup(
 			<TalkListing
 				listing={createListing({
@@ -83,6 +90,8 @@ describe("TalkListing", () => {
 		expect(html).toContain('type="hidden" name="collection"');
 		expect(html).toContain("min-w-0 flex-1");
 		expect(html).toContain("h-11 w-11");
+		expect(html).toContain("max-w-[calc(100vw-2.5rem)]");
+		expect(html).toContain('<fieldset class="border-0 p-0">');
 		expect(html).not.toContain("home-outline-button");
 		expect(html).toContain("全65件中 31〜60件");
 		expect(html).toContain(
