@@ -68,6 +68,15 @@ describe("TalkListing", () => {
 			/<details[^>]*>\s*<summary[^>]*>\s*<span>検索・絞り込み<\/span>/,
 		);
 		expect(html).not.toContain('<details open="">');
+		expect(html).toContain("条件あり");
+		const noConditionsHtml = renderToStaticMarkup(
+			<TalkListing
+				listing={createListing({
+					conditions: { query: "", collectionId: "", seriesId: "" },
+				})}
+			/>,
+		);
+		expect(noConditionsHtml).toContain("分類・シリーズ");
 		expect(html).toContain('type="hidden" name="collection"');
 		expect(html).toContain("検索");
 		expect(html).toContain("w-full min-w-0");

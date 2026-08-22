@@ -88,7 +88,7 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 							<span>検索・絞り込み</span>
 							<span className="flex items-center gap-2">
 								<span className="font-normal text-[11px] text-[#887966]">
-									{hasActiveConditions ? "条件あり" : "検索対象・分類"}
+									{hasActiveConditions ? "条件あり" : "分類・シリーズ"}
 								</span>
 								<svg
 									aria-hidden="true"
