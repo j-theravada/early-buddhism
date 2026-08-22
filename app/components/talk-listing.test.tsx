@@ -64,11 +64,15 @@ describe("TalkListing", () => {
 		expect(html).toContain('name="query"');
 		expect(html).toContain('name="fields"');
 		expect(html).toContain("検索対象");
+		expect(html).toMatch(
+			/<details[^>]*>\s*<summary[^>]*>\s*<span>検索・絞り込み<\/span>/,
+		);
+		expect(html).not.toContain('<details open="">');
 		expect(html).toContain('type="hidden" name="collection"');
 		expect(html).toContain("検索");
 		expect(html).toContain("w-full min-w-0");
 		expect(html).toContain("min-w-20");
-		expect(html).toContain("sm:min-w-48");
+		expect(html).toContain("sm:min-w-28");
 		expect(html).not.toContain("home-outline-button");
 		expect(html).toContain("全65件中 31〜60件");
 		expect(html).toContain(
