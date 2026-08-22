@@ -65,10 +65,13 @@ describe("TalkListing", () => {
 		expect(html).toContain('name="fields"');
 		expect(html).toContain("検索対象");
 		expect(html).toMatch(
-			/<details[^>]*>\s*<summary[^>]*>\s*<span>検索・絞り込み<\/span>/,
+			/<details[^>]*>\s*<summary[^>]*aria-label="検索設定（条件あり）"/,
 		);
 		expect(html).not.toContain('<details open="">');
-		expect(html).toContain("条件あり");
+		expect(html).toContain('aria-label="検索"');
+		expect(html).toContain('title="検索"');
+		expect(html).toContain('aria-label="検索設定（条件あり）"');
+		expect(html).toContain("lucide-sliders-horizontal");
 		const noConditionsHtml = renderToStaticMarkup(
 			<TalkListing
 				listing={createListing({
@@ -76,18 +79,56 @@ describe("TalkListing", () => {
 				})}
 			/>,
 		);
-		expect(noConditionsHtml).toContain("分類・シリーズ");
+		expect(noConditionsHtml).toContain('aria-label="検索設定"');
 		expect(html).toContain('type="hidden" name="collection"');
-		expect(html).toContain("検索");
-		expect(html).toContain("w-full min-w-0");
-		expect(html).toContain("min-w-20");
-		expect(html).toContain("sm:min-w-28");
+		expect(html).toContain("min-w-0 flex-1");
+		expect(html).toContain("h-11 w-11");
 		expect(html).not.toContain("home-outline-button");
 		expect(html).toContain("全65件中 31〜60件");
 		expect(html).toContain(
 			'href="/talks/page/3?query=%E4%BB%8F%E6%95%99&amp;collection=monthly_talk"',
 		);
 		expect(html).toContain("galleryPage=2");
+	});
+
+	test("設定パネルに分類・シリーズをまとめ、現在の条件を保持する", () => {
+		const html = renderToStaticMarkup(
+			<TalkListing
+				listing={createListing({
+					conditions: {
+						query: "無常",
+						collectionId: "scripture_commentary",
+						seriesId: "abhidhamma",
+						searchFields: ["title", "transcript"],
+					},
+					collectionOptions: [
+						{ id: "monthly_talk", label: "月例講演" },
+						{ id: "scripture_commentary", label: "経典解説" },
+					],
+					seriesOptions: [
+						{
+							id: "abhidhamma",
+							label: "アビダンマ",
+							collectionId: "scripture_commentary",
+						},
+					],
+				})}
+			/>,
+		);
+
+		expect(html).toContain("分類");
+		expect(html).toContain("シリーズ");
+		expect(html).toContain(
+			'href="/talks?query=%E7%84%A1%E5%B8%B8&amp;collection=monthly_talk&amp;fields=title&amp;fields=transcript"',
+		);
+		expect(html).toContain(
+			'href="/talks?query=%E7%84%A1%E5%B8%B8&amp;collection=scripture_commentary&amp;series=abhidhamma&amp;fields=title&amp;fields=transcript"',
+		);
+		expect(html).toContain('aria-current="page"');
+		expect(html).toContain("検索対象: タイトル・文字起こし");
+		expect(html).toContain("検索: 無常 ×");
+		expect(html).toContain("経典解説 ×");
+		expect(html).toContain("アビダンマ ×");
 	});
 
 	test("検索対象にはタイトル、解説、文字起こしだけを表示する", () => {
