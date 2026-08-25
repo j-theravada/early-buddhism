@@ -17,7 +17,15 @@ type Props = {
 	galleryOptions?: TalkGalleryHrefOptions;
 	transcriptSnippets?: TranscriptSearchSnippet[];
 	thumbnailPriority?: boolean;
+	subtitleMaxLength?: number;
 };
+
+function truncateByCodePoints(value: string, maxLength: number): string {
+	const codePoints = Array.from(value);
+	return codePoints.length > maxLength
+		? `${codePoints.slice(0, maxLength).join("")}…`
+		: value;
+}
 
 export default function TalkGalleryCard({
 	talk,
@@ -25,7 +33,12 @@ export default function TalkGalleryCard({
 	galleryOptions,
 	transcriptSnippets = [],
 	thumbnailPriority = false,
+	subtitleMaxLength,
 }: Props) {
+	const subtitle =
+		talk.subtitle && subtitleMaxLength !== undefined
+			? truncateByCodePoints(talk.subtitle, subtitleMaxLength)
+			: talk.subtitle;
 	const detailOptions: TalkGalleryHrefOptions = galleryOptions ?? {};
 	const talkDetailHref = buildTalkDetailHref(talk.id, detailOptions);
 	const collectionHref = galleryOptions
@@ -109,9 +122,9 @@ export default function TalkGalleryCard({
 					<h2 className="text-lg font-bold text-[#303030] sm:text-xl">
 						{highlightMatches(talk.title, searchTokens)}
 					</h2>
-					{talk.subtitle && (
+					{subtitle && (
 						<p className="mt-2 text-sm leading-relaxed text-[#666]">
-							{highlightMatches(talk.subtitle, searchTokens)}
+							{highlightMatches(subtitle, searchTokens)}
 						</p>
 					)}
 				</Link>

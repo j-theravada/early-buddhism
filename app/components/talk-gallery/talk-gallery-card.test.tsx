@@ -22,6 +22,57 @@ const talk: TalkGalleryItem = {
 };
 
 describe("TalkGalleryCard", () => {
+	test("一覧向けの解説制限はUnicode code points単位で100文字を境界にする", () => {
+		const exactly100CodePoints = "🙂".repeat(100);
+		const exactly100Html = renderToStaticMarkup(
+			<TalkGalleryCard
+				searchTokens={[]}
+				subtitleMaxLength={100}
+				talk={{ ...talk, subtitle: exactly100CodePoints }}
+			/>,
+		);
+		expect(exactly100Html).toContain(exactly100CodePoints);
+		expect(exactly100Html).not.toContain("…");
+
+		const over100CodePoints = `${exactly100CodePoints}🙂`;
+		const over100Html = renderToStaticMarkup(
+			<TalkGalleryCard
+				searchTokens={[]}
+				subtitleMaxLength={100}
+				talk={{ ...talk, subtitle: over100CodePoints }}
+			/>,
+		);
+		expect(over100Html).toContain(`${exactly100CodePoints}…`);
+		expect(over100Html).not.toContain(over100CodePoints);
+	});
+
+	test("検索ハイライトは切り詰め後の解説へ適用する", () => {
+		const html = renderToStaticMarkup(
+			<TalkGalleryCard
+				searchTokens={["冒頭"]}
+				subtitleMaxLength={100}
+				talk={{
+					...talk,
+					subtitle: `冒頭${"あ".repeat(99)}末尾`,
+				}}
+			/>,
+		);
+
+		expect(html).toContain('<mark class="rounded bg-yellow-200');
+		expect(html).toContain(`${"あ".repeat(98)}…`);
+		expect(html).not.toContain("末尾");
+	});
+
+	test("解説制限を指定しない表示では長い解説を変更しない", () => {
+		const subtitle = `${"あ".repeat(100)}末尾`;
+		const html = renderToStaticMarkup(
+			<TalkGalleryCard searchTokens={[]} talk={{ ...talk, subtitle }} />,
+		);
+
+		expect(html).toContain(subtitle);
+		expect(html).not.toContain("…");
+	});
+
 	test("一覧のページと絞り込み条件を詳細・cue・バッジリンクへ引き継ぐ", () => {
 		const html = renderToStaticMarkup(
 			<TalkGalleryCard

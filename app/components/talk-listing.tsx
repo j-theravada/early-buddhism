@@ -25,6 +25,7 @@ const filterLinkClass =
 	"shrink-0 rounded-sm border border-[#d6c6ad] bg-white px-2.5 py-1 text-xs font-medium text-[#5f5144] transition hover:border-[#9d7e4c] hover:text-[#303030]";
 const activeFilterLinkClass =
 	"shrink-0 rounded-sm border border-[#9d7e4c] bg-[#fffbeb] px-2.5 py-1 text-xs font-medium text-[#303030] transition hover:border-[#9d7e4c]";
+const TALK_LISTING_SUBTITLE_MAX_LENGTH = 100;
 
 export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 	const { conditions } = listing;
@@ -364,6 +365,7 @@ export default function TalkListing({ listing }: { listing: TalkListingPage }) {
 											<TalkGalleryCard
 												galleryOptions={galleryOptions}
 												searchTokens={searchTokens}
+												subtitleMaxLength={TALK_LISTING_SUBTITLE_MAX_LENGTH}
 												talk={talk}
 												thumbnailPriority={pageIndex < 3}
 												transcriptSnippets={

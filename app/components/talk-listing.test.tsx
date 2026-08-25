@@ -82,7 +82,12 @@ describe("TalkListing", () => {
 		const noConditionsHtml = renderToStaticMarkup(
 			<TalkListing
 				listing={createListing({
-					conditions: { query: "", collectionId: "", seriesId: "" },
+					conditions: {
+						query: "",
+						collectionId: "",
+						seriesId: "",
+						searchFields: [...ALL_SEARCH_FIELDS],
+					},
 				})}
 			/>,
 		);
@@ -296,6 +301,25 @@ describe("TalkListing", () => {
 		expect(html).toContain(
 			"検索条件に一致するデータが見つかりませんでした。条件を変えてお試しください。",
 		);
+	});
+
+	test("一覧画面のカードだけ解説を100 Unicode code pointsまで表示する", () => {
+		const first100CodePoints = "🙂".repeat(100);
+		const html = renderToStaticMarkup(
+			<TalkListing
+				listing={createListing({
+					items: [
+						{
+							...createTalk("TALK-LONG"),
+							subtitle: `${first100CodePoints}末尾`,
+						},
+					],
+				})}
+			/>,
+		);
+
+		expect(html).toContain(`${first100CodePoints}…`);
+		expect(html).not.toContain("末尾");
 	});
 });
 
