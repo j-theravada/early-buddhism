@@ -73,6 +73,33 @@ turso db create early-buddhism-search-YYYYMMDD --from-file app/generated/gakurin
 Then update the Vercel Production `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`
 variables to point at the imported database.
 
+## Login
+
+Login, account security, email verification, and password recovery use Clerk.
+Turso remains the transcript search database only; authentication needs no
+application-owned database or migration.
+
+Create a Clerk application and set these variables locally and in every Vercel
+environment where login is enabled:
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+CLERK_SECRET_KEY=sk_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/login
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+```
+
+The same Clerk application serves regular users and administrators. In the Clerk
+Dashboard:
+
+1. Keep **Access mode** open so regular users can sign up.
+2. Set only subtitle administrators' public metadata to
+   `{ "role": "subtitle_admin" }`.
+
+The `/subtitle-admin` layout rejects users without the `subtitle_admin` role.
+Every future subtitle-management API route and Server Action must repeat the
+role check; protecting the page layout alone does not protect mutations.
+
 Popular videos can be loaded from the GA4 Data API when these server-side variables are set:
 
 ```bash

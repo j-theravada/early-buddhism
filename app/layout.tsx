@@ -1,3 +1,6 @@
+import { jaJP } from "@clerk/localizations";
+import { ClerkProvider } from "@clerk/nextjs";
+import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
@@ -43,8 +46,22 @@ export default function RootLayout({
 	return (
 		<html data-scroll-behavior="smooth" lang="ja">
 			<body className={`${inter.variable} antialiased`}>
-				<ClientPageChrome />
-				{children}
+				<ClerkProvider
+					afterSignOutUrl="/"
+					appearance={{
+						theme: shadcn,
+						variables: {
+							borderRadius: "0.125rem",
+							colorPrimary: "#8a6a38",
+						},
+					}}
+					localization={jaJP}
+					signInUrl="/login"
+					signUpUrl="/sign-up"
+				>
+					<ClientPageChrome />
+					{children}
+				</ClerkProvider>
 				{gaId ? (
 					<>
 						<Script

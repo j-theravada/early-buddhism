@@ -1,0 +1,41 @@
+"use client";
+
+import { Show, UserButton, useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import { hasSubtitleAdminRole } from "../application/auth/subtitle-admin";
+
+type Props = {
+	variant: "desktop" | "mobile";
+};
+
+export default function AuthNav({ variant }: Props) {
+	const { user } = useUser();
+	const isSubtitleAdmin = hasSubtitleAdminRole(user?.publicMetadata);
+	const className =
+		variant === "desktop"
+			? "font-display text-[15px] font-semibold text-[#303030] transition-colors hover:text-[#9d7e4c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/50"
+			: "font-display text-base font-semibold text-white transition-colors hover:text-[#fffbeb]";
+
+	return (
+		<>
+			<Show when="signed-out">
+				<Link className={className} href="/login">
+					ログイン
+				</Link>
+				<Link className={className} href="/sign-up">
+					新規登録
+				</Link>
+			</Show>
+			<Show when="signed-in">
+				<span className="flex items-center gap-3">
+					{isSubtitleAdmin ? (
+						<Link className={className} href="/subtitle-admin">
+							字幕管理
+						</Link>
+					) : null}
+					<UserButton userProfileMode="navigation" userProfileUrl="/account" />
+				</span>
+			</Show>
+		</>
+	);
+}

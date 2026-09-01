@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { SUMANASARA_JA_NAME } from "../domain/teacher/sumanasara";
+import AuthNav from "./auth-nav";
 
 const navLinks = [
 	{ href: "/talks", label: "動画一覧" },
@@ -89,6 +90,7 @@ export default function Header() {
 							{link.label}
 						</Link>
 					))}
+					<AuthNav variant="desktop" />
 					<a
 						aria-label="Xで初期仏教塾を見る"
 						className="font-display flex h-8 w-8 items-center justify-center rounded-sm bg-[#303030] text-sm font-semibold text-white transition-colors hover:bg-[#9d7e4c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/50"
@@ -145,6 +147,7 @@ export default function Header() {
 								{link.label}
 							</Link>
 						))}
+						<AuthNav variant="mobile" />
 						<a
 							className="font-display text-base font-semibold text-white transition-colors hover:text-[#fffbeb]"
 							href="https://x.com/EarlyBuddhism"
