@@ -28,11 +28,12 @@ NEXT_PUBLIC_GA_ID=G-STEXVRMHCW
 
 The Vercel project also needs `NEXT_PUBLIC_GA_ID` set for Production, Preview, and Development.
 
-Transcript search uses libSQL. Local development defaults to a SQLite file at
-`app/generated/gakurin.db`, which is created by:
+Search and signed-in watch history use one libSQL database. Local development
+defaults to `app/generated/gakurin.db`, which is created by:
 
 ```bash
 bun run db:seed:local
+bun run db:migrate:local
 ```
 
 Normal builds reuse the checked-in generated talk/transcript files and skip
@@ -60,24 +61,27 @@ TURSO_DATABASE_URL=libsql://...
 TURSO_AUTH_TOKEN=...
 ```
 
-For a full Turso refresh, build the local SQLite database and import that file
-with the Turso CLI. This is much faster than inserting the full transcript index
-over HTTP:
+Refresh production search tables in place. `db:seed:turso` replaces only the
+named search tables in one transaction; application-owned tables such as
+`user_watch_history` remain in the same durable database:
 
 ```bash
 bun run generate-talks
 bun run db:seed:local
-turso db create early-buddhism-search-YYYYMMDD --from-file app/generated/gakurin.db --group default --wait
+GAKURIN_DATABASE_TARGET=turso \
+TURSO_DATABASE_URL=libsql://... \
+TURSO_AUTH_TOKEN=... \
+bun run db:seed:turso
 ```
 
-Then update the Vercel Production `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`
-variables to point at the imported database.
+Do not import into a replacement Turso database or change Vercel's database URL
+during a normal search refresh. Replacing the database would also replace
+durable user data.
 
 ## Login
 
 Login, account security, email verification, and password recovery use Clerk.
-Turso remains the transcript search database only; authentication needs no
-application-owned database or migration.
+Authentication needs no application-owned user table.
 
 Create a Clerk application and set these variables locally and in every Vercel
 environment where login is enabled:
@@ -99,6 +103,26 @@ Dashboard:
 The `/subtitle-admin` layout rejects users without the `subtitle_admin` role.
 Every future subtitle-management API route and Server Action must repeat the
 role check; protecting the page layout alone does not protect mutations.
+
+### Watch history
+
+Signed-in users' watch history is stored by Clerk user ID in the same durable
+libSQL database. Drizzle owns the application schema and watch-history CRUD;
+the search FTS seed remains raw SQL for bulk loading. Generate and commit a
+migration after changing `app/infrastructure/database/schema.ts`:
+
+```bash
+bun run db:generate
+```
+
+Apply committed migrations before deploying code that uses the new schema:
+
+```bash
+bun run db:migrate:turso
+```
+
+Search refreshes must keep `user_watch_history` and Drizzle's migration table
+intact.
 
 Popular videos can be loaded from the GA4 Data API when these server-side variables are set:
 

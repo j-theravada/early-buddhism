@@ -1,8 +1,11 @@
-import { expect, test } from "bun:test";
+import { expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import AboutPage, { metadata } from "./page";
+import { clerkNextjsMock } from "../testing/clerk-nextjs-mock";
 
-test("Aboutで運営主体と法話アーカイブであることを明示する", () => {
+mock.module("@clerk/nextjs", () => clerkNextjsMock);
+
+test("Aboutで運営主体と法話アーカイブであることを明示する", async () => {
+	const { default: AboutPage, metadata } = await import("./page");
 	const html = renderToStaticMarkup(<AboutPage />);
 
 	expect(metadata.description).toContain("日本テーラワーダ仏教協会が運営");

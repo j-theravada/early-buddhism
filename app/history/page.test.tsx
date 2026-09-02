@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import HistoryPage, { metadata } from "./page";
+import { historyPageMetadata, HistoryPageView } from "./history-page-view";
 
-test("履歴ページはnoindexでページ枠を描画する", () => {
-	const html = renderToStaticMarkup(<HistoryPage />);
+test("認証済みユーザーの履歴ページはnoindexでページ枠を描画する", async () => {
+	const html = renderToStaticMarkup(<HistoryPageView entries={[]} />);
 
-	expect(metadata).toMatchObject({
+	expect(historyPageMetadata).toMatchObject({
 		title: "視聴履歴",
 		robots: { index: false, follow: false },
 	});

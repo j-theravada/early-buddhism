@@ -2,10 +2,11 @@ import { describe, expect, test } from "bun:test";
 import {
 	WATCH_HISTORY_LIMIT,
 	WATCH_HISTORY_MINIMUM_SECONDS,
-	WATCH_HISTORY_STORAGE_KEY,
 	getResumeSeconds,
 	isPlaybackCompleted,
-	parseWatchHistory,
+	isValidWatchHistoryTalkId,
+	parseWatchHistoryEntry,
+	parseWatchHistorySnapshot,
 	upsertWatchHistory,
 	type WatchHistoryEntry,
 	type WatchHistorySnapshot,
@@ -30,66 +31,28 @@ const snapshot: WatchHistorySnapshot = {
 	lastWatchedAt: entry.lastWatchedAt,
 };
 
-describe("parseWatchHistory", () => {
-	test("returns an empty list for malformed JSON", () => {
-		expect(parseWatchHistory("invalid")).toEqual([]);
+describe("watch history parsing", () => {
+	test("API入力から有効な再生スナップショットだけを受け付ける", () => {
+		expect(isValidWatchHistoryTalkId(snapshot.talkId)).toBe(true);
+		expect(isValidWatchHistoryTalkId("")).toBe(false);
+		expect(parseWatchHistorySnapshot(snapshot)).toEqual(snapshot);
+		expect(
+			parseWatchHistorySnapshot({ ...snapshot, positionSeconds: "60" }),
+		).toBeNull();
+		expect(
+			parseWatchHistorySnapshot({ ...snapshot, thumbnailUrl: "javascript:x" }),
+		).toBeNull();
+		expect(
+			parseWatchHistorySnapshot({ ...snapshot, durationSeconds: 0 }),
+		).toBeNull();
 	});
 
-	test("discards malformed records and accepts only an object keyed by talk ID", () => {
-		const valid = { ...entry };
-		const raw = JSON.stringify({
-			[entry.talkId]: valid,
-			wrongKey: valid,
-			badFields: { ...valid, positionSeconds: "60" },
-			badThumbnail: { ...valid, thumbnailUrl: 42 },
-			badDuration: { ...valid, durationSeconds: 0 },
-			badDate: { ...valid, lastWatchedAt: "not-a-date" },
-			badCompleted: { ...valid, completed: "false" },
-		});
-
-		expect(parseWatchHistory(raw)).toEqual([entry]);
-		expect(parseWatchHistory(JSON.stringify([]))).toEqual([]);
-	});
-
-	test("sorts valid records newest first", () => {
-		const older = {
-			...entry,
-			talkId: "older",
-			lastWatchedAt: "2026-07-26T00:00:00.000Z",
-		};
-		const newer = {
-			...entry,
-			talkId: "newer",
-			lastWatchedAt: "2026-07-28T00:00:00.000Z",
-		};
-
-		expect(parseWatchHistory(JSON.stringify({ older, newer }))).toEqual([
-			newer,
-			older,
-		]);
-	});
-
-	test("caps persisted history at the newest 200 entries", () => {
-		const persisted = Object.fromEntries(
-			Array.from({ length: WATCH_HISTORY_LIMIT + 1 }, (_, index) => {
-				const persistedEntry = {
-					...entry,
-					talkId: `persisted-${index}`,
-					lastWatchedAt: new Date(Date.UTC(2026, 0, 1, 0, index)).toISOString(),
-				};
-				return [persistedEntry.talkId, persistedEntry];
-			}),
-		);
-
-		const result = parseWatchHistory(JSON.stringify(persisted));
-
-		expect(result).toHaveLength(WATCH_HISTORY_LIMIT);
-		expect(result[0]?.talkId).toBe("persisted-200");
-		expect(result.some(({ talkId }) => talkId === "persisted-0")).toBe(false);
-	});
-
-	test("exposes the versioned storage key", () => {
-		expect(WATCH_HISTORY_STORAGE_KEY).toBe("early-buddhism:watch-history:v1");
+	test("API応答から完全な履歴だけを受け付ける", () => {
+		expect(parseWatchHistoryEntry(entry)).toEqual(entry);
+		expect(parseWatchHistoryEntry({ ...entry, completed: "false" })).toBeNull();
+		expect(
+			parseWatchHistoryEntry({ ...entry, lastWatchedAt: "not-a-date" }),
+		).toBeNull();
 	});
 });
 

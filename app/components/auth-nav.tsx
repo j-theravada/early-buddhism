@@ -1,6 +1,7 @@
 "use client";
 
 import { Show, UserButton, useUser } from "@clerk/nextjs";
+import { History } from "lucide-react";
 import Link from "next/link";
 import { hasSubtitleAdminRole } from "../application/auth/subtitle-admin";
 
@@ -33,7 +34,15 @@ export default function AuthNav({ variant }: Props) {
 							字幕管理
 						</Link>
 					) : null}
-					<UserButton userProfileMode="navigation" userProfileUrl="/account" />
+					<UserButton userProfileMode="navigation" userProfileUrl="/account">
+						<UserButton.MenuItems>
+							<UserButton.Link
+								href="/history"
+								label="視聴履歴"
+								labelIcon={<History aria-hidden className="size-4" />}
+							/>
+						</UserButton.MenuItems>
+					</UserButton>
 				</span>
 			</Show>
 		</>

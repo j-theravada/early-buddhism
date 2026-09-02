@@ -1,4 +1,5 @@
 import {
+	EARLY_BUDDHISM_X_URL,
 	FEEDBACK_FORM_URL,
 	THERAVADA_ASSOCIATION_URL,
 } from "../utils/site-links";
@@ -17,6 +18,17 @@ export default function Footer({ maxWidth = "7xl" }: Props) {
 			>
 				<div className="space-y-2">
 					<div>© {new Date().getFullYear()} 初期仏教塾</div>
+					<div>
+						<a
+							aria-label="Xで初期仏教塾を見る"
+							className="text-[#dc6209] underline transition hover:text-[#9d7e4c]"
+							href={EARLY_BUDDHISM_X_URL}
+							rel="noopener noreferrer"
+							target="_blank"
+						>
+							X
+						</a>
+					</div>
 					<div>
 						<a
 							className="text-[#dc6209] underline transition hover:text-[#9d7e4c]"

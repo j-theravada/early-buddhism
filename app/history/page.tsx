@@ -1,16 +1,17 @@
-import type { Metadata } from "next";
-import SimplePageLayout from "../components/simple-page-layout";
-import WatchHistoryList from "./watch-history-list";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { getWatchHistoryRepository } from "../infrastructure/watch-history/repository";
+import { historyPageMetadata, HistoryPageView } from "./history-page-view";
 
-export const metadata: Metadata = {
-	title: "視聴履歴",
-	robots: { index: false, follow: false },
-};
+export const metadata = historyPageMetadata;
 
-export default function HistoryPage() {
-	return (
-		<SimplePageLayout title="視聴履歴">
-			<WatchHistoryList />
-		</SimplePageLayout>
-	);
+export default async function HistoryPage() {
+	const { userId } = await auth();
+	if (!userId) {
+		redirect("/login?redirect_url=/history");
+	}
+
+	const entries = await getWatchHistoryRepository().listForUser(userId);
+
+	return <HistoryPageView entries={entries} />;
 }
