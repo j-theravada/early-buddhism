@@ -11,12 +11,7 @@ export default function SignUpPage() {
 	return (
 		<SimplePageLayout title="アカウント作成">
 			<div className="flex justify-center">
-				<SignUp
-					fallbackRedirectUrl="/account"
-					path="/sign-up"
-					routing="path"
-					signInUrl="/login"
-				/>
+				<SignUp fallbackRedirectUrl="/account" path="/sign-up" routing="path" />
 			</div>
 		</SimplePageLayout>
 	);

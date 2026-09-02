@@ -8,6 +8,9 @@ type Props = {
 	variant: "desktop" | "mobile";
 };
 
+// Re-enable the public authentication links after production OAuth setup.
+const SHOW_PUBLIC_AUTH_LINKS = false;
+
 export default function AuthNav({ variant }: Props) {
 	const { user } = useUser();
 	const isSubtitleAdmin = hasSubtitleAdminRole(user?.publicMetadata);
@@ -18,14 +21,16 @@ export default function AuthNav({ variant }: Props) {
 
 	return (
 		<>
-			<Show when="signed-out">
-				<Link className={className} href="/login">
-					ログイン
-				</Link>
-				<Link className={className} href="/sign-up">
-					新規登録
-				</Link>
-			</Show>
+			{SHOW_PUBLIC_AUTH_LINKS ? (
+				<Show when="signed-out">
+					<Link className={className} href="/login">
+						ログイン
+					</Link>
+					<Link className={className} href="/sign-up">
+						新規登録
+					</Link>
+				</Show>
+			) : null}
 			<Show when="signed-in">
 				<span className="flex items-center gap-3">
 					{isSubtitleAdmin ? (

@@ -16,6 +16,6 @@ test("グローバルナビゲーションから視聴履歴へ移動できる",
 
 	expect(html).toContain('href="/history"');
 	expect(html).toContain("視聴履歴");
-	expect(html).toContain('href="/login"');
-	expect(html).toContain('href="/sign-up"');
+	expect(html).not.toContain('href="/login"');
+	expect(html).not.toContain('href="/sign-up"');
 });
