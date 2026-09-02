@@ -4,16 +4,23 @@ import {
 	beforeAll,
 	describe,
 	expect,
+	mock,
 	test,
 } from "bun:test";
 import { Window } from "happy-dom";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import {
-	WATCH_HISTORY_STORAGE_KEY,
 	type WatchHistoryEntry,
+	type WatchHistorySnapshot,
 } from "../application/watch-history";
 import { LOAD_TALK_PLAYER_EVENT } from "../application/talk/player-events";
+
+let isSignedIn = true;
+
+mock.module("../infrastructure/auth/client", () => ({
+	useIsSignedIn: () => isSignedIn,
+}));
 
 type EmbedProps = {
 	embedUrl?: string;
@@ -58,6 +65,9 @@ let intervalStarts = 0;
 let clearIntervalCalls = 0;
 let destroyCalls = 0;
 let playerCreations = 0;
+let remoteHistory: WatchHistoryEntry | null = null;
+let historyReadCount = 0;
+let savedSnapshots: WatchHistorySnapshot[] = [];
 let originalSetInterval: typeof window.setInterval;
 let originalClearInterval: typeof window.clearInterval;
 
@@ -111,7 +121,7 @@ function installFakeApi({
 }
 
 function writeHistory(positionSeconds: number) {
-	const entry: WatchHistoryEntry = {
+	remoteHistory = {
 		completed: false,
 		durationSeconds: 120,
 		lastWatchedAt: "2026-07-27T00:00:00.000Z",
@@ -120,11 +130,34 @@ function writeHistory(positionSeconds: number) {
 		thumbnailUrl: "https://img.youtube.com/vi/example/hqdefault.jpg",
 		title: "テスト動画",
 	};
-	localStorage.setItem(
-		WATCH_HISTORY_STORAGE_KEY,
-		JSON.stringify({ [entry.talkId]: entry }),
-	);
 }
+
+const fakeFetch = async (
+	input: Parameters<typeof fetch>[0],
+	init?: Parameters<typeof fetch>[1],
+) => {
+	const url =
+		typeof input === "string"
+			? input
+			: input instanceof URL
+				? input.toString()
+				: input.url;
+	const method = init?.method ?? "GET";
+
+	if (method === "PUT" && url === "/api/watch-history") {
+		savedSnapshots.push(JSON.parse(String(init?.body)) as WatchHistorySnapshot);
+		return Response.json({ ok: true });
+	}
+
+	if (method === "GET" && url.startsWith("/api/watch-history/")) {
+		historyReadCount += 1;
+		return remoteHistory
+			? Response.json(remoteHistory)
+			: Response.json({ error: "Not found" }, { status: 404 });
+	}
+
+	return Response.json({ error: "Unexpected request" }, { status: 500 });
+};
 
 async function mountEmbed(props: EmbedProps = {}) {
 	currentContainer = document.createElement("div");
@@ -152,6 +185,7 @@ async function renderEmbed(props: EmbedProps) {
 				title={props.title ?? "テスト動画"}
 			/>,
 		);
+		await new Promise((resolve) => setTimeout(resolve, 0));
 	});
 }
 
@@ -210,17 +244,17 @@ async function waitFor(check: () => void) {
 }
 
 function savedPosition(): number | null {
-	const raw = localStorage.getItem(WATCH_HISTORY_STORAGE_KEY);
-	if (!raw) return null;
-	const entries = JSON.parse(raw) as Record<string, WatchHistoryEntry>;
-	return entries["TALK-1"]?.positionSeconds ?? null;
+	return (
+		[...savedSnapshots].reverse().find(({ talkId }) => talkId === "TALK-1")
+			?.positionSeconds ?? null
+	);
 }
 
-function savedEntry(talkId: string): WatchHistoryEntry | null {
-	const raw = localStorage.getItem(WATCH_HISTORY_STORAGE_KEY);
-	if (!raw) return null;
-	const entries = JSON.parse(raw) as Record<string, WatchHistoryEntry>;
-	return entries[talkId] ?? null;
+function savedEntry(talkId: string): WatchHistorySnapshot | null {
+	return (
+		[...savedSnapshots].reverse().find((entry) => entry.talkId === talkId) ??
+		null
+	);
 }
 
 function requireScript(script: HTMLScriptElement | null): HTMLScriptElement {
@@ -243,7 +277,7 @@ beforeAll(async () => {
 	installGlobal("MouseEvent", testWindow.MouseEvent);
 	installGlobal("CustomEvent", testWindow.CustomEvent);
 	installGlobal("MutationObserver", testWindow.MutationObserver);
-	installGlobal("localStorage", testWindow.localStorage);
+	installGlobal("fetch", fakeFetch);
 	installGlobal("IS_REACT_ACT_ENVIRONMENT", true);
 	originalSetInterval = window.setInterval;
 	originalClearInterval = window.clearInterval;
@@ -257,7 +291,6 @@ afterEach(async () => {
 	currentContainer?.remove();
 	currentContainer = null;
 	document.body.replaceChildren();
-	localStorage.clear();
 	Reflect.deleteProperty(getWindowWithYouTube(), "YT");
 	Reflect.deleteProperty(getWindowWithYouTube(), "onYouTubeIframeAPIReady");
 	window.setInterval = originalSetInterval;
@@ -269,6 +302,10 @@ afterEach(async () => {
 	clearIntervalCalls = 0;
 	destroyCalls = 0;
 	playerCreations = 0;
+	isSignedIn = true;
+	remoteHistory = null;
+	historyReadCount = 0;
+	savedSnapshots = [];
 });
 
 afterAll(async () => {
@@ -304,6 +341,7 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 		expect(getIframe().src).toContain("autoplay=1");
 		expect(getIframe().src).toContain("enablejsapi=1");
 		expect(getIframe().src).toContain("start=60");
+		expect(historyReadCount).toBe(1);
 	});
 
 	test("小数の保存位置から整数秒だけをYouTube開始位置へ渡す", async () => {
@@ -526,7 +564,7 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 
 		await unmountEmbed();
 		expect(savedPosition()).toBe(63);
-		localStorage.clear();
+		savedSnapshots = [];
 		window.dispatchEvent(new Event("pagehide"));
 		expect(savedPosition()).toBeNull();
 	});
@@ -563,5 +601,17 @@ describe("LiteYouTubeEmbed client playback tracking", () => {
 
 		expect(getIframe().src).toContain("autoplay=1");
 		expect(getIframe().src).toContain("enablejsapi=1");
+	});
+
+	test("ログアウト中は履歴を読み書きしない", async () => {
+		isSignedIn = false;
+		installFakeApi();
+		await mountEmbed();
+		await clickPlayButton();
+		await loadIframe();
+		stateChange?.({ data: 2 });
+
+		expect(historyReadCount).toBe(0);
+		expect(savedSnapshots).toEqual([]);
 	});
 });

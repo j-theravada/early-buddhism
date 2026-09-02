@@ -4,7 +4,7 @@ const DEFAULT_LOCAL_DATABASE_URL = "file:app/generated/gakurin.db";
 
 type DatabaseTarget = "local" | "turso";
 
-type DatabaseConfig = {
+export type DatabaseConfig = {
 	authToken?: string;
 	target: DatabaseTarget;
 	url: string;

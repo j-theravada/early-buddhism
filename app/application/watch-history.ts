@@ -1,6 +1,9 @@
 export const WATCH_HISTORY_LIMIT = 200;
 export const WATCH_HISTORY_MINIMUM_SECONDS = 30;
-export const WATCH_HISTORY_STORAGE_KEY = "early-buddhism:watch-history:v1";
+
+const WATCH_HISTORY_TALK_ID_MAX_LENGTH = 200;
+const WATCH_HISTORY_TITLE_MAX_LENGTH = 500;
+const WATCH_HISTORY_THUMBNAIL_URL_MAX_LENGTH = 2_048;
 
 export type WatchHistoryEntry = {
 	talkId: string;
@@ -30,43 +33,91 @@ const isValidTimestamp = (value: unknown): value is string =>
 	value.length > 0 &&
 	Number.isFinite(Date.parse(value));
 
-const isWatchHistoryEntry = (
-	key: string,
+const isValidThumbnailUrl = (value: unknown): value is string | null => {
+	if (value === null) return true;
+	if (
+		typeof value !== "string" ||
+		value.length === 0 ||
+		value.length > WATCH_HISTORY_THUMBNAIL_URL_MAX_LENGTH
+	) {
+		return false;
+	}
+
+	try {
+		const protocol = new URL(value).protocol;
+		return protocol === "https:" || protocol === "http:";
+	} catch {
+		return false;
+	}
+};
+
+export const isValidWatchHistoryTalkId = (value: unknown): value is string =>
+	typeof value === "string" &&
+	value.length > 0 &&
+	value.length <= WATCH_HISTORY_TALK_ID_MAX_LENGTH;
+
+const isWatchHistorySnapshot = (
 	value: unknown,
-): value is WatchHistoryEntry => {
+): value is WatchHistorySnapshot => {
 	if (!isRecord(value)) return false;
 
 	return (
-		value.talkId === key &&
-		typeof value.talkId === "string" &&
-		value.talkId.length > 0 &&
+		isValidWatchHistoryTalkId(value.talkId) &&
 		typeof value.title === "string" &&
 		value.title.length > 0 &&
-		(value.thumbnailUrl === null || typeof value.thumbnailUrl === "string") &&
+		value.title.length <= WATCH_HISTORY_TITLE_MAX_LENGTH &&
+		isValidThumbnailUrl(value.thumbnailUrl) &&
 		isNonNegativeFiniteNumber(value.positionSeconds) &&
 		(value.durationSeconds === null ||
 			(isNonNegativeFiniteNumber(value.durationSeconds) &&
 				value.durationSeconds > 0)) &&
-		isValidTimestamp(value.lastWatchedAt) &&
-		typeof value.completed === "boolean"
+		(value.lastWatchedAt === undefined || isValidTimestamp(value.lastWatchedAt))
 	);
 };
 
-export const parseWatchHistory = (raw: string): WatchHistoryEntry[] => {
-	try {
-		const parsed: unknown = JSON.parse(raw);
-		if (!isRecord(parsed)) return [];
+export const parseWatchHistorySnapshot = (
+	value: unknown,
+): WatchHistorySnapshot | null =>
+	isWatchHistorySnapshot(value) ? { ...value } : null;
 
-		return Object.entries(parsed)
-			.filter((entry): entry is [string, WatchHistoryEntry] =>
-				isWatchHistoryEntry(entry[0], entry[1]),
-			)
-			.map(([, value]) => value)
-			.sort((a, b) => Date.parse(b.lastWatchedAt) - Date.parse(a.lastWatchedAt))
-			.slice(0, WATCH_HISTORY_LIMIT);
-	} catch {
-		return [];
+export const parseWatchHistoryEntry = (
+	value: unknown,
+): WatchHistoryEntry | null => {
+	if (!isRecord(value)) return null;
+
+	const completed = value.completed;
+	const lastWatchedAt = value.lastWatchedAt;
+	if (
+		!isWatchHistorySnapshot(value) ||
+		!isValidTimestamp(lastWatchedAt) ||
+		typeof completed !== "boolean"
+	) {
+		return null;
 	}
+
+	return {
+		completed,
+		durationSeconds: value.durationSeconds,
+		lastWatchedAt,
+		positionSeconds: value.positionSeconds,
+		talkId: value.talkId,
+		thumbnailUrl: value.thumbnailUrl,
+		title: value.title,
+	};
+};
+
+export const parseWatchHistoryEntries = (
+	value: unknown,
+): WatchHistoryEntry[] | null => {
+	if (!Array.isArray(value) || value.length > WATCH_HISTORY_LIMIT) return null;
+
+	const entries: WatchHistoryEntry[] = [];
+	for (const candidate of value) {
+		const entry = parseWatchHistoryEntry(candidate);
+		if (!entry) return null;
+		entries.push(entry);
+	}
+	return entries;
 };
 
 export const isPlaybackCompleted = (
@@ -79,37 +130,56 @@ export const isPlaybackCompleted = (
 	durationSeconds > 0 &&
 	positionSeconds / durationSeconds >= 0.9;
 
-export const upsertWatchHistory = (
-	entries: WatchHistoryEntry[],
+const createWatchHistoryEntry = (
 	snapshot: WatchHistorySnapshot,
-): WatchHistoryEntry[] => {
+): WatchHistoryEntry | null => {
 	if (
-		typeof snapshot.talkId !== "string" ||
-		snapshot.talkId.length === 0 ||
-		typeof snapshot.title !== "string" ||
-		snapshot.title.length === 0 ||
-		(snapshot.thumbnailUrl !== null &&
-			typeof snapshot.thumbnailUrl !== "string") ||
-		!isNonNegativeFiniteNumber(snapshot.positionSeconds) ||
-		(snapshot.durationSeconds !== null &&
-			(!isNonNegativeFiniteNumber(snapshot.durationSeconds) ||
-				snapshot.durationSeconds === 0)) ||
+		!isWatchHistorySnapshot(snapshot) ||
 		snapshot.positionSeconds < WATCH_HISTORY_MINIMUM_SECONDS
 	) {
-		return entries;
+		return null;
 	}
 
-	const updated: WatchHistoryEntry = {
+	return {
 		...snapshot,
-		lastWatchedAt: snapshot.lastWatchedAt ?? new Date().toISOString(),
+		lastWatchedAt: new Date(
+			snapshot.lastWatchedAt ?? new Date().toISOString(),
+		).toISOString(),
 		completed: isPlaybackCompleted(
 			snapshot.positionSeconds,
 			snapshot.durationSeconds,
 		),
 	};
+};
+
+export const upsertWatchHistory = (
+	entries: WatchHistoryEntry[],
+	snapshot: WatchHistorySnapshot,
+): WatchHistoryEntry[] => {
+	const updated = createWatchHistoryEntry(snapshot);
+	if (!updated) return entries;
 
 	return [...entries.filter(({ talkId }) => talkId !== updated.talkId), updated]
 		.sort((a, b) => Date.parse(b.lastWatchedAt) - Date.parse(a.lastWatchedAt))
+		.slice(0, WATCH_HISTORY_LIMIT);
+};
+
+export const normalizeWatchHistoryEntries = (
+	snapshots: readonly WatchHistorySnapshot[],
+): WatchHistoryEntry[] => {
+	const entryByTalkId = new Map<string, WatchHistoryEntry>();
+	for (const snapshot of snapshots) {
+		const entry = createWatchHistoryEntry(snapshot);
+		if (!entry) continue;
+
+		const current = entryByTalkId.get(entry.talkId);
+		if (!current || entry.lastWatchedAt > current.lastWatchedAt) {
+			entryByTalkId.set(entry.talkId, entry);
+		}
+	}
+
+	return [...entryByTalkId.values()]
+		.sort((a, b) => b.lastWatchedAt.localeCompare(a.lastWatchedAt))
 		.slice(0, WATCH_HISTORY_LIMIT);
 };
 

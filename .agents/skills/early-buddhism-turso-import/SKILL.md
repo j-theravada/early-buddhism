@@ -1,29 +1,32 @@
 ---
 name: early-buddhism-turso-import
-description: Use when work in this repository needs to import the locally generated SQLite search database into Turso, replace or test the Early Buddhism Turso search DB, switch Vercel environment variables to a newly imported DB, or debug the local-DB-import deployment workflow.
+description: Use when this repository needs to refresh or verify the Turso search tables, preserve application-owned data during a search update, or debug the in-place libSQL seed workflow.
 ---
 
-# Early Buddhism Turso Import
+# Early Buddhism Turso In-place Refresh
 
 ## Scope
 
 Use this skill only in this repository.
 
-This is not a general search-performance skill. It covers one workflow: build or verify a local SQLite search DB, import that DB into Turso with `turso db import`, point Vercel at the imported DB, and verify the live site.
+The production Turso database is durable application storage. Search refreshes
+must update the search tables in place and preserve unrelated tables, including
+`user_watch_history`.
 
-## Why Import
+## Invariant
 
-For this repository, loading large search data into remote Turso by running the seed script against the libSQL HTTP client is too slow for interactive use. Prefer:
+Use the existing `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`. Do not create a
+replacement database, import the local SQLite file into a new database, or
+switch Vercel's database URL during a normal search refresh.
 
-```text
-local SQLite generation -> compact/verify -> turso db import -> Vercel env switch -> live verification
-```
-
-Do not row-by-row seed hundreds of thousands or millions of rows into remote Turso unless the user explicitly asks to test that path.
+`scripts/seed-search-database.ts` drops and recreates only its explicitly named
+search tables inside one write transaction. It must never drop
+`user_watch_history`, Drizzle's migration table, or other application-owned
+tables.
 
 ## Required Checks
 
-Before touching Turso or Vercel:
+Before touching Turso:
 
 ```sh
 git status --short --branch
@@ -31,69 +34,71 @@ turso auth whoami || turso db list
 turso db list
 ```
 
-Treat existing worktree changes as user-owned. Do not stage, revert, or overwrite unrelated repository changes.
+Treat worktree changes as user-owned. Do not stage, revert, or overwrite
+unrelated files. Resolve the configured database target without printing its
+token. Creating a new token or changing cloud configuration requires explicit
+approval at the point of action.
 
-Known durable DBs may include:
-
-- `early-buddhism-search`
-- `early-buddhism`
-
-Use a temporary/new DB name for validation, such as `early-buddhism-search-next` or a timestamped suffix. Do not destroy `early-buddhism-search` unless the user explicitly asks and the replacement has already been verified.
-
-## Local DB Preparation
-
-Use the repo's generator unless the user gives a different DB file:
+Before a production refresh, record the search metadata and whether the durable
+history table exists. If it exists, record its row count:
 
 ```sh
+turso db shell <database-name> \
+  "select key, value from search_database_meta order by key;"
+turso db shell <database-name> ".tables"
+turso db shell <database-name> "select count(*) from user_watch_history;"
+```
+
+Run the last query only when `.tables` includes `user_watch_history`.
+
+## Local Preparation
+
+Generate and verify the local search database before the remote write:
+
+```sh
+bun run generate-talks
 bun run db:seed:local
+bun run db:migrate:local
 sqlite3 app/generated/gakurin.db "pragma integrity_check;"
-sqlite3 app/generated/gakurin.db "select key, value from search_database_meta order by key;"
+sqlite3 app/generated/gakurin.db \
+  "select key, value from search_database_meta order by key;"
 du -h app/generated/gakurin.db
 ```
 
-If the generated DB is used for Vercel bundle testing, remember that bundle behavior and Turso behavior are different. Do not infer Turso production latency from local SQLite alone.
+Do not infer production latency from local SQLite.
 
-## Turso Import
+## In-place Turso Refresh
 
-Import the finished local DB into a new Turso database. Example:
-
-```sh
-cp app/generated/gakurin.db /tmp/early-buddhism-search-next.db
-turso db import /tmp/early-buddhism-search-next.db --group default
-turso db shell early-buddhism-search-next \
-  "select key, value from search_database_meta order by key;"
-```
-
-Get URL and token without printing the token:
+Apply committed Drizzle migrations before deploying application code that
+depends on them:
 
 ```sh
-URL="$(turso db show early-buddhism-search-next --url)"
-TOKEN="$(turso db tokens create early-buddhism-search-next)"
+GAKURIN_DATABASE_TARGET=turso \
+TURSO_DATABASE_URL="$URL" \
+TURSO_AUTH_TOKEN="$TOKEN" \
+bun run db:migrate:turso
 ```
 
-When reporting, say that a token was created, but never include the token value.
-
-## Vercel Environment Switch
-
-Only switch production after the imported DB has passed basic validation.
-
-Use `--force` for replacement and avoid echoing secrets:
+Run the repository's existing remote seed against the current durable database:
 
 ```sh
-vercel env add TURSO_DATABASE_URL production --scope jtba-digital --force --yes --value "$URL"
-vercel env add TURSO_AUTH_TOKEN production --scope jtba-digital --force --yes --value "$TOKEN"
+GAKURIN_DATABASE_TARGET=turso \
+TURSO_DATABASE_URL="$URL" \
+TURSO_AUTH_TOKEN="$TOKEN" \
+bun run db:seed:turso
 ```
 
-Then deploy through the repo's normal Git/Vercel flow or trigger a redeploy as appropriate. Confirm the alias:
+This can take materially longer than a file import because the generated search
+rows travel to Turso. The single write transaction is the safety boundary: a
+failure must roll back rather than leave a partially refreshed index. Do not
+fall back to database replacement for speed.
 
-```sh
-vercel list --scope jtba-digital
-vercel inspect https://early-buddhism.j-theravada.com --scope jtba-digital --timeout 2m
-```
+After completion, verify search metadata again and confirm that the history
+table and its row count are unchanged.
 
 ## Live Verification
 
-Measure representative searches with cache-busting params:
+Verify representative search queries with cache-busting parameters:
 
 ```sh
 for q in 八正道 ブッダ 法 ダンマパダ 慈悲; do
@@ -104,31 +109,10 @@ for q in 八正道 ブッダ 法 ダンマパダ 慈悲; do
 done
 ```
 
-Also verify any search-result behavior the user cares about in the browser if UI changes are involved.
-
-## Cleanup
-
-Clean up only after the new DB is verified and the user agrees or the temporary nature is clear.
-
-Safe cleanup examples:
-
-```sh
-rm -f /tmp/early-buddhism-search-next.db
-turso db destroy early-buddhism-search-next --yes
-```
-
-Never destroy a durable DB by default. If a failed import created a temporary DB, confirm its name before deleting it.
+When UI behavior changed, also verify it in the browser.
 
 ## Reporting
 
-Report concrete state:
-
-- Local DB path and size.
-- Imported Turso DB name.
-- Whether metadata/integrity checks passed.
-- Whether Vercel environment variables changed.
-- Deployment URL/alias status.
-- Live timing results.
-- Cleanup performed.
-
-Do not report raw credentials or secret values.
+Report the database name, local integrity result and size, metadata before and
+after, durable-table row count before and after, remote seed result, and live
+query results. Never print credentials.

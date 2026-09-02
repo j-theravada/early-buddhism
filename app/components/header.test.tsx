@@ -1,21 +1,17 @@
 import { expect, mock, test } from "bun:test";
-import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { clerkNextjsMock } from "../testing/clerk-nextjs-mock";
 
-mock.module("@clerk/nextjs", () => ({
-	Show: ({ children, when }: { children: ReactNode; when: string }) =>
-		when === "signed-out" ? children : null,
-	UserButton: () => null,
-	useUser: () => ({ user: null }),
-}));
+mock.module("@clerk/nextjs", () => clerkNextjsMock);
 
 const { default: Header } = await import("./header");
 
-test("グローバルナビゲーションから視聴履歴と認証へ移動できる", () => {
+test("ヘッダーの認証導線とユーザーメニュー内の視聴履歴を描画する", () => {
 	const html = renderToStaticMarkup(<Header />);
 
-	expect(html).toContain('href="/history"');
-	expect(html).toContain("視聴履歴");
 	expect(html).toContain('href="/login"');
 	expect(html).toContain('href="/sign-up"');
+	expect(html).toContain('data-user-button-link="true" href="/history"');
+	expect(html.match(/href="\/history"/g)).toHaveLength(2);
+	expect(html).not.toContain("x.com/EarlyBuddhism");
 });

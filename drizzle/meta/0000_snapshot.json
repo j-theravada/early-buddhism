@@ -1,0 +1,116 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "8e195365-e5da-4772-9a23-7943c9d418d3",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"tables": {
+		"user_watch_history": {
+			"name": "user_watch_history",
+			"columns": {
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"talk_id": {
+					"name": "talk_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"title": {
+					"name": "title",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"thumbnail_url": {
+					"name": "thumbnail_url",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"position_seconds": {
+					"name": "position_seconds",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"duration_seconds": {
+					"name": "duration_seconds",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"last_watched_at": {
+					"name": "last_watched_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"completed": {
+					"name": "completed",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"user_watch_history_recent": {
+					"name": "user_watch_history_recent",
+					"columns": ["user_id", "last_watched_at"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"user_watch_history_user_id_talk_id_pk": {
+					"columns": ["user_id", "talk_id"],
+					"name": "user_watch_history_user_id_talk_id_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"user_watch_history_title_nonempty": {
+					"name": "user_watch_history_title_nonempty",
+					"value": "length(\"user_watch_history\".\"title\") > 0"
+				},
+				"user_watch_history_timestamp_nonempty": {
+					"name": "user_watch_history_timestamp_nonempty",
+					"value": "length(\"user_watch_history\".\"last_watched_at\") > 0"
+				},
+				"user_watch_history_position_nonnegative": {
+					"name": "user_watch_history_position_nonnegative",
+					"value": "\"user_watch_history\".\"position_seconds\" >= 0"
+				},
+				"user_watch_history_duration_positive": {
+					"name": "user_watch_history_duration_positive",
+					"value": "\"user_watch_history\".\"duration_seconds\" IS NULL OR \"user_watch_history\".\"duration_seconds\" > 0"
+				},
+				"user_watch_history_completed_boolean": {
+					"name": "user_watch_history_completed_boolean",
+					"value": "\"user_watch_history\".\"completed\" IN (0, 1)"
+				}
+			}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}

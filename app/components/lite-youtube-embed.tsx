@@ -8,15 +8,17 @@ import {
 	LOAD_TALK_PLAYER_EVENT,
 	type LoadTalkPlayerEventDetail,
 } from "../application/talk/player-events";
+import { useIsSignedIn } from "../infrastructure/auth/client";
+import {
+	findWatchHistory,
+	saveWatchProgress,
+} from "../infrastructure/watch-history/client";
+import { migrateLegacyWatchHistory } from "../infrastructure/watch-history/legacy-migration";
 import {
 	loadYouTubeIframeApi,
 	YouTubePlayerState,
 	type YouTubePlayer,
 } from "../infrastructure/youtube/iframe-api";
-import {
-	findWatchHistory,
-	saveWatchProgress,
-} from "../infrastructure/browser/watch-history-storage";
 
 type Props = {
 	embedUrl: string;
@@ -50,10 +52,12 @@ export default function LiteYouTubeEmbed({
 	thumbnailUrl,
 	title,
 }: Props) {
-	const autoplayUrl = useMemo(() => {
-		const history = findWatchHistory(talkId);
-		return buildAutoplayUrl(embedUrl, history ? getResumeSeconds(history) : 0);
-	}, [embedUrl, talkId]);
+	const isSignedIn = useIsSignedIn();
+	const [resumeSeconds, setResumeSeconds] = useState(0);
+	const autoplayUrl = useMemo(
+		() => buildAutoplayUrl(embedUrl, resumeSeconds),
+		[embedUrl, resumeSeconds],
+	);
 	const [playerSrc, setPlayerSrc] = useState<string | null>(null);
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 	const playerRef = useRef<YouTubePlayer | null>(null);
@@ -69,20 +73,21 @@ export default function LiteYouTubeEmbed({
 
 	const saveProgress = useCallback(() => {
 		const player = playerRef.current;
-		if (!player) return;
+		if (!player || !isSignedIn) return;
 
 		try {
-			saveWatchProgress({
+			void saveWatchProgress({
 				durationSeconds: player.getDuration() || null,
+				lastWatchedAt: new Date().toISOString(),
 				positionSeconds: player.getCurrentTime(),
 				talkId,
 				thumbnailUrl: thumbnailUrl ?? null,
 				title,
-			});
+			}).catch(() => {});
 		} catch {
 			// Playback must remain usable when YouTube getter calls fail.
 		}
-	}, [talkId, thumbnailUrl, title]);
+	}, [isSignedIn, talkId, thumbnailUrl, title]);
 
 	saveProgressRef.current = saveProgress;
 
@@ -102,6 +107,25 @@ export default function LiteYouTubeEmbed({
 	}, [clearProgressInterval]);
 
 	cleanupPlayerRef.current = cleanupPlayer;
+
+	useEffect(() => {
+		if (!isSignedIn) {
+			setResumeSeconds(0);
+			return;
+		}
+
+		setResumeSeconds(0);
+		const controller = new AbortController();
+		void migrateLegacyWatchHistory()
+			.catch(() => 0)
+			.then(() => findWatchHistory(talkId, controller.signal))
+			.then((entry) => {
+				setResumeSeconds(entry ? getResumeSeconds(entry) : 0);
+			})
+			.catch(() => {});
+
+		return () => controller.abort();
+	}, [isSignedIn, talkId]);
 
 	const handlePlayerStateChange = useCallback(
 		(event: { data: number }) => {

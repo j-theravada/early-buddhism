@@ -1,11 +1,7 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { buildTalkDetailHref } from "../application/talk/links";
 import type { WatchHistoryEntry } from "../application/watch-history";
-import { readWatchHistory } from "../infrastructure/browser/watch-history-storage";
 
 const formatPlaybackTime = (seconds: number): string => {
 	const roundedSeconds = Math.floor(seconds);
@@ -126,16 +122,10 @@ export function WatchHistoryEntries({
 	);
 }
 
-export default function WatchHistoryList() {
-	const [entries, setEntries] = useState<WatchHistoryEntry[] | null>(null);
-
-	useEffect(() => {
-		setEntries(readWatchHistory());
-	}, []);
-
-	if (entries === null) {
-		return <div aria-hidden className="min-h-32" />;
-	}
-
+export default function WatchHistoryList({
+	entries,
+}: {
+	entries: WatchHistoryEntry[];
+}) {
 	return <WatchHistoryEntries entries={entries} />;
 }

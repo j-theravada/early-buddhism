@@ -3,6 +3,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { buildTalkGalleryItems } from "../application/talk/gallery";
 import { TALK_LISTING_PAGE_SIZE } from "../application/talk/listing";
 import { getTalks } from "../infrastructure/talk/repository";
+import { clerkNextjsMock } from "../testing/clerk-nextjs-mock";
+
+mock.module("@clerk/nextjs", () => clerkNextjsMock);
 
 mock.module("next/navigation", () => ({
 	notFound: () => {
