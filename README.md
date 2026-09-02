@@ -115,11 +115,17 @@ migration after changing `app/infrastructure/database/schema.ts`:
 bun run db:generate
 ```
 
-Apply committed migrations before deploying code that uses the new schema:
+Vercel Production builds apply committed migrations before building the
+application. Preview and local builds skip this step. Run the same migration
+manually when needed with:
 
 ```bash
 bun run db:migrate:turso
 ```
+
+Production migrations must remain backward-compatible with the currently live
+deployment because a failed build does not roll back an already-applied schema
+change.
 
 Search refreshes must keep `user_watch_history` and Drizzle's migration table
 intact.
