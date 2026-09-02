@@ -10,6 +10,8 @@ import {
 } from "./application/seo/site-identity";
 import ClientPageChrome from "./components/client-page-chrome";
 import { SITE_NAME, SITE_URL } from "./utils/seo";
+// Next.js applies global CSS through this required side-effect import.
+// oxlint-disable-next-line import/no-unassigned-import
 import "./globals.css";
 
 const inter = Inter({

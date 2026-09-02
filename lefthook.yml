@@ -1,0 +1,22 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: lint
+      glob: "*.{js,jsx,ts,tsx}"
+      run: bun x oxlint --deny-warnings {staged_files}
+
+    - name: format
+      glob: "*.{js,jsx,ts,tsx,json,jsonc,css,md,yml,yaml}"
+      run: bun x oxfmt --check {staged_files}
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: lint
+      run: bun run lint
+
+    - name: format
+      run: bun run format:check
+
+    - name: test
+      run: bun test

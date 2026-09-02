@@ -90,12 +90,6 @@ export default function LiteYouTubeEmbed({
 	const saveProgressRef = useRef<() => void>(() => {});
 	const cleanupPlayerRef = useRef<() => void>(() => {});
 
-	const clearProgressInterval = useCallback(() => {
-		if (intervalRef.current === null) return;
-		window.clearInterval(intervalRef.current);
-		intervalRef.current = null;
-	}, []);
-
 	const saveProgress = useCallback(() => {
 		const player = playerRef.current;
 		if (!player || !isSignedIn) return;
@@ -123,7 +117,10 @@ export default function LiteYouTubeEmbed({
 		try {
 			saveProgressRef.current();
 		} finally {
-			clearProgressInterval();
+			if (intervalRef.current !== null) {
+				window.clearInterval(intervalRef.current);
+				intervalRef.current = null;
+			}
 			playerRef.current = null;
 			try {
 				player?.destroy();
@@ -131,7 +128,7 @@ export default function LiteYouTubeEmbed({
 				// The iframe remains available even when the API player cannot destroy.
 			}
 		}
-	}, [clearProgressInterval]);
+	}, []);
 
 	useEffect(() => {
 		cleanupPlayerRef.current = cleanupPlayer;
@@ -141,46 +138,51 @@ export default function LiteYouTubeEmbed({
 		if (!isSignedIn) return;
 
 		const controller = new AbortController();
-		void migrateLegacyWatchHistory()
-			.catch(() => 0)
-			.then(() => findWatchHistory(talkId, controller.signal))
-			.then((entry) => {
+
+		async function loadResumePosition() {
+			try {
+				await migrateLegacyWatchHistory();
+				const entry = await findWatchHistory(talkId, controller.signal);
 				if (controller.signal.aborted) return;
 				setResumePosition({
 					ownerKey: talkId,
 					seconds: entry ? getResumeSeconds(entry) : 0,
 				});
-			})
-			.catch(() => {});
+			} catch {
+				// Playback starts at the beginning when history is unavailable.
+			}
+		}
+
+		void loadResumePosition();
 
 		return () => controller.abort();
 	}, [isSignedIn, talkId]);
 
-	const handlePlayerStateChange = useCallback(
-		(event: { data: number }) => {
-			if (event.data === YouTubePlayerState.PLAYING) {
-				if (intervalRef.current === null) {
-					intervalRef.current = window.setInterval(
-						() => saveProgressRef.current(),
-						15_000,
-					);
-				}
-				return;
+	const handlePlayerStateChange = useCallback((event: { data: number }) => {
+		if (event.data === YouTubePlayerState.PLAYING) {
+			if (intervalRef.current === null) {
+				intervalRef.current = window.setInterval(
+					() => saveProgressRef.current(),
+					15_000,
+				);
 			}
+			return;
+		}
 
-			if (
-				event.data === YouTubePlayerState.PAUSED ||
-				event.data === YouTubePlayerState.ENDED
-			) {
-				try {
-					saveProgressRef.current();
-				} finally {
-					clearProgressInterval();
+		if (
+			event.data === YouTubePlayerState.PAUSED ||
+			event.data === YouTubePlayerState.ENDED
+		) {
+			try {
+				saveProgressRef.current();
+			} finally {
+				if (intervalRef.current !== null) {
+					window.clearInterval(intervalRef.current);
+					intervalRef.current = null;
 				}
 			}
-		},
-		[clearProgressInterval],
-	);
+		}
+	}, []);
 
 	const initializePlayer = useCallback(async () => {
 		const iframe = iframeRef.current;
@@ -219,6 +221,8 @@ export default function LiteYouTubeEmbed({
 
 	useEffect(() => () => cleanupPlayerRef.current(), []);
 
+	// YouTube needs scripts and same-origin storage; its cross-origin document cannot escape the parent sandbox.
+	/* oxlint-disable react/iframe-missing-sandbox */
 	return (
 		<div className="relative w-full aspect-video overflow-hidden rounded-lg bg-gray-100 shadow-sm">
 			<iframe
@@ -229,6 +233,7 @@ export default function LiteYouTubeEmbed({
 				name="talk-player"
 				onLoad={() => void initializePlayer()}
 				ref={iframeRef}
+				sandbox="allow-popups allow-popups-to-escape-sandbox allow-presentation allow-same-origin allow-scripts"
 				src={playerSrc ?? "about:blank"}
 				title={title}
 			/>
@@ -258,4 +263,5 @@ export default function LiteYouTubeEmbed({
 			)}
 		</div>
 	);
+	/* oxlint-enable react/iframe-missing-sandbox */
 }

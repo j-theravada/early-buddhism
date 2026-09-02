@@ -21,7 +21,6 @@ type TranscriptLoaderState = {
 	mode: TranscriptMode;
 	status: TranscriptLoadStatus;
 	deepLinkKey: string;
-	retryToken: number;
 };
 
 type Props = {
@@ -180,7 +179,6 @@ export default function TranscriptSectionLoader({
 					targetCueIndex,
 					transcriptHighlightQuery,
 				),
-				retryToken: 0,
 			};
 		},
 	);
@@ -202,7 +200,7 @@ export default function TranscriptSectionLoader({
 		loaderState = synchronizedState;
 		setLoaderState(loaderState);
 	}
-	const { mode, status, retryToken } = loaderState;
+	const { mode, status } = loaderState;
 
 	useEffect(() => {
 		if (mode !== "timeline" || status !== "loading" || transcript !== null)
@@ -236,14 +234,10 @@ export default function TranscriptSectionLoader({
 
 		void loadTranscript();
 		return () => controller.abort();
-	}, [mode, retryToken, status, talkId, transcript]);
+	}, [mode, status, talkId, transcript]);
 
 	function selectMode(nextMode: TranscriptMode) {
 		setLoaderState((current) => {
-			const isRetry =
-				nextMode === "timeline" &&
-				current.mode === "timeline" &&
-				(current.status === "error" || current.status === "missing");
 			return {
 				...current,
 				mode: nextMode,
@@ -251,7 +245,6 @@ export default function TranscriptSectionLoader({
 					nextMode === "timeline" && transcript === null
 						? "loading"
 						: current.status,
-				retryToken: isRetry ? current.retryToken + 1 : current.retryToken,
 			};
 		});
 	}
