@@ -215,7 +215,7 @@ export async function writeGeneratedTranscriptSearchDocuments(
 	const documents: SerializedTranscriptSearchDocument[] = [];
 
 	for (const fileName of fileNames
-		.filter((fileName) => fileName.endsWith(".srt"))
+		.filter((candidateName) => candidateName.endsWith(".srt"))
 		.sort()) {
 		const content = await readFile(resolve(transcriptsDir, fileName), "utf8");
 		const document = serializeTranscriptSearchDocument(

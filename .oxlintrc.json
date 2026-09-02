@@ -1,6 +1,6 @@
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
-	"plugins": ["react", "jsx-a11y", "nextjs"],
+	"plugins": ["react", "jsx-a11y", "nextjs", "import", "promise"],
 	"jsPlugins": [
 		{
 			"name": "anti-slop",
@@ -11,6 +11,15 @@
 		"browser": true,
 		"builtin": true,
 		"node": true
+	},
+	"categories": {
+		"correctness": "error",
+		"suspicious": "error"
+	},
+	"options": {
+		"reportUnusedDisableDirectives": "error",
+		"typeAware": true,
+		"typeCheck": true
 	},
 	"rules": {
 		"anti-slop/no-chained-type-assertions": "error",
@@ -28,7 +37,8 @@
 		"anti-slop/no-unsafe-dictionary-type": "error",
 		"anti-slop/no-widen-then-assert": "error",
 		"anti-slop/require-safety-comment-for-type-assertion": "error",
-		"complexity": ["error", { "max": 22 }]
+		"complexity": ["error", { "max": 22 }],
+		"react/react-in-jsx-scope": "off"
 	},
 	"ignorePatterns": [
 		".next/**",
