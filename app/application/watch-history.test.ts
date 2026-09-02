@@ -5,6 +5,7 @@ import {
 	getResumeSeconds,
 	isPlaybackCompleted,
 	isValidWatchHistoryTalkId,
+	parseWatchHistoryEntries,
 	parseWatchHistoryEntry,
 	parseWatchHistorySnapshot,
 	upsertWatchHistory,
@@ -49,6 +50,10 @@ describe("watch history parsing", () => {
 
 	test("API応答から完全な履歴だけを受け付ける", () => {
 		expect(parseWatchHistoryEntry(entry)).toEqual(entry);
+		expect(parseWatchHistoryEntries([entry])).toEqual([entry]);
+		expect(
+			parseWatchHistoryEntries([{ ...entry, completed: "false" }]),
+		).toBeNull();
 		expect(parseWatchHistoryEntry({ ...entry, completed: "false" })).toBeNull();
 		expect(
 			parseWatchHistoryEntry({ ...entry, lastWatchedAt: "not-a-date" }),

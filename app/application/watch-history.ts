@@ -106,6 +106,20 @@ export const parseWatchHistoryEntry = (
 	};
 };
 
+export const parseWatchHistoryEntries = (
+	value: unknown,
+): WatchHistoryEntry[] | null => {
+	if (!Array.isArray(value) || value.length > WATCH_HISTORY_LIMIT) return null;
+
+	const entries: WatchHistoryEntry[] = [];
+	for (const candidate of value) {
+		const entry = parseWatchHistoryEntry(candidate);
+		if (!entry) return null;
+		entries.push(entry);
+	}
+	return entries;
+};
+
 export const isPlaybackCompleted = (
 	positionSeconds: number,
 	durationSeconds: number | null,
@@ -116,18 +130,17 @@ export const isPlaybackCompleted = (
 	durationSeconds > 0 &&
 	positionSeconds / durationSeconds >= 0.9;
 
-export const upsertWatchHistory = (
-	entries: WatchHistoryEntry[],
+const createWatchHistoryEntry = (
 	snapshot: WatchHistorySnapshot,
-): WatchHistoryEntry[] => {
+): WatchHistoryEntry | null => {
 	if (
 		!isWatchHistorySnapshot(snapshot) ||
 		snapshot.positionSeconds < WATCH_HISTORY_MINIMUM_SECONDS
 	) {
-		return entries;
+		return null;
 	}
 
-	const updated: WatchHistoryEntry = {
+	return {
 		...snapshot,
 		lastWatchedAt: new Date(
 			snapshot.lastWatchedAt ?? new Date().toISOString(),
@@ -137,9 +150,36 @@ export const upsertWatchHistory = (
 			snapshot.durationSeconds,
 		),
 	};
+};
+
+export const upsertWatchHistory = (
+	entries: WatchHistoryEntry[],
+	snapshot: WatchHistorySnapshot,
+): WatchHistoryEntry[] => {
+	const updated = createWatchHistoryEntry(snapshot);
+	if (!updated) return entries;
 
 	return [...entries.filter(({ talkId }) => talkId !== updated.talkId), updated]
 		.sort((a, b) => Date.parse(b.lastWatchedAt) - Date.parse(a.lastWatchedAt))
+		.slice(0, WATCH_HISTORY_LIMIT);
+};
+
+export const normalizeWatchHistoryEntries = (
+	snapshots: readonly WatchHistorySnapshot[],
+): WatchHistoryEntry[] => {
+	const entryByTalkId = new Map<string, WatchHistoryEntry>();
+	for (const snapshot of snapshots) {
+		const entry = createWatchHistoryEntry(snapshot);
+		if (!entry) continue;
+
+		const current = entryByTalkId.get(entry.talkId);
+		if (!current || entry.lastWatchedAt > current.lastWatchedAt) {
+			entryByTalkId.set(entry.talkId, entry);
+		}
+	}
+
+	return [...entryByTalkId.values()]
+		.sort((a, b) => b.lastWatchedAt.localeCompare(a.lastWatchedAt))
 		.slice(0, WATCH_HISTORY_LIMIT);
 };
 

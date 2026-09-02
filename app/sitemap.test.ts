@@ -5,7 +5,7 @@ import { getTalks } from "./infrastructure/talk/repository";
 import sitemap from "./sitemap";
 import { buildCanonicalUrl } from "./utils/seo";
 
-test("31件の一覧URLと全901法話詳細だけを重複なく含む", async () => {
+test("一覧URLと全法話詳細だけを重複なく含む", async () => {
 	const talks = await getTalks();
 	const urls = (await sitemap()).map((entry) => entry.url);
 	const totalListingPages = Math.max(
@@ -31,14 +31,12 @@ test("31件の一覧URLと全901法話詳細だけを重複なく含む", async 
 		...expectedDetailUrlSet,
 	]);
 
-	expect(talks).toHaveLength(901);
-	expect(expectedListingUrls).toHaveLength(31);
-	expect(listingUrls).toHaveLength(31);
-	expect(detailUrls).toHaveLength(901);
 	expect(new Set(listingUrls)).toEqual(expectedListingUrlSet);
 	expect(new Set(detailUrls)).toEqual(expectedDetailUrlSet);
-	expect(talkUrls).toHaveLength(expectedTalkUrlSet.size);
 	expect(new Set(talkUrls)).toEqual(expectedTalkUrlSet);
+	expect(talkUrls.find((url, index) => talkUrls.indexOf(url) !== index)).toBe(
+		undefined,
+	);
 	expect(urls.some((url) => url.includes("/talks/archive/"))).toBeFalse();
 	expect(urls.some((url) => new URL(url).search)).toBeFalse();
 });

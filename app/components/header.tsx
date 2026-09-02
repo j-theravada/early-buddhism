@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { SUMANASARA_JA_NAME } from "../domain/teacher/sumanasara";
+import { useIsSignedIn } from "../infrastructure/auth/client";
+import { migrateLegacyWatchHistory } from "../infrastructure/watch-history/legacy-migration";
 import AuthNav from "./auth-nav";
 
 const navLinks = [
@@ -15,8 +17,15 @@ const navLinks = [
 ];
 
 export default function Header() {
+	const isSignedIn = useIsSignedIn();
 	const [isScrolled, setIsScrolled] = useState(false);
 	const isScrolledRef = useRef(false);
+
+	useEffect(() => {
+		if (isSignedIn) {
+			void migrateLegacyWatchHistory().catch(() => {});
+		}
+	}, [isSignedIn]);
 
 	useEffect(() => {
 		let frameId: number | null = null;

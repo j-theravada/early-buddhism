@@ -6,6 +6,8 @@ import {
 import { getDatabase, type Database } from "../database/drizzle";
 import { userWatchHistory } from "../database/schema";
 
+const IMPORT_CHUNK_SIZE = 50;
+
 export function createWatchHistoryRepository(database: Database) {
 	const listForUser = async (userId: string): Promise<WatchHistoryEntry[]> => {
 		return database
@@ -83,7 +85,54 @@ export function createWatchHistoryRepository(database: Database) {
 		return saved[0] ?? entry;
 	};
 
-	return { findForUser, listForUser, saveForUser };
+	const importForUser = async (
+		userId: string,
+		entries: WatchHistoryEntry[],
+	): Promise<void> => {
+		if (entries.length === 0) return;
+
+		await database.transaction(async (transaction) => {
+			for (let start = 0; start < entries.length; start += IMPORT_CHUNK_SIZE) {
+				await transaction
+					.insert(userWatchHistory)
+					.values(
+						entries.slice(start, start + IMPORT_CHUNK_SIZE).map((entry) => ({
+							...entry,
+							userId,
+						})),
+					)
+					.onConflictDoUpdate({
+						set: {
+							completed: sql`excluded.completed`,
+							durationSeconds: sql`excluded.duration_seconds`,
+							lastWatchedAt: sql`excluded.last_watched_at`,
+							positionSeconds: sql`excluded.position_seconds`,
+							thumbnailUrl: sql`excluded.thumbnail_url`,
+							title: sql`excluded.title`,
+						},
+						setWhere: sql`excluded.last_watched_at > ${userWatchHistory.lastWatchedAt}`,
+						target: [userWatchHistory.userId, userWatchHistory.talkId],
+					});
+			}
+
+			const retainedTalkIds = transaction
+				.select({ talkId: userWatchHistory.talkId })
+				.from(userWatchHistory)
+				.where(eq(userWatchHistory.userId, userId))
+				.orderBy(desc(userWatchHistory.lastWatchedAt))
+				.limit(WATCH_HISTORY_LIMIT);
+			await transaction
+				.delete(userWatchHistory)
+				.where(
+					and(
+						eq(userWatchHistory.userId, userId),
+						notInArray(userWatchHistory.talkId, retainedTalkIds),
+					),
+				);
+		});
+	};
+
+	return { findForUser, importForUser, listForUser, saveForUser };
 }
 
 let repository: ReturnType<typeof createWatchHistoryRepository> | null = null;

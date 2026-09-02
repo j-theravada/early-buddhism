@@ -124,6 +124,11 @@ bun run db:migrate:turso
 Search refreshes must keep `user_watch_history` and Drizzle's migration table
 intact.
 
+After sign-in, the client imports the legacy
+`early-buddhism:watch-history:v1` localStorage data once. The server merges by
+`lastWatchedAt`, so older device data cannot overwrite newer account history.
+The legacy key is removed only after a successful import.
+
 Popular videos can be loaded from the GA4 Data API when these server-side variables are set:
 
 ```bash

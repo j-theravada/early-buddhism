@@ -13,6 +13,7 @@ import {
 	findWatchHistory,
 	saveWatchProgress,
 } from "../infrastructure/watch-history/client";
+import { migrateLegacyWatchHistory } from "../infrastructure/watch-history/legacy-migration";
 import {
 	loadYouTubeIframeApi,
 	YouTubePlayerState,
@@ -115,7 +116,9 @@ export default function LiteYouTubeEmbed({
 
 		setResumeSeconds(0);
 		const controller = new AbortController();
-		void findWatchHistory(talkId, controller.signal)
+		void migrateLegacyWatchHistory()
+			.catch(() => 0)
+			.then(() => findWatchHistory(talkId, controller.signal))
 			.then((entry) => {
 				setResumeSeconds(entry ? getResumeSeconds(entry) : 0);
 			})

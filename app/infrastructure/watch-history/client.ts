@@ -36,3 +36,16 @@ export async function saveWatchProgress(
 		throw new Error(`Watch history save failed: ${response.status}`);
 	}
 }
+
+export async function importWatchHistory(
+	entries: WatchHistoryEntry[],
+): Promise<void> {
+	const response = await fetch("/api/watch-history", {
+		body: JSON.stringify(entries),
+		headers: { "Content-Type": "application/json" },
+		method: "POST",
+	});
+	if (!response.ok) {
+		throw new Error(`Watch history import failed: ${response.status}`);
+	}
+}
