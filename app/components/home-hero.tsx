@@ -65,18 +65,13 @@ function addRenderedSlideIndexes(
 export default function HomeHero() {
 	const [slideState, setSlideState] = useState<HeroSlideState>(() => ({
 		activeIndex: FIRST_SLIDE_INDEX,
-		renderedSlideIndexes: new Set([FIRST_SLIDE_INDEX]),
+		renderedSlideIndexes: new Set([
+			FIRST_SLIDE_INDEX,
+			getNextSlideIndex(FIRST_SLIDE_INDEX),
+		]),
 	}));
 
 	useEffect(() => {
-		setSlideState((current) => ({
-			...current,
-			renderedSlideIndexes: addRenderedSlideIndexes(
-				current.renderedSlideIndexes,
-				[getNextSlideIndex(current.activeIndex)],
-			),
-		}));
-
 		const timer = window.setInterval(() => {
 			setSlideState((current) => {
 				const next = getNextSlideIndex(current.activeIndex);

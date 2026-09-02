@@ -13,10 +13,6 @@ type GeneratedDataPaths = {
 	transcriptsDir: string;
 };
 
-type TranscriptSearchDocumentSummary = {
-	talkId?: unknown;
-};
-
 export type GeneratedDataSummary = {
 	talkCount: number;
 	transcriptDocumentCount: number;
@@ -37,11 +33,22 @@ function getGeneratedDataPaths(): GeneratedDataPaths {
 
 async function readJsonArray(path: string, label: string): Promise<unknown[]> {
 	const raw = await readFile(path, "utf8");
-	const parsed = JSON.parse(raw) as unknown;
+	const parsed: unknown = JSON.parse(raw);
 	if (!Array.isArray(parsed) || parsed.length === 0) {
 		throw new Error(`${label} must be a non-empty JSON array`);
 	}
 	return parsed;
+}
+
+// Generated transcript documents are decoded from an untyped JSON array.
+// oxlint-disable-next-line anti-slop/no-unknown-parameters
+function hasStringTalkId(value: unknown): value is { talkId: string } {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"talkId" in value &&
+		typeof value.talkId === "string"
+	);
 }
 
 export async function validateGeneratedData(): Promise<GeneratedDataSummary> {
@@ -56,11 +63,7 @@ export async function validateGeneratedData(): Promise<GeneratedDataSummary> {
 		transcriptFileNames.filter((fileName) => fileName.endsWith(".srt")),
 	);
 	const missingTranscriptIds = transcriptDocuments
-		.map((document) =>
-			typeof (document as TranscriptSearchDocumentSummary).talkId === "string"
-				? (document as { talkId: string }).talkId
-				: "",
-		)
+		.map((document) => (hasStringTalkId(document) ? document.talkId : ""))
 		.filter((talkId) => talkId && !transcriptFiles.has(`${talkId}.srt`));
 
 	if (missingTranscriptIds.length > 0) {

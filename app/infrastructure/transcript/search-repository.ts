@@ -15,6 +15,7 @@ async function loadTranscriptSearchDocuments(): Promise<
 	TranscriptSearchDocument[]
 > {
 	const content = await readFile(TRANSCRIPT_SEARCH_DOCUMENTS_PATH, "utf8");
+	// SAFETY: This generated file is written exclusively as serialized transcript tuples by the repository generator.
 	const documents = JSON.parse(content) as SerializedTranscriptSearchDocument[];
 	return documents.map(deserializeTranscriptSearchDocument);
 }
@@ -26,9 +27,9 @@ export function createTranscriptSearchDocumentsLoader(
 		TranscriptSearchDocument[]
 	> | null = null;
 	return function getTranscriptSearchDocuments() {
-		transcriptSearchDocumentsPromise ??= load().catch((error: unknown) => {
+		transcriptSearchDocumentsPromise ??= load().catch((cause: unknown) => {
 			transcriptSearchDocumentsPromise = null;
-			throw error;
+			throw cause;
 		});
 		return transcriptSearchDocumentsPromise;
 	};

@@ -17,6 +17,13 @@ export type TranscriptLoadStatus =
 	| "missing"
 	| "error";
 
+type TranscriptLoaderState = {
+	mode: TranscriptMode;
+	status: TranscriptLoadStatus;
+	deepLinkKey: string;
+	retryToken: number;
+};
+
 type Props = {
 	children: ReactNode;
 	talkId: string;
@@ -48,15 +55,52 @@ function buildTranscriptApiUrl(talkId: string): string {
 	return `/api/transcripts/${encodeURIComponent(talkId)}`;
 }
 
+// The API response is untyped until this boundary predicate validates its object member.
+/* oxlint-disable anti-slop/no-unknown-parameters */
+function isTranscriptResponse(
+	value: unknown,
+): value is { transcript: unknown } {
+	return typeof value === "object" && value !== null && "transcript" in value;
+}
+/* oxlint-enable anti-slop/no-unknown-parameters */
+
+// Transcript JSON scalar values are checked before constructing a TranscriptCue.
+// oxlint-disable-next-line anti-slop/no-unknown-parameters
+function isTranscriptCue(value: unknown): value is TranscriptCue {
+	if (typeof value !== "object" || value === null) return false;
+
+	return (
+		"index" in value &&
+		typeof value.index === "number" &&
+		Number.isFinite(value.index) &&
+		"start" in value &&
+		typeof value.start === "number" &&
+		Number.isFinite(value.start) &&
+		"end" in value &&
+		typeof value.end === "number" &&
+		Number.isFinite(value.end) &&
+		"startLabel" in value &&
+		typeof value.startLabel === "string" &&
+		"endLabel" in value &&
+		typeof value.endLabel === "string" &&
+		"text" in value &&
+		typeof value.text === "string"
+	);
+}
+
+// Response.json() returns an untyped payload; this function is its decoder boundary.
+// oxlint-disable-next-line anti-slop/no-unknown-parameters
 function parseTranscriptResponse(value: unknown): TranscriptCue[] {
-	if (typeof value !== "object" || value === null || !("transcript" in value)) {
+	if (!isTranscriptResponse(value)) {
 		throw new Error("Transcript response must include transcript.");
 	}
-	const transcript = (value as { transcript: unknown }).transcript;
-	if (!Array.isArray(transcript)) {
+	if (
+		!Array.isArray(value.transcript) ||
+		!value.transcript.every(isTranscriptCue)
+	) {
 		throw new Error("Transcript must be an array.");
 	}
-	return transcript as TranscriptCue[];
+	return value.transcript;
 }
 
 export function getInitialTranscriptMode(
@@ -68,6 +112,17 @@ export function getInitialTranscriptMode(
 		: transcriptHighlightQuery?.trim()
 			? "timeline"
 			: "plain";
+}
+
+function getTranscriptDeepLinkKey(
+	targetCueIndex: number | null | undefined,
+	transcriptHighlightQuery: string | null | undefined,
+): string {
+	if (targetCueIndex !== null && targetCueIndex !== undefined) {
+		return `cue:${targetCueIndex}`;
+	}
+	const query = transcriptHighlightQuery?.trim();
+	return query ? `query:${query}` : "";
 }
 
 export function TranscriptContent({
@@ -111,27 +166,49 @@ export default function TranscriptSectionLoader({
 	transcriptHighlightQuery,
 	targetCueIndex,
 }: Props) {
-	const [mode, setMode] = useState<TranscriptMode>(() =>
-		getInitialTranscriptMode(targetCueIndex, transcriptHighlightQuery),
-	);
-	const [status, setStatus] = useState<TranscriptLoadStatus>("idle");
 	const [transcript, setTranscript] = useState<TranscriptCue[] | null>(null);
-	const [retryToken, setRetryToken] = useState(0);
-
-	useEffect(() => {
-		if (
-			getInitialTranscriptMode(targetCueIndex, transcriptHighlightQuery) ===
-			"timeline"
-		) {
-			setMode("timeline");
+	const [storedLoaderState, setLoaderState] = useState<TranscriptLoaderState>(
+		() => {
+			const mode = getInitialTranscriptMode(
+				targetCueIndex,
+				transcriptHighlightQuery,
+			);
+			return {
+				mode,
+				status: mode === "timeline" ? "loading" : "idle",
+				deepLinkKey: getTranscriptDeepLinkKey(
+					targetCueIndex,
+					transcriptHighlightQuery,
+				),
+				retryToken: 0,
+			};
+		},
+	);
+	const deepLinkKey = getTranscriptDeepLinkKey(
+		targetCueIndex,
+		transcriptHighlightQuery,
+	);
+	let loaderState = storedLoaderState;
+	if (deepLinkKey !== storedLoaderState.deepLinkKey) {
+		const synchronizedState: TranscriptLoaderState = {
+			...storedLoaderState,
+			deepLinkKey,
+		};
+		if (deepLinkKey) {
+			synchronizedState.mode = "timeline";
+			synchronizedState.status =
+				transcript === null ? "loading" : storedLoaderState.status;
 		}
-	}, [targetCueIndex, transcriptHighlightQuery]);
+		loaderState = synchronizedState;
+		setLoaderState(loaderState);
+	}
+	const { mode, status, retryToken } = loaderState;
 
 	useEffect(() => {
-		if (mode !== "timeline" || transcript !== null) return;
+		if (mode !== "timeline" || status !== "loading" || transcript !== null)
+			return;
 
 		const controller = new AbortController();
-		setStatus("loading");
 
 		async function loadTranscript() {
 			try {
@@ -139,34 +216,44 @@ export default function TranscriptSectionLoader({
 					signal: controller.signal,
 				});
 				if (response.status === 404) {
-					setStatus("missing");
+					setLoaderState((current) => ({
+						...current,
+						status: "missing",
+					}));
 					return;
 				}
 				if (!response.ok) {
 					throw new Error(`Transcript request failed: ${response.status}`);
 				}
 				setTranscript(parseTranscriptResponse(await response.json()));
-				setStatus("ready");
+				setLoaderState((current) => ({ ...current, status: "ready" }));
 			} catch (error) {
 				if (error instanceof DOMException && error.name === "AbortError")
 					return;
-				setStatus("error");
+				setLoaderState((current) => ({ ...current, status: "error" }));
 			}
 		}
 
 		void loadTranscript();
 		return () => controller.abort();
-	}, [mode, retryToken, talkId, transcript]);
+	}, [mode, retryToken, status, talkId, transcript]);
 
 	function selectMode(nextMode: TranscriptMode) {
-		if (
-			nextMode === "timeline" &&
-			mode === "timeline" &&
-			(status === "error" || status === "missing")
-		) {
-			setRetryToken((current) => current + 1);
-		}
-		setMode(nextMode);
+		setLoaderState((current) => {
+			const isRetry =
+				nextMode === "timeline" &&
+				current.mode === "timeline" &&
+				(current.status === "error" || current.status === "missing");
+			return {
+				...current,
+				mode: nextMode,
+				status:
+					nextMode === "timeline" && transcript === null
+						? "loading"
+						: current.status,
+				retryToken: isRetry ? current.retryToken + 1 : current.retryToken,
+			};
+		});
 	}
 
 	return (

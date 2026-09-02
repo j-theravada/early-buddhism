@@ -110,14 +110,11 @@ function buildListingOptions(items: readonly TalkGalleryItem[]) {
 	};
 }
 
-export function normalizeTalkListingRequest(
-	items: readonly TalkGalleryItem[],
+function normalizeListingClassification(
 	request: TalkListingRequest,
-): NormalizedTalkListingRequest | null {
-	const page = parseTalkListingPageNumber(request.page);
-	if (!page) return null;
-
-	const { collectionOptions, seriesOptions } = buildListingOptions(items);
+	collectionOptions: TalkListingOption<ContentCollectionId>[],
+	seriesOptions: TalkListingSeriesOption[],
+): Pick<TalkListingConditions, "collectionId" | "seriesId"> | null {
 	const rawCollectionId = request.collectionId?.trim() ?? "";
 	const rawSeriesId = request.seriesId?.trim() ?? "";
 	const parsedCollectionId = rawCollectionId
@@ -145,13 +142,33 @@ export function normalizeTalkListingRequest(
 	}
 
 	return {
+		collectionId: parsedCollectionId || seriesOption?.collectionId || "",
+		seriesId: seriesOption?.id ?? "",
+	};
+}
+
+export function normalizeTalkListingRequest(
+	items: readonly TalkGalleryItem[],
+	request: TalkListingRequest,
+): NormalizedTalkListingRequest | null {
+	const page = parseTalkListingPageNumber(request.page);
+	if (!page) return null;
+
+	const { collectionOptions, seriesOptions } = buildListingOptions(items);
+	const classification = normalizeListingClassification(
+		request,
+		collectionOptions,
+		seriesOptions,
+	);
+	if (!classification) return null;
+
+	return {
 		page,
 		conditions: {
 			query: (request.query ?? "")
 				.trim()
 				.slice(0, TALK_LISTING_MAX_QUERY_LENGTH),
-			collectionId: parsedCollectionId || seriesOption?.collectionId || "",
-			seriesId: seriesOption?.id ?? "",
+			...classification,
 			searchFields: normalizeSearchFields(request.searchFields),
 		},
 		collectionOptions,

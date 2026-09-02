@@ -1,3 +1,5 @@
+// Legacy localStorage JSON is decoded here before migration into WatchHistoryEntry.
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-unsafe-dictionary-type */
 import {
 	WATCH_HISTORY_LIMIT,
 	parseWatchHistoryEntry,
@@ -70,9 +72,9 @@ export function migrateLegacyWatchHistory(): Promise<number> {
 		migrationPromise = migrateLegacyWatchHistoryFromStorage(
 			storage,
 			importWatchHistory,
-		).catch((error: unknown) => {
+		).catch((cause: unknown) => {
 			migrationPromise = null;
-			throw error;
+			throw cause;
 		});
 	}
 	return migrationPromise;

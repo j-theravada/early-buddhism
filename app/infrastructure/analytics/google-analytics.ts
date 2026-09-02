@@ -24,6 +24,15 @@ type GoogleAnalyticsCredentials =
 	| ServiceAccountCredentials
 	| AuthorizedUserCredentials;
 
+type GoogleAnalyticsCredentialsInput = {
+	type?: unknown;
+	client_email?: unknown;
+	private_key?: unknown;
+	client_id?: unknown;
+	client_secret?: unknown;
+	refresh_token?: unknown;
+};
+
 type TokenResponse = {
 	access_token?: string;
 	error?: string;
@@ -111,6 +120,7 @@ export async function getPopularTalkPageViews({
 		);
 	}
 
+	// SAFETY: A successful GA4 runReport response owns this documented optional-field schema.
 	const data = (await response.json()) as RunReportResponse;
 	return aggregateTalkPageViews(data).slice(0, limit);
 }
@@ -163,20 +173,23 @@ async function getAccessToken(
 async function getOAuthAccessToken(
 	credentials: AuthorizedUserCredentials,
 ): Promise<string> {
+	const tokenParameters = new URLSearchParams({
+		client_id: credentials.client_id,
+		grant_type: "refresh_token",
+		refresh_token: credentials.refresh_token,
+	});
+	if (credentials.client_secret) {
+		tokenParameters.set("client_secret", credentials.client_secret);
+	}
+
 	const response = await fetch(TOKEN_URL, {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
-		body: new URLSearchParams({
-			client_id: credentials.client_id,
-			grant_type: "refresh_token",
-			refresh_token: credentials.refresh_token,
-			...(credentials.client_secret
-				? { client_secret: credentials.client_secret }
-				: {}),
-		}),
+		body: tokenParameters,
 		cache: "no-store",
 	});
 
+	// SAFETY: The OAuth token endpoint owns this documented response schema; access_token is checked before use.
 	const data = (await response.json()) as TokenResponse;
 	if (!response.ok || !data.access_token) {
 		throw new Error(
@@ -201,6 +214,7 @@ async function getServiceAccountAccessToken(
 		cache: "no-store",
 	});
 
+	// SAFETY: The OAuth token endpoint owns this documented response schema; access_token is checked before use.
 	const data = (await response.json()) as TokenResponse;
 	if (!response.ok || !data.access_token) {
 		throw new Error(
@@ -281,40 +295,64 @@ function getOAuthCredentialsFromEnv(): AuthorizedUserCredentials | null {
 		);
 	}
 
-	return {
+	const credentials: AuthorizedUserCredentials = {
 		client_id: clientId,
-		...(clientSecret ? { client_secret: clientSecret } : {}),
 		refresh_token: refreshToken,
 		type: "authorized_user",
 	};
+	if (clientSecret) {
+		credentials.client_secret = clientSecret;
+	}
+	return credentials;
+}
+
+// Parsed credential fields have no type until this JSON-boundary predicate accepts the object.
+/* oxlint-disable anti-slop/no-unknown-parameters */
+function isCredentialsInput(
+	value: unknown,
+): value is GoogleAnalyticsCredentialsInput {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+/* oxlint-enable anti-slop/no-unknown-parameters */
+
+// Credential scalar fields are validated through this type guard before string operations.
+// oxlint-disable-next-line anti-slop/no-unknown-parameters
+function isString(value: unknown): value is string {
+	return typeof value === "string";
 }
 
 function parseGoogleAnalyticsCredentialsJson(
 	json: string,
 ): GoogleAnalyticsCredentials {
-	const parsed = JSON.parse(json) as Partial<
-		ServiceAccountCredentials & AuthorizedUserCredentials
-	>;
+	const parsed: unknown = JSON.parse(json);
+	if (!isCredentialsInput(parsed)) {
+		throw new Error("GA4 credentials JSON must contain an object.");
+	}
 
 	if (isAuthorizedUserCredentials(parsed)) {
-		return {
+		const credentials: AuthorizedUserCredentials = {
 			client_id: parsed.client_id.trim(),
-			...(parsed.client_secret?.trim()
-				? { client_secret: parsed.client_secret.trim() }
-				: {}),
 			refresh_token: parsed.refresh_token.trim(),
 			type: "authorized_user",
 		};
+		if (isString(parsed.client_secret) && parsed.client_secret.trim()) {
+			credentials.client_secret = parsed.client_secret.trim();
+		}
+		return credentials;
 	}
 
 	return parseServiceAccountCredentials(parsed);
 }
 
 function parseServiceAccountCredentials(
-	parsed: Partial<ServiceAccountCredentials>,
+	parsed: GoogleAnalyticsCredentialsInput,
 ): ServiceAccountCredentials {
-	const clientEmail = parsed.client_email?.trim();
-	const privateKey = normalizePrivateKey(parsed.private_key ?? "");
+	const clientEmail = isString(parsed.client_email)
+		? parsed.client_email.trim()
+		: "";
+	const privateKey = normalizePrivateKey(
+		isString(parsed.private_key) ? parsed.private_key : "",
+	);
 
 	if (!clientEmail || !privateKey) {
 		throw new Error(
@@ -326,12 +364,12 @@ function parseServiceAccountCredentials(
 }
 
 function isAuthorizedUserCredentials(
-	credentials: Partial<Record<keyof AuthorizedUserCredentials, unknown>>,
+	credentials: GoogleAnalyticsCredentialsInput,
 ): credentials is AuthorizedUserCredentials {
 	return Boolean(
-		typeof credentials.client_id === "string" &&
+		isString(credentials.client_id) &&
 		credentials.client_id.trim() &&
-		typeof credentials.refresh_token === "string" &&
+		isString(credentials.refresh_token) &&
 		credentials.refresh_token.trim(),
 	);
 }

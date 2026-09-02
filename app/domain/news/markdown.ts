@@ -3,6 +3,22 @@ import type { NewsItem } from "./types";
 const frontmatterPattern = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
+type NewsFrontmatter = {
+	title?: string;
+	date?: string;
+	slug?: string;
+	excerpt?: string;
+	draft?: string;
+};
+
+type RequiredNewsFrontmatterField = "title" | "date";
+
+function isNewsFrontmatterKey(key: string): key is keyof NewsFrontmatter {
+	return ["title", "date", "slug", "excerpt", "draft"].some(
+		(candidate) => candidate === key,
+	);
+}
+
 export function parseNewsMarkdown(
 	source: string,
 	fallbackSlug: string,
@@ -33,8 +49,8 @@ export function parseNewsMarkdown(
 	};
 }
 
-function parseFrontmatter(source: string): Record<string, string> {
-	const fields: Record<string, string> = {};
+function parseFrontmatter(source: string): NewsFrontmatter {
+	const fields: NewsFrontmatter = {};
 	for (const line of source.split(/\r?\n/)) {
 		const trimmed = line.trim();
 		if (!trimmed || trimmed.startsWith("#")) {
@@ -48,7 +64,9 @@ function parseFrontmatter(source: string): Record<string, string> {
 
 		const key = trimmed.slice(0, separatorIndex).trim();
 		const value = trimmed.slice(separatorIndex + 1).trim();
-		fields[key] = normalizeFrontmatterValue(value);
+		if (isNewsFrontmatterKey(key)) {
+			fields[key] = normalizeFrontmatterValue(value);
+		}
 	}
 
 	return fields;
@@ -66,8 +84,8 @@ function normalizeFrontmatterValue(value: string): string {
 }
 
 function getRequiredField(
-	fields: Record<string, string>,
-	key: string,
+	fields: NewsFrontmatter,
+	key: RequiredNewsFrontmatterField,
 	fallbackSlug: string,
 ): string {
 	const value = fields[key];

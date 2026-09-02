@@ -135,7 +135,7 @@ function hasTranscriptTokenMatch(
 	const transcriptSearchText =
 		searchData.transcriptSearchTextByTalkId.get(talkId);
 	return (
-		typeof transcriptSearchText === "string" &&
+		transcriptSearchText !== undefined &&
 		tokens.some((token) => transcriptSearchText.includes(token))
 	);
 }

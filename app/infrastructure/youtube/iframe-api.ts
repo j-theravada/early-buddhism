@@ -42,6 +42,7 @@ const findIframeApiScript = (): HTMLScriptElement | null => {
 };
 
 export const loadYouTubeIframeApi = (): Promise<YouTubeIframeApi> => {
+	// SAFETY: This adapter owns the optional YouTube globals it reads and installs on window.
 	const youtubeWindow = window as YouTubeWindow;
 	if (youtubeWindow.YT?.Player) {
 		return Promise.resolve(youtubeWindow.YT);
@@ -107,9 +108,9 @@ export const loadYouTubeIframeApi = (): Promise<YouTubeIframeApi> => {
 			script.src = IFRAME_API_SRC;
 			document.head.append(script);
 		}
-	}).catch((error: unknown) => {
+	}).catch((cause: unknown) => {
 		iframeApiPromise = null;
-		throw error;
+		throw cause;
 	});
 
 	return iframeApiPromise;

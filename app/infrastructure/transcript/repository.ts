@@ -9,6 +9,15 @@ function isSafeTalkId(talkId: string) {
 	return /^[A-Za-z0-9_()-]+$/.test(talkId);
 }
 
+function isMissingFileError(cause: unknown): cause is { code: "ENOENT" } {
+	return (
+		typeof cause === "object" &&
+		cause !== null &&
+		"code" in cause &&
+		cause.code === "ENOENT"
+	);
+}
+
 export async function getTranscriptByTalkId(
 	talkId: string,
 ): Promise<TranscriptCue[] | null> {
@@ -20,12 +29,8 @@ export async function getTranscriptByTalkId(
 		const content = await readFile(filePath, "utf8");
 		const cues = parseSrt(content);
 		return cues.length ? cues : null;
-	} catch (error) {
-		if (error && typeof error === "object" && "code" in error) {
-			if ((error as { code?: string }).code === "ENOENT") {
-				return null;
-			}
-		}
-		throw error;
+	} catch (cause) {
+		if (isMissingFileError(cause)) return null;
+		throw cause;
 	}
 }
