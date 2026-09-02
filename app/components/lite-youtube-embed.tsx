@@ -27,6 +27,11 @@ type Props = {
 	title: string;
 };
 
+type ResumePositionState = {
+	ownerKey: string;
+	seconds: number;
+};
+
 function buildAutoplayUrl(embedUrl: string, resumeSeconds: number): string {
 	const separator = embedUrl.includes("?") ? "&" : "?";
 	const start = resumeSeconds > 0 ? `&start=${resumeSeconds}` : "";
@@ -38,12 +43,26 @@ function enableYouTubeApi(embedUrl: string): string {
 	return `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}enablejsapi=1`;
 }
 
+// CustomEvent.detail is untyped until this event-boundary predicate validates it.
+/* oxlint-disable anti-slop/no-unknown-parameters */
+function isLoadTalkPlayerEventDetail(
+	detail: unknown,
+): detail is LoadTalkPlayerEventDetail {
+	return (
+		typeof detail === "object" &&
+		detail !== null &&
+		"src" in detail &&
+		typeof detail.src === "string"
+	);
+}
+/* oxlint-enable anti-slop/no-unknown-parameters */
+
 function readPlayerEventDetail(event: Event): LoadTalkPlayerEventDetail | null {
 	if (!(event instanceof CustomEvent)) {
 		return null;
 	}
-	const detail = event.detail as Partial<LoadTalkPlayerEventDetail> | null;
-	return typeof detail?.src === "string" ? { src: detail.src } : null;
+	const detail: unknown = event.detail;
+	return isLoadTalkPlayerEventDetail(detail) ? { src: detail.src } : null;
 }
 
 export default function LiteYouTubeEmbed({
@@ -53,7 +72,13 @@ export default function LiteYouTubeEmbed({
 	title,
 }: Props) {
 	const isSignedIn = useIsSignedIn();
-	const [resumeSeconds, setResumeSeconds] = useState(0);
+	const resumeOwnerKey = isSignedIn ? talkId : "signed-out";
+	const [resumePosition, setResumePosition] = useState<ResumePositionState>({
+		ownerKey: "signed-out",
+		seconds: 0,
+	});
+	const resumeSeconds =
+		resumePosition.ownerKey === resumeOwnerKey ? resumePosition.seconds : 0;
 	const autoplayUrl = useMemo(
 		() => buildAutoplayUrl(embedUrl, resumeSeconds),
 		[embedUrl, resumeSeconds],
@@ -89,7 +114,9 @@ export default function LiteYouTubeEmbed({
 		}
 	}, [isSignedIn, talkId, thumbnailUrl, title]);
 
-	saveProgressRef.current = saveProgress;
+	useEffect(() => {
+		saveProgressRef.current = saveProgress;
+	}, [saveProgress]);
 
 	const cleanupPlayer = useCallback(() => {
 		const player = playerRef.current;
@@ -106,21 +133,23 @@ export default function LiteYouTubeEmbed({
 		}
 	}, [clearProgressInterval]);
 
-	cleanupPlayerRef.current = cleanupPlayer;
+	useEffect(() => {
+		cleanupPlayerRef.current = cleanupPlayer;
+	}, [cleanupPlayer]);
 
 	useEffect(() => {
-		if (!isSignedIn) {
-			setResumeSeconds(0);
-			return;
-		}
+		if (!isSignedIn) return;
 
-		setResumeSeconds(0);
 		const controller = new AbortController();
 		void migrateLegacyWatchHistory()
 			.catch(() => 0)
 			.then(() => findWatchHistory(talkId, controller.signal))
 			.then((entry) => {
-				setResumeSeconds(entry ? getResumeSeconds(entry) : 0);
+				if (controller.signal.aborted) return;
+				setResumePosition({
+					ownerKey: talkId,
+					seconds: entry ? getResumeSeconds(entry) : 0,
+				});
 			})
 			.catch(() => {});
 

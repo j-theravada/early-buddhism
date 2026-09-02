@@ -14,9 +14,9 @@ export function createSearchDataLoader(
 ) {
 	let searchDataPromise: Promise<TranscriptAwareSearchData> | null = null;
 	return function getSearchData() {
-		searchDataPromise ??= load().catch((error: unknown) => {
+		searchDataPromise ??= load().catch((cause: unknown) => {
 			searchDataPromise = null;
-			throw error;
+			throw cause;
 		});
 		return searchDataPromise;
 	};

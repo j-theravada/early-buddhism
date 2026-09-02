@@ -142,6 +142,7 @@ describe("writeGeneratedTranscriptSearchDocuments", () => {
 				outPath,
 				transcriptsDir,
 			);
+			// SAFETY: writeGeneratedTranscriptSearchDocuments just wrote the file as serialized transcript tuples.
 			const documents = JSON.parse(await readFile(outPath, "utf8")) as [
 				string,
 				unknown[],

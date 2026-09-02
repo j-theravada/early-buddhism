@@ -25,7 +25,11 @@ export function buildVisibleTalkListingPages(
 	const visible: VisibleTalkListingPage[] = [];
 	for (const page of candidates) {
 		const previous = visible.at(-1);
-		if (typeof previous === "number" && page - previous > 1) {
+		if (
+			previous !== undefined &&
+			previous !== "ellipsis" &&
+			page - previous > 1
+		) {
 			visible.push("ellipsis");
 		}
 		visible.push(page);

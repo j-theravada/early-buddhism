@@ -30,24 +30,49 @@ export function getPrimaryTalkMediaUrl(
 	return talk.youtubeLink || null;
 }
 
-export function transformTalkToDisplay(
-	talk: Talk,
-	index: number,
-): TalkForDisplay {
-	const rawTitle = getTalkTitle(talk);
-	const displayTitle = normalizeText(rawTitle);
-
+function buildTalkSubtitle(talk: Talk): string {
 	const rawSubtitle =
 		talk.description &&
 		talk.title &&
 		talk.description.trim() !== talk.title.trim()
 			? talk.description
 			: "";
-	const subtitle = rawSubtitle ? normalizeText(rawSubtitle) : "";
+	return rawSubtitle ? normalizeText(rawSubtitle) : "";
+}
 
+function buildTalkDateFields(talk: Talk) {
 	const year = talk.recordedOnDate?.getFullYear() ?? null;
 	const decade = year ? Math.floor(year / 10) * 10 : null;
-	const decadeLabel = decade ? `${decade}年代` : "年代不明";
+	const recordedOnRaw = talk.recordedOn || "日付不明";
+	return {
+		recordedOnRaw,
+		recordedOnFormatted: formatJapaneseDate(talk.recordedOnDate, recordedOnRaw),
+		recordedOnSortValue: talk.recordedOnDate?.getTime() ?? 0,
+		decadeLabel: decade ? `${decade}年代` : "年代不明",
+	};
+}
+
+function buildTalkClassificationFields(talk: Talk) {
+	const classification = resolveContentClassification({
+		collectionSources: [talk.collectionLabel, talk.event],
+		seriesSources: [talk.seriesLabel],
+	});
+	return {
+		collectionId:
+			parseContentCollectionId(talk.collectionId) ||
+			classification.collectionId,
+		collectionLabel: talk.collectionLabel || classification.collectionLabel,
+		seriesId: parseContentSeriesId(talk.seriesId) || classification.seriesId,
+		seriesLabel: talk.seriesLabel || classification.seriesLabel,
+	};
+}
+
+export function transformTalkToDisplay(
+	talk: Talk,
+	index: number,
+): TalkForDisplay {
+	const rawTitle = getTalkTitle(talk);
+	const displayTitle = normalizeText(rawTitle);
 	const themeSource = (talk.description || talk.event || "").trim();
 	const themeLabel = themeSource || "テーマ未設定";
 
@@ -55,29 +80,15 @@ export function transformTalkToDisplay(
 	const { youtubeUrl: finalYoutubeUrl, thumbnailUrl } =
 		getYouTubeInfo(youtubeUrl);
 
-	const recordedOnSortValue = talk.recordedOnDate?.getTime() ?? 0;
-	const recordedOnRaw = talk.recordedOn || "日付不明";
-	const classification = resolveContentClassification({
-		collectionSources: [talk.collectionLabel, talk.event],
-		seriesSources: [talk.seriesLabel],
-	});
-	const collectionId =
-		parseContentCollectionId(talk.collectionId) || classification.collectionId;
-	const seriesId =
-		parseContentSeriesId(talk.seriesId) || classification.seriesId;
-
 	return {
 		id: talk.id || `talk-${index}`,
 		kind: "talk",
-		collectionId,
-		collectionLabel: talk.collectionLabel || classification.collectionLabel,
-		seriesId,
-		seriesLabel: talk.seriesLabel || classification.seriesLabel,
+		...buildTalkClassificationFields(talk),
 		dvdId: talk.dvdId || "",
 		event: talk.event || "未分類",
 		title: displayTitle,
 		description: normalizeText(talk.description || ""),
-		subtitle,
+		subtitle: buildTalkSubtitle(talk),
 		venue: talk.venue || "—",
 		speaker: normalizeSumanasaraJapaneseName(talk.speaker || "—"),
 		duration: talk.duration || "—",
@@ -85,10 +96,7 @@ export function transformTalkToDisplay(
 		attachmentsLink: talk.attachmentsLink,
 		youtubeUrl: finalYoutubeUrl,
 		thumbnailUrl,
-		recordedOnRaw,
-		recordedOnFormatted: formatJapaneseDate(talk.recordedOnDate, recordedOnRaw),
-		recordedOnSortValue,
-		decadeLabel,
+		...buildTalkDateFields(talk),
 		themeLabel,
 	};
 }

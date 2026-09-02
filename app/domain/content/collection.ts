@@ -66,9 +66,11 @@ const NON_SERIES_LABEL_SOURCES = new Set(["法話", "その他"]);
 export function parseContentCollectionId(
 	value: string,
 ): ContentCollectionId | "" {
-	return CONTENT_COLLECTION_IDS.includes(value as ContentCollectionId)
-		? (value as ContentCollectionId)
-		: "";
+	return isContentCollectionId(value) ? value : "";
+}
+
+function isContentCollectionId(value: string): value is ContentCollectionId {
+	return CONTENT_COLLECTION_IDS.some((collectionId) => collectionId === value);
 }
 
 export function parseContentSeriesId(value: string): ContentSeriesId | "" {

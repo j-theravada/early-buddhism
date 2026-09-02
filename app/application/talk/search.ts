@@ -23,6 +23,12 @@ export const SEARCH_FIELD_OPTIONS = [
 
 export type SearchField = (typeof SEARCH_FIELD_OPTIONS)[number]["id"];
 
+type SearchTextByField = {
+	title: string;
+	description: string;
+	transcript: string;
+};
+
 export const ALL_SEARCH_FIELDS: readonly SearchField[] =
 	SEARCH_FIELD_OPTIONS.map(({ id }) => id);
 
@@ -50,7 +56,7 @@ export function areAllSearchFieldsSelected(
 export type IndexedContentItem<TItem extends ContentSearchItem> = {
 	data: TItem;
 	searchText: string;
-	searchTextByField: Record<SearchField, string>;
+	searchTextByField: SearchTextByField;
 };
 
 export type IndexedTalk = IndexedContentItem<TalkForDisplay>;
@@ -98,7 +104,7 @@ function normalizeSearchParts(values: (string | undefined)[]): string {
 function buildSearchTextByField(
 	item: ContentSearchItem,
 	extraSearchText = "",
-): Record<SearchField, string> {
+): SearchTextByField {
 	return {
 		title: normalizeSearchParts([item.title]),
 		description: normalizeSearchParts([item.description, item.subtitle]),
@@ -106,9 +112,7 @@ function buildSearchTextByField(
 	};
 }
 
-function buildSearchText(
-	searchTextByField: Record<SearchField, string>,
-): string {
+function buildSearchText(searchTextByField: SearchTextByField): string {
 	return normalizeSearchParts(
 		ALL_SEARCH_FIELDS.map((field) => searchTextByField[field]),
 	);

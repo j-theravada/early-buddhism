@@ -26,10 +26,12 @@ function getYouTubeThumbnailUrl(videoId: string): string {
 	return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 }
 
-export function getYouTubeInfo(url: string | null): {
+type YouTubeInfo = {
 	youtubeUrl: string | null;
 	thumbnailUrl: string | null;
-} {
+};
+
+export function getYouTubeInfo(url: string | null): YouTubeInfo {
 	if (!url) {
 		return { youtubeUrl: null, thumbnailUrl: null };
 	}

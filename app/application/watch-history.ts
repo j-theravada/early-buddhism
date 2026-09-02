@@ -1,3 +1,5 @@
+// Persisted watch-history JSON is decoded here before it enters the domain model.
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-unsafe-dictionary-type */
 export const WATCH_HISTORY_LIMIT = 200;
 export const WATCH_HISTORY_MINIMUM_SECONDS = 30;
 
@@ -27,6 +29,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isNonNegativeFiniteNumber = (value: unknown): value is number =>
 	typeof value === "number" && Number.isFinite(value) && value >= 0;
+
+const isBoolean = (value: unknown): value is boolean =>
+	typeof value === "boolean";
 
 const isValidTimestamp = (value: unknown): value is string =>
 	typeof value === "string" &&
@@ -90,7 +95,7 @@ export const parseWatchHistoryEntry = (
 	if (
 		!isWatchHistorySnapshot(value) ||
 		!isValidTimestamp(lastWatchedAt) ||
-		typeof completed !== "boolean"
+		!isBoolean(completed)
 	) {
 		return null;
 	}

@@ -62,6 +62,12 @@ export type TalkGalleryHrefOptions = {
 	searchFields?: readonly string[];
 };
 
+function isTalkGalleryQuery(
+	value: string | TalkGalleryHrefOptions,
+): value is string {
+	return typeof value === "string";
+}
+
 function normalizeGalleryPage(page: number | undefined): number {
 	return Number.isSafeInteger(page) && (page ?? 1) > 1 ? page! : 1;
 }
@@ -103,10 +109,9 @@ function appendSearchFieldParams(
 export function buildTalksHref(
 	queryOrOptions: string | TalkGalleryHrefOptions = "",
 ): string {
-	const options =
-		typeof queryOrOptions === "string"
-			? { query: queryOrOptions }
-			: queryOrOptions;
+	const options = isTalkGalleryQuery(queryOrOptions)
+		? { query: queryOrOptions }
+		: queryOrOptions;
 	const page = normalizeGalleryPage(options.page);
 	const path = page > 1 ? `/talks/page/${page}` : "/talks";
 	const params = new URLSearchParams();

@@ -17,6 +17,15 @@ import {
 
 const TRANSCRIPT_DOWNLOAD_CONCURRENCY = 8;
 
+function isMissingDirectoryError(cause: unknown): cause is { code: "ENOENT" } {
+	return (
+		typeof cause === "object" &&
+		cause !== null &&
+		"code" in cause &&
+		cause.code === "ENOENT"
+	);
+}
+
 export type TranscriptSource = {
 	id: string;
 	srtLink: string | null;
@@ -100,12 +109,7 @@ async function retainExistingTranscript(
 			"utf8",
 		);
 		return true;
-	} catch (error) {
-		if (error && typeof error === "object" && "code" in error) {
-			if ((error as { code?: string }).code === "ENOENT") {
-				return false;
-			}
-		}
+	} catch {
 		return false;
 	}
 }
@@ -200,15 +204,11 @@ export async function writeGeneratedTranscriptSearchDocuments(
 
 	try {
 		fileNames = await readdir(transcriptsDir);
-	} catch (error) {
-		if (error && typeof error === "object" && "code" in error) {
-			if ((error as { code?: string }).code === "ENOENT") {
-				fileNames = [];
-			} else {
-				throw error;
-			}
+	} catch (cause) {
+		if (isMissingDirectoryError(cause)) {
+			fileNames = [];
 		} else {
-			throw error;
+			throw cause;
 		}
 	}
 

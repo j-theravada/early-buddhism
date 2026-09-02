@@ -1,4 +1,4 @@
-import type { InStatement, Row } from "@libsql/client";
+import type { InStatement, Row, Value } from "@libsql/client";
 import {
 	buildSearchSnippets,
 	tokenizeSearchQuery,
@@ -49,37 +49,49 @@ function quoteFtsPhrase(token: string): string {
 	return `"${token.replaceAll('"', '""')}"`;
 }
 
+function isStringValue(value: Value): value is string {
+	return typeof value === "string";
+}
+
+function isNumberValue(value: Value): value is number {
+	return typeof value === "number";
+}
+
+function isBigIntValue(value: Value): value is bigint {
+	return typeof value === "bigint";
+}
+
 function readStringColumn(row: Row, column: string): string | null {
 	const value = row[column];
-	return typeof value === "string" ? value : null;
+	return isStringValue(value) ? value : null;
 }
 
 function readNumberColumn(row: Row, column: string): number | null {
 	const value = row[column];
-	if (typeof value === "number") {
+	if (isNumberValue(value)) {
 		return value;
 	}
-	if (typeof value === "bigint") {
+	if (isBigIntValue(value)) {
 		return Number(value);
 	}
 	return null;
 }
 
-function isMissingCueSearchFtsError(error: unknown): boolean {
+function isMissingCueSearchFtsError(cause: unknown): boolean {
 	return (
-		error instanceof Error &&
-		error.message.includes("no such table") &&
-		error.message.includes("transcript_cue_search_fts")
+		cause instanceof Error &&
+		cause.message.includes("no such table") &&
+		cause.message.includes("transcript_cue_search_fts")
 	);
 }
 
-function isMissingTranscriptTokenIndexError(error: unknown): boolean {
+function isMissingTranscriptTokenIndexError(cause: unknown): boolean {
 	return (
-		error instanceof Error &&
-		((error.message.includes("no such table") &&
-			error.message.includes("transcript_token_index")) ||
-			(error.message.includes("no such column") &&
-				error.message.includes("matches_json")))
+		cause instanceof Error &&
+		((cause.message.includes("no such table") &&
+			cause.message.includes("transcript_token_index")) ||
+			(cause.message.includes("no such column") &&
+				cause.message.includes("matches_json")))
 	);
 }
 
@@ -201,7 +213,7 @@ function parseTranscriptTokenMatches(value: string): TranscriptTokenMatch[] {
 		if (
 			!Array.isArray(parsedMatch) ||
 			parsedMatch.length < 2 ||
-			!parsedMatch.every((entry) => typeof entry === "number")
+			!parsedMatch.every(isNumberValue)
 		) {
 			continue;
 		}
@@ -486,17 +498,48 @@ async function loadTranscriptSnippets(
 	return loadLegacyTranscriptSnippets(talkIds, tokens);
 }
 
-async function loadTokenIndexTranscriptSnippets(
+function collectMatchingCueIds(
+	transcriptTokens: string[],
+	matchesByToken: Map<string, TranscriptTokenMatch[]>,
+	matchingSortIndexes: Set<number>,
+	selectedSortIndexes: Set<number>,
+	talkIdsBySortIndex: Map<number, string>,
+	cueIdsByTalkId: Map<string, Set<number>>,
+): void {
+	for (const transcriptToken of transcriptTokens) {
+		for (const match of matchesByToken.get(transcriptToken) ?? []) {
+			if (
+				!matchingSortIndexes.has(match.talkSortIndex) ||
+				!selectedSortIndexes.has(match.talkSortIndex)
+			) {
+				continue;
+			}
+
+			const talkId = talkIdsBySortIndex.get(match.talkSortIndex);
+			if (!talkId) {
+				continue;
+			}
+
+			let cueIds = cueIdsByTalkId.get(talkId);
+			if (!cueIds) {
+				cueIds = new Set();
+				cueIdsByTalkId.set(talkId, cueIds);
+			}
+
+			for (const cueId of match.cueIds) {
+				if (cueIds.size >= MAX_MATCHING_CUES_PER_TALK) {
+					break;
+				}
+				cueIds.add(cueId);
+			}
+		}
+	}
+}
+
+async function loadTokenIndexCueIdsByTalkId(
 	talkIds: string[],
 	ftsTokens: string[],
-	snippetTokens: string[],
-): Promise<Map<string, TalkSearchTranscriptSnippet[]>> {
-	const snippetsByTalkId = new Map<string, TalkSearchTranscriptSnippet[]>();
-	const seenSnippetsByTalkId = new Map<string, Set<string>>();
-	if (talkIds.length === 0) {
-		return snippetsByTalkId;
-	}
-
+): Promise<Map<string, Set<number>>> {
 	const sortIndexesByTalkId = await loadTalkSortIndexesById(talkIds);
 	const talkIdsBySortIndex = new Map(
 		[...sortIndexesByTalkId].map(([talkId, sortIndex]) => [sortIndex, talkId]),
@@ -522,36 +565,31 @@ async function loadTokenIndexTranscriptSnippets(
 				),
 			),
 		);
-
-		for (const transcriptToken of transcriptTokens) {
-			for (const match of matchesByToken.get(transcriptToken) ?? []) {
-				if (
-					!matchingSortIndexes.has(match.talkSortIndex) ||
-					!selectedSortIndexes.has(match.talkSortIndex)
-				) {
-					continue;
-				}
-
-				const talkId = talkIdsBySortIndex.get(match.talkSortIndex);
-				if (!talkId) {
-					continue;
-				}
-
-				let cueIds = cueIdsByTalkId.get(talkId);
-				if (!cueIds) {
-					cueIds = new Set();
-					cueIdsByTalkId.set(talkId, cueIds);
-				}
-
-				for (const cueId of match.cueIds) {
-					if (cueIds.size >= MAX_MATCHING_CUES_PER_TALK) {
-						break;
-					}
-					cueIds.add(cueId);
-				}
-			}
-		}
+		collectMatchingCueIds(
+			transcriptTokens,
+			matchesByToken,
+			matchingSortIndexes,
+			selectedSortIndexes,
+			talkIdsBySortIndex,
+			cueIdsByTalkId,
+		);
 	}
+
+	return cueIdsByTalkId;
+}
+
+async function loadTokenIndexTranscriptSnippets(
+	talkIds: string[],
+	ftsTokens: string[],
+	snippetTokens: string[],
+): Promise<Map<string, TalkSearchTranscriptSnippet[]>> {
+	const snippetsByTalkId = new Map<string, TalkSearchTranscriptSnippet[]>();
+	const seenSnippetsByTalkId = new Map<string, Set<string>>();
+	if (talkIds.length === 0) {
+		return snippetsByTalkId;
+	}
+
+	const cueIdsByTalkId = await loadTokenIndexCueIdsByTalkId(talkIds, ftsTokens);
 
 	const cueIds = [...cueIdsByTalkId].flatMap(([, talkCueIds]) =>
 		[...talkCueIds].sort((a, b) => a - b),

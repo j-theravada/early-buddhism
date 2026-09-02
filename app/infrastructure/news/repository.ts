@@ -36,11 +36,11 @@ export async function getNewsItems(): Promise<NewsItem[]> {
 	return loadNewsItems();
 }
 
-function isMissingDirectoryError(error: unknown): boolean {
+function isMissingDirectoryError(cause: unknown): cause is { code: "ENOENT" } {
 	return (
-		typeof error === "object" &&
-		error !== null &&
-		"code" in error &&
-		error.code === "ENOENT"
+		typeof cause === "object" &&
+		cause !== null &&
+		"code" in cause &&
+		cause.code === "ENOENT"
 	);
 }

@@ -1218,11 +1218,7 @@ const TranscriptSection = dynamic(() => import("./transcript-section"), {
 
 export type TranscriptMode = "plain" | "timeline";
 export type TranscriptLoadStatus =
-	| "idle"
-	| "loading"
-	| "ready"
-	| "missing"
-	| "error";
+	"idle" | "loading" | "ready" | "missing" | "error";
 
 type Props = {
 	children: ReactNode;

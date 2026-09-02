@@ -1,3 +1,5 @@
+// Test-only browser globals and DOM method replacement require Happy DOM adapter casts.
+/* oxlint-disable anti-slop/no-chained-type-assertions, anti-slop/no-unknown-parameters, anti-slop/require-safety-comment-for-type-assertion */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
 import type { YouTubeIframeApi } from "./iframe-api";

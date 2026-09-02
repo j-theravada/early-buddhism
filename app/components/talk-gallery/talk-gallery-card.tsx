@@ -1,4 +1,4 @@
-import { ExternalLink, Youtube } from "lucide-react";
+import { ExternalLink, Play } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -27,6 +27,35 @@ function truncateByCodePoints(value: string, maxLength: number): string {
 		: value;
 }
 
+function buildCollectionHref(
+	talk: TalkGalleryItem,
+	galleryOptions: TalkGalleryHrefOptions | undefined,
+): string | null {
+	if (!galleryOptions) return null;
+	return buildTalksHref({
+		query: galleryOptions.query,
+		collectionId: talk.collectionId,
+		seriesId:
+			talk.collectionId === "scripture_commentary"
+				? galleryOptions.seriesId
+				: "",
+		searchFields: galleryOptions.searchFields,
+	});
+}
+
+function buildSeriesHref(
+	talk: TalkGalleryItem,
+	galleryOptions: TalkGalleryHrefOptions | undefined,
+): string | null {
+	if (!galleryOptions || !talk.seriesId) return null;
+	return buildTalksHref({
+		query: galleryOptions.query,
+		collectionId: "scripture_commentary",
+		seriesId: talk.seriesId,
+		searchFields: galleryOptions.searchFields,
+	});
+}
+
 export default function TalkGalleryCard({
 	talk,
 	searchTokens,
@@ -41,26 +70,8 @@ export default function TalkGalleryCard({
 			: talk.subtitle;
 	const detailOptions: TalkGalleryHrefOptions = galleryOptions ?? {};
 	const talkDetailHref = buildTalkDetailHref(talk.id, detailOptions);
-	const collectionHref = galleryOptions
-		? buildTalksHref({
-				query: galleryOptions.query,
-				collectionId: talk.collectionId,
-				seriesId:
-					talk.collectionId === "scripture_commentary"
-						? galleryOptions.seriesId
-						: "",
-				searchFields: galleryOptions.searchFields,
-			})
-		: null;
-	const seriesHref =
-		galleryOptions && talk.seriesId
-			? buildTalksHref({
-					query: galleryOptions.query,
-					collectionId: "scripture_commentary",
-					seriesId: talk.seriesId,
-					searchFields: galleryOptions.searchFields,
-				})
-			: null;
+	const collectionHref = buildCollectionHref(talk, galleryOptions);
+	const seriesHref = buildSeriesHref(talk, galleryOptions);
 	return (
 		<div className="group relative flex flex-col overflow-hidden rounded-lg border border-[#d6c6ad] bg-white shadow-sm transition duration-200 ease-out hover:border-[#9d7e4c] hover:shadow-md">
 			{talk.dvdId && (
@@ -175,7 +186,7 @@ export default function TalkGalleryCard({
 						rel="noopener noreferrer"
 						target="_blank"
 					>
-						<Youtube className="h-4 w-4" />
+						<Play className="h-4 w-4" />
 						<span>YouTube</span>
 						<ExternalLink className="h-3 w-3" />
 					</a>

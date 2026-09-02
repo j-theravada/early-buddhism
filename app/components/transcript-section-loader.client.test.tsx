@@ -1,3 +1,5 @@
+// Test-only browser globals and fetch replacement require Happy DOM adapter casts.
+/* oxlint-disable anti-slop/no-runtime-typeof, anti-slop/no-unknown-parameters, anti-slop/require-safety-comment-for-type-assertion */
 import {
 	afterAll,
 	afterEach,

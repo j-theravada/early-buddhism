@@ -1,4 +1,4 @@
-import { createClient } from "@libsql/client";
+import { createClient, type Value } from "@libsql/client";
 import { access, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { getLibsqlDatabaseConfig } from "../app/infrastructure/database/libsql";
@@ -19,6 +19,10 @@ function getLocalDatabasePath(databaseUrl: string): string | null {
 		return null;
 	}
 	return resolve(process.cwd(), databaseUrl.slice("file:".length));
+}
+
+function isStringValue(value: Value): value is string {
+	return typeof value === "string";
 }
 
 async function hasFreshLocalSearchDatabase(): Promise<boolean> {
@@ -46,7 +50,7 @@ async function hasFreshLocalSearchDatabase(): Promise<boolean> {
 			});
 			const meta = new Map(
 				result.rows.flatMap((row) =>
-					typeof row.key === "string" && typeof row.value === "string"
+					isStringValue(row.key) && isStringValue(row.value)
 						? [[row.key, row.value]]
 						: [],
 				),

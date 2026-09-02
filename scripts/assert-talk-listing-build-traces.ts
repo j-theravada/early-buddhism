@@ -4,15 +4,22 @@ import { resolve } from "node:path";
 const transcriptSearchDocuments =
 	"app/generated/transcript-search-documents.json";
 
+const talkListingRoutes = [
+	"/talks",
+	"/talks/page/[page]",
+	"/talks/[id]",
+	"/talks/archive/[page]",
+] as const;
+
+type TalkListingRoute = (typeof talkListingRoutes)[number];
+
 const tracePaths = {
 	"/talks": ".next/server/app/talks/page.js.nft.json",
 	"/talks/page/[page]": ".next/server/app/talks/page/[page]/page.js.nft.json",
 	"/talks/[id]": ".next/server/app/talks/[id]/page.js.nft.json",
 	"/talks/archive/[page]":
 		".next/server/app/talks/archive/[page]/page.js.nft.json",
-} as const;
-
-type TalkListingRoute = keyof typeof tracePaths;
+} as const satisfies Record<TalkListingRoute, string>;
 
 type TraceContents = {
 	version: number;
@@ -28,14 +35,14 @@ function includesTranscriptSearchDocuments(trace: TraceContents): boolean {
 export function assertTalkListingTraceContents(
 	traces: TalkListingTraceContents,
 ): void {
-	const expectations: Record<TalkListingRoute, boolean> = {
+	const expectations = {
 		"/talks": true,
 		"/talks/page/[page]": true,
 		"/talks/[id]": false,
 		"/talks/archive/[page]": false,
-	};
+	} as const satisfies Record<TalkListingRoute, boolean>;
 
-	for (const route of Object.keys(expectations) as TalkListingRoute[]) {
+	for (const route of talkListingRoutes) {
 		const expected = expectations[route];
 		const actual = includesTranscriptSearchDocuments(traces[route]);
 		if (actual !== expected) {
@@ -52,10 +59,11 @@ async function readTrace(path: string): Promise<TraceContents> {
 
 export async function assertTalkListingBuildTraces(): Promise<void> {
 	const entries = await Promise.all(
-		(Object.entries(tracePaths) as [TalkListingRoute, string][]).map(
-			async ([route, path]) => [route, await readTrace(path)] as const,
+		talkListingRoutes.map(
+			async (route) => [route, await readTrace(tracePaths[route])] as const,
 		),
 	);
+	// SAFETY: Every TalkListingRoute is present exactly once because entries is mapped from talkListingRoutes.
 	assertTalkListingTraceContents(
 		Object.fromEntries(entries) as TalkListingTraceContents,
 	);

@@ -27,7 +27,7 @@ function serializeTalk(talk: Talk): SerializedTalk {
 async function hasUsableGeneratedTalks(outPath: string): Promise<boolean> {
 	try {
 		const current = await readFile(outPath, "utf8");
-		const parsed = JSON.parse(current) as unknown;
+		const parsed: unknown = JSON.parse(current);
 		return Array.isArray(parsed);
 	} catch {
 		return false;

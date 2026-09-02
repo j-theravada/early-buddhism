@@ -1,3 +1,5 @@
+// This module is the JSON decoder boundary; unknown inputs and a temporary key-value view are intentional here.
+/* oxlint-disable anti-slop/no-unknown-parameters, anti-slop/no-unsafe-dictionary-type */
 export type TalkSearchTranscriptSnippet = {
 	text: string;
 	cueIndex: number;
@@ -28,12 +30,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
 
+function isString(value: unknown): value is string {
+	return typeof value === "string";
+}
+
+function isFiniteNumber(value: unknown): value is number {
+	return typeof value === "number" && Number.isFinite(value);
+}
+
 function parseTalkIds(value: unknown): string[] {
 	if (!Array.isArray(value)) {
 		return [];
 	}
 
-	return value.filter((talkId): talkId is string => typeof talkId === "string");
+	return value.filter(isString);
 }
 
 function parseTranscriptSnippet(
@@ -42,20 +52,15 @@ function parseTranscriptSnippet(
 	if (!isRecord(value)) {
 		return null;
 	}
-	if (
-		typeof value.text !== "string" ||
-		typeof value.cueIndex !== "number" ||
-		!Number.isFinite(value.cueIndex)
-	) {
+	if (!isString(value.text) || !isFiniteNumber(value.cueIndex)) {
 		return null;
 	}
 
 	return {
 		text: value.text,
 		cueIndex: value.cueIndex,
-		...(typeof value.start === "number" &&
-			Number.isFinite(value.start) && { start: value.start }),
-		...(typeof value.startLabel === "string" && {
+		...(isFiniteNumber(value.start) && { start: value.start }),
+		...(isString(value.startLabel) && {
 			startLabel: value.startLabel,
 		}),
 	};
@@ -83,7 +88,7 @@ function parseSnippetMap(
 	}
 
 	for (const item of value) {
-		if (!isRecord(item) || typeof item.talkId !== "string") {
+		if (!isRecord(item) || !isString(item.talkId)) {
 			continue;
 		}
 

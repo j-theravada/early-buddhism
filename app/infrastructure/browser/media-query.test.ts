@@ -1,3 +1,5 @@
+// Partial MediaQueryList fakes intentionally omit unrelated browser members.
+/* oxlint-disable anti-slop/no-chained-type-assertions, anti-slop/require-safety-comment-for-type-assertion */
 import { describe, expect, test } from "bun:test";
 import { addMediaQueryChangeListener } from "./media-query";
 

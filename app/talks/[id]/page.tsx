@@ -1,4 +1,4 @@
-import { ExternalLink, Youtube } from "lucide-react";
+import { ExternalLink, Play } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
@@ -229,7 +229,7 @@ export default async function TalkDetailPage({ params, searchParams }: Props) {
 									rel="noopener noreferrer"
 									target="_blank"
 								>
-									<Youtube className="h-5 w-5" />
+									<Play className="h-5 w-5" />
 									<span>YouTube</span>
 									<ExternalLink className="h-4 w-4" />
 								</a>
