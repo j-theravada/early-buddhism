@@ -11,11 +11,11 @@ mock.module("@clerk/nextjs", () => ({
 
 const { default: Header } = await import("./header");
 
-test("グローバルナビゲーションから視聴履歴へ移動できる", () => {
+test("グローバルナビゲーションから視聴履歴と認証へ移動できる", () => {
 	const html = renderToStaticMarkup(<Header />);
 
 	expect(html).toContain('href="/history"');
 	expect(html).toContain("視聴履歴");
-	expect(html).not.toContain('href="/login"');
-	expect(html).not.toContain('href="/sign-up"');
+	expect(html).toContain('href="/login"');
+	expect(html).toContain('href="/sign-up"');
 });
