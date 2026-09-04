@@ -3,7 +3,8 @@
 import { Show, UserButton, useUser } from "@clerk/nextjs";
 import { History } from "lucide-react";
 import Link from "next/link";
-import { hasSubtitleAdminRole } from "../application/auth/subtitle-admin";
+import { useEffect, useState } from "react";
+import { getSubtitleAdminAccess } from "../infrastructure/auth/client";
 
 type Props = {
 	variant: "desktop" | "mobile";
@@ -11,7 +12,29 @@ type Props = {
 
 export default function AuthNav({ variant }: Props) {
 	const { user } = useUser();
-	const isSubtitleAdmin = hasSubtitleAdminRole(user?.publicMetadata);
+	const userId = user?.id;
+	const [subtitleAdminUserId, setSubtitleAdminUserId] = useState<string | null>(
+		null,
+	);
+	const isSubtitleAdmin = subtitleAdminUserId === userId;
+
+	useEffect(() => {
+		if (!userId) {
+			return;
+		}
+
+		const controller = new AbortController();
+		void getSubtitleAdminAccess(controller.signal)
+			.then((hasAccess) => {
+				if (!controller.signal.aborted) {
+					setSubtitleAdminUserId(hasAccess ? userId : null);
+				}
+				return undefined;
+			})
+			.catch(() => {});
+
+		return () => controller.abort();
+	}, [userId]);
 	const className =
 		variant === "desktop"
 			? "font-display text-[15px] font-semibold text-[#303030] transition-colors hover:text-[#9d7e4c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d7e4c]/50"

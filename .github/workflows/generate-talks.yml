@@ -1,4 +1,4 @@
-name: Generate talks.json
+name: Refresh generated talk data
 
 on:
   schedule:
@@ -7,6 +7,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: refresh-generated-talk-data
+  cancel-in-progress: false
 
 jobs:
   generate:
@@ -23,18 +27,18 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Generate talks.json
+      - name: Generate talk and transcript data
         run: bun run generate-talks
 
       - name: Commit and push if changed
         run: |
-          if git diff --quiet -- app/generated/talks.json; then
+          if git diff --quiet -- app/generated/talks.json app/generated/transcripts app/generated/transcript-search-documents.json; then
             echo "No changes to commit."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/generated/talks.json
-          git commit -m "chore: update talks.json"
+          git add app/generated/talks.json app/generated/transcripts app/generated/transcript-search-documents.json
+          git commit -m "chore: refresh generated talk data"
           git push

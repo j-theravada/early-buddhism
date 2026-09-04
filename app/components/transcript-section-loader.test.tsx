@@ -1,9 +1,15 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import TranscriptSectionLoader, {
+
+mock.module("../infrastructure/auth/client", () => ({
+	useIsSignedIn: () => false,
+}));
+
+const {
+	default: TranscriptSectionLoader,
 	getInitialTranscriptMode,
 	TranscriptContent,
-} from "./transcript-section-loader";
+} = await import("./transcript-section-loader");
 
 describe("TranscriptSectionLoader", () => {
 	test("通常アクセスは読みやすい全文を初期表示する", () => {
@@ -36,7 +42,12 @@ describe("TranscriptSectionLoader", () => {
 
 	test("タイムライン取得失敗時もSSR済み全文を残す", () => {
 		const html = renderToStaticMarkup(
-			<TranscriptContent mode="timeline" status="error" transcript={null}>
+			<TranscriptContent
+				mode="timeline"
+				status="error"
+				talkId="TALK-1"
+				transcript={null}
+			>
 				<p>消してはいけない全文</p>
 			</TranscriptContent>,
 		);

@@ -1,9 +1,9 @@
-type PublicMetadata = {
+type PrivateMetadata = {
 	role?: unknown;
 };
 
 export function hasSubtitleAdminRole(
-	publicMetadata: PublicMetadata | null | undefined,
+	privateMetadata: PrivateMetadata | null | undefined,
 ): boolean {
-	return publicMetadata?.role === "subtitle_admin";
+	return privateMetadata?.role === "subtitle_admin";
 }

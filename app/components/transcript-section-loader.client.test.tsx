@@ -6,11 +6,18 @@ import {
 	beforeAll,
 	describe,
 	expect,
+	mock,
 	test,
 } from "bun:test";
 import { Window } from "happy-dom";
 import { act } from "react";
 import type { Root } from "react-dom/client";
+
+let isSignedIn = false;
+
+mock.module("../infrastructure/auth/client", () => ({
+	useIsSignedIn: () => isSignedIn,
+}));
 
 type LoaderProps = {
 	talkId: string;
@@ -19,7 +26,9 @@ type LoaderProps = {
 };
 
 type CapturedRequest = {
+	body: BodyInit | null;
 	input: RequestInfo | URL;
+	method: string;
 	signal: AbortSignal | null;
 };
 
@@ -59,7 +68,12 @@ function installGlobal(name: string, value: unknown) {
 function installFetch(responder: FetchResponder): CapturedRequest[] {
 	const requests: CapturedRequest[] = [];
 	globalThis.fetch = (async (input, init) => {
-		requests.push({ input, signal: init?.signal ?? null });
+		requests.push({
+			body: init?.body ?? null,
+			input,
+			method: init?.method ?? "GET",
+			signal: init?.signal ?? null,
+		});
 		return responder(requests.length, input, init);
 	}) as typeof fetch;
 	return requests;
@@ -177,6 +191,7 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
+	isSignedIn = false;
 	await unmountLoader();
 	currentContainer?.remove();
 	currentContainer = null;
@@ -351,5 +366,78 @@ describe("TranscriptSectionLoader client effects", () => {
 		await unmountLoader();
 
 		expect(requests[0]?.signal?.aborted).toBe(true);
+	});
+
+	test("ログイン中は字幕行から修正を申請できる", async () => {
+		isSignedIn = true;
+		const requests = installFetch((_attempt, input, init) => {
+			const url = String(input);
+			if (url.startsWith("/api/transcripts/")) return transcriptResponse();
+			if (url.startsWith("/api/transcript-change-requests?")) {
+				return Response.json({ requests: [] });
+			}
+			if (
+				url === "/api/transcript-change-requests" &&
+				init?.method === "POST"
+			) {
+				return Response.json(
+					{
+						id: "request-1",
+						cueIndex: 7,
+						proposedText: "慈悲の修正本文",
+						status: "pending",
+						createdAt: "2026-09-03T00:00:00.000Z",
+						reviewNote: null,
+					},
+					{ status: 201 },
+				);
+			}
+			return Response.json({ error: "Unexpected request" }, { status: 500 });
+		});
+		const container = await mountLoader({
+			talkId: "TALK-1",
+			targetCueIndex: 7,
+		});
+		await waitFor(() => {
+			expect(container.textContent).toContain("慈悲のタイムライン本文");
+			expect(
+				container.querySelector('button[aria-label="00:00:10の字幕を修正"]'),
+			).not.toBeNull();
+		});
+
+		await act(async () => {
+			container
+				.querySelector<HTMLButtonElement>(
+					'button[aria-label="00:00:10の字幕を修正"]',
+				)
+				?.click();
+		});
+		const textarea = container.querySelector<HTMLTextAreaElement>("textarea");
+		if (!textarea) throw new Error("Correction textarea was not rendered.");
+		const valueSetter = Object.getOwnPropertyDescriptor(
+			testWindow.HTMLTextAreaElement.prototype,
+			"value",
+		)?.set;
+		if (!valueSetter) throw new Error("Textarea value setter is unavailable.");
+		await act(async () => {
+			valueSetter.call(textarea, "慈悲の修正本文");
+			textarea.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+		await act(async () => {
+			container
+				.querySelector<HTMLButtonElement>('button[type="submit"]')
+				?.click();
+		});
+		await waitFor(() => expect(container.textContent).toContain("審査待ち"));
+
+		const submission = requests.find(
+			(request) => String(request.input) === "/api/transcript-change-requests",
+		);
+		expect(submission).toBeDefined();
+		expect(JSON.parse(String(submission?.body))).toMatchObject({
+			talkId: "TALK-1",
+			cueIndex: 7,
+			proposedText: "慈悲の修正本文",
+		});
 	});
 });

@@ -1,6 +1,6 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
-import { hasSubtitleAdminRole } from "../application/auth/subtitle-admin";
+import { currentUserIsSubtitleAdmin } from "../infrastructure/auth/server";
 
 export default async function SubtitleAdminLayout({
 	children,
@@ -9,8 +9,7 @@ export default async function SubtitleAdminLayout({
 	if (!isAuthenticated) {
 		redirect("/login?redirect_url=/subtitle-admin");
 	}
-	const user = await currentUser();
-	if (!hasSubtitleAdminRole(user?.publicMetadata)) {
+	if (!(await currentUserIsSubtitleAdmin())) {
 		notFound();
 	}
 

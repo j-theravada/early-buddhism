@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { type ReactNode, useEffect, useState } from "react";
 import type { TranscriptCue } from "../domain/transcript/types";
-import { FEEDBACK_FORM_URL } from "../utils/site-links";
+import { useIsSignedIn } from "../infrastructure/auth/client";
 
 const TranscriptSection = dynamic(() => import("./transcript-section"), {
 	loading: () => null,
@@ -34,7 +34,7 @@ type Props = {
 
 type TimelineProps = Pick<
 	Props,
-	"embedUrlPrefix" | "transcriptHighlightQuery" | "targetCueIndex"
+	"talkId" | "embedUrlPrefix" | "transcriptHighlightQuery" | "targetCueIndex"
 >;
 
 const MODE_OPTIONS: Array<{ mode: TranscriptMode; label: string }> = [
@@ -165,6 +165,7 @@ export default function TranscriptSectionLoader({
 	transcriptHighlightQuery,
 	targetCueIndex,
 }: Props) {
+	const isSignedIn = useIsSignedIn();
 	const [transcript, setTranscript] = useState<TranscriptCue[] | null>(null);
 	const [storedLoaderState, setLoaderState] = useState<TranscriptLoaderState>(
 		() => {
@@ -277,16 +278,20 @@ export default function TranscriptSectionLoader({
 						))}
 					</div>
 					<p className="min-w-0 text-xs text-amber-800 sm:ml-auto lg:whitespace-nowrap">
-						AI文字起こしです。誤りは
-						<a
-							className="mx-0.5 font-medium underline hover:text-amber-700"
-							href={FEEDBACK_FORM_URL}
-							rel="noopener noreferrer"
-							target="_blank"
-						>
-							こちら
-						</a>
-						へ。
+						{isSignedIn ? (
+							"AI文字起こしです。タイムラインの字幕をクリックすると修正申請できます。"
+						) : (
+							<>
+								AI文字起こしです。修正申請は
+								<a
+									className="mx-0.5 font-medium underline hover:text-amber-700"
+									href={`/login?redirect_url=${encodeURIComponent(`/talks/${talkId}`)}`}
+								>
+									ログイン
+								</a>
+								後に利用できます。
+							</>
+						)}
 					</p>
 				</div>
 			</div>
@@ -294,6 +299,7 @@ export default function TranscriptSectionLoader({
 				embedUrlPrefix={embedUrlPrefix}
 				mode={mode}
 				status={status}
+				talkId={talkId}
 				targetCueIndex={targetCueIndex}
 				transcript={transcript}
 				transcriptHighlightQuery={transcriptHighlightQuery}

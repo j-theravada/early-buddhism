@@ -1,22 +1,23 @@
-export function buildTranscriptDownloadUrl(rawUrl: string): string {
+export function extractGoogleDriveFileId(rawUrl: string): string | null {
 	try {
 		const url = new URL(rawUrl);
 		if (url.hostname !== "drive.google.com") {
-			return rawUrl;
+			return null;
 		}
 
 		const directId = url.searchParams.get("id");
-		if (directId) {
-			return `https://drive.google.com/uc?export=download&id=${directId}`;
-		}
+		if (directId) return directId;
 
 		const match = url.pathname.match(/\/file\/d\/([^/]+)/);
-		if (!match) {
-			return rawUrl;
-		}
-
-		return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+		return match?.[1] ?? null;
 	} catch {
-		return rawUrl;
+		return null;
 	}
+}
+
+export function buildTranscriptDownloadUrl(rawUrl: string): string {
+	const fileId = extractGoogleDriveFileId(rawUrl);
+	return fileId
+		? `https://drive.google.com/uc?export=download&id=${fileId}`
+		: rawUrl;
 }

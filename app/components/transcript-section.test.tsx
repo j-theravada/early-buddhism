@@ -1,12 +1,18 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import TranscriptSection from "./transcript-section";
+
+mock.module("../infrastructure/auth/client", () => ({
+	useIsSignedIn: () => false,
+}));
+
+const { default: TranscriptSection } = await import("./transcript-section");
 
 describe("TranscriptSection", () => {
 	test("タイムスタンプ付き文字起こしと再生リンクを出す", () => {
 		const html = renderToStaticMarkup(
 			<TranscriptSection
 				embedUrlPrefix="https://example.com/embed?"
+				talkId="TALK-1"
 				transcript={[
 					{
 						index: 1,
@@ -31,6 +37,7 @@ describe("TranscriptSection", () => {
 	test("指定されたcueへ飛べるidと検索語ハイライトを出す", () => {
 		const html = renderToStaticMarkup(
 			<TranscriptSection
+				talkId="TALK-1"
 				targetCueIndex={7}
 				transcript={[
 					{

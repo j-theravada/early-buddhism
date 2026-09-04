@@ -8,6 +8,13 @@
 			"when": 1788348876430,
 			"tag": "0000_clever_miracleman",
 			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1788436180501,
+			"tag": "0001_freezing_the_enforcers",
+			"breakpoints": true
 		}
 	]
 }

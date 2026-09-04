@@ -1,17 +1,16 @@
-import { createSign } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { normalizeTalkId } from "../../domain/talk/id";
+import {
+	getGoogleServiceAccountAccessToken,
+	normalizeGooglePrivateKey,
+	parseGoogleServiceAccountCredentials,
+	type GoogleServiceAccountCredentials,
+} from "../google/service-account";
 
 const DATA_API_BASE_URL = "https://analyticsdata.googleapis.com/v1beta";
 const DEFAULT_LOOKBACK_DAYS = 90;
 const GA4_SCOPE = "https://www.googleapis.com/auth/analytics.readonly";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
-
-type ServiceAccountCredentials = {
-	type?: "service_account";
-	client_email: string;
-	private_key: string;
-};
 
 type AuthorizedUserCredentials = {
 	type?: "authorized_user";
@@ -21,7 +20,7 @@ type AuthorizedUserCredentials = {
 };
 
 type GoogleAnalyticsCredentials =
-	| ServiceAccountCredentials
+	| GoogleServiceAccountCredentials
 	| AuthorizedUserCredentials;
 
 type GoogleAnalyticsCredentialsInput = {
@@ -163,11 +162,11 @@ function extractTalkIdFromPath(pagePath: string): string | null {
 async function getAccessToken(
 	credentials: GoogleAnalyticsCredentials,
 ): Promise<string> {
-	if (isAuthorizedUserCredentials(credentials)) {
+	if ("client_id" in credentials) {
 		return getOAuthAccessToken(credentials);
 	}
 
-	return getServiceAccountAccessToken(credentials);
+	return getGoogleServiceAccountAccessToken(credentials, GA4_SCOPE);
 }
 
 async function getOAuthAccessToken(
@@ -200,58 +199,6 @@ async function getOAuthAccessToken(
 	return data.access_token;
 }
 
-async function getServiceAccountAccessToken(
-	credentials: ServiceAccountCredentials,
-): Promise<string> {
-	const assertion = createJwtAssertion(credentials);
-	const response = await fetch(TOKEN_URL, {
-		method: "POST",
-		headers: { "Content-Type": "application/x-www-form-urlencoded" },
-		body: new URLSearchParams({
-			assertion,
-			grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-		}),
-		cache: "no-store",
-	});
-
-	// SAFETY: The OAuth token endpoint owns this documented response schema; access_token is checked before use.
-	const data = (await response.json()) as TokenResponse;
-	if (!response.ok || !data.access_token) {
-		throw new Error(
-			`GA4 token request failed: ${data.error_description ?? data.error ?? response.statusText}`,
-		);
-	}
-
-	return data.access_token;
-}
-
-function createJwtAssertion(credentials: ServiceAccountCredentials): string {
-	const now = Math.floor(Date.now() / 1000);
-	const header = encodeBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-	const payload = encodeBase64Url(
-		JSON.stringify({
-			aud: TOKEN_URL,
-			exp: now + 60 * 60,
-			iat: now,
-			iss: credentials.client_email,
-			scope: GA4_SCOPE,
-		}),
-	);
-	const unsignedToken = `${header}.${payload}`;
-	const signer = createSign("RSA-SHA256");
-	signer.update(unsignedToken);
-	const signature = encodeBase64Url(signer.sign(credentials.private_key));
-	return `${unsignedToken}.${signature}`;
-}
-
-function encodeBase64Url(input: string | Buffer): string {
-	return Buffer.from(input)
-		.toString("base64")
-		.replace(/\+/g, "-")
-		.replace(/\//g, "_")
-		.replace(/=+$/g, "");
-}
-
 async function getServiceAccountCredentials(): Promise<GoogleAnalyticsCredentials> {
 	const inlineJson =
 		process.env.GA4_SERVICE_ACCOUNT_JSON ||
@@ -272,9 +219,11 @@ async function getServiceAccountCredentials(): Promise<GoogleAnalyticsCredential
 	if (oauthCredentials) return oauthCredentials;
 
 	const clientEmail = process.env.GA4_CLIENT_EMAIL?.trim();
-	const privateKey = normalizePrivateKey(process.env.GA4_PRIVATE_KEY ?? "");
+	const privateKey = normalizeGooglePrivateKey(
+		process.env.GA4_PRIVATE_KEY ?? "",
+	);
 	if (clientEmail && privateKey) {
-		return { client_email: clientEmail, private_key: privateKey };
+		return { clientEmail, privateKey };
 	}
 
 	throw new Error(
@@ -341,26 +290,7 @@ function parseGoogleAnalyticsCredentialsJson(
 		return credentials;
 	}
 
-	return parseServiceAccountCredentials(parsed);
-}
-
-function parseServiceAccountCredentials(
-	parsed: GoogleAnalyticsCredentialsInput,
-): ServiceAccountCredentials {
-	const clientEmail = isString(parsed.client_email)
-		? parsed.client_email.trim()
-		: "";
-	const privateKey = normalizePrivateKey(
-		isString(parsed.private_key) ? parsed.private_key : "",
-	);
-
-	if (!clientEmail || !privateKey) {
-		throw new Error(
-			"GA4 service account JSON must include client_email and private_key.",
-		);
-	}
-
-	return { client_email: clientEmail, private_key: privateKey };
+	return parseGoogleServiceAccountCredentials(json, "GA4");
 }
 
 function isAuthorizedUserCredentials(
@@ -372,10 +302,6 @@ function isAuthorizedUserCredentials(
 		isString(credentials.refresh_token) &&
 		credentials.refresh_token.trim(),
 	);
-}
-
-function normalizePrivateKey(privateKey: string): string {
-	return privateKey.trim().replace(/\\n/g, "\n");
 }
 
 function getPropertyResource(): string {

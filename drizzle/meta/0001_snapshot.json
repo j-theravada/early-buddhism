@@ -1,0 +1,273 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "6a6f3652-932b-49ae-9cc2-079554c2b3de",
+	"prevId": "8e195365-e5da-4772-9a23-7943c9d418d3",
+	"tables": {
+		"transcript_change_requests": {
+			"name": "transcript_change_requests",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"talk_id": {
+					"name": "talk_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"drive_file_id": {
+					"name": "drive_file_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"cue_index": {
+					"name": "cue_index",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"cue_start": {
+					"name": "cue_start",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"cue_end": {
+					"name": "cue_end",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"base_text": {
+					"name": "base_text",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"proposed_text": {
+					"name": "proposed_text",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"reason": {
+					"name": "reason",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"submitter_user_id": {
+					"name": "submitter_user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"status": {
+					"name": "status",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "'pending'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"reviewer_user_id": {
+					"name": "reviewer_user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"reviewed_at": {
+					"name": "reviewed_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"review_note": {
+					"name": "review_note",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"transcript_change_requests_pending": {
+					"name": "transcript_change_requests_pending",
+					"columns": ["status", "created_at"],
+					"isUnique": false
+				},
+				"transcript_change_requests_submitter_talk": {
+					"name": "transcript_change_requests_submitter_talk",
+					"columns": ["submitter_user_id", "talk_id", "created_at"],
+					"isUnique": false
+				},
+				"transcript_change_requests_cue": {
+					"name": "transcript_change_requests_cue",
+					"columns": ["talk_id", "cue_index", "status"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"transcript_change_requests_status": {
+					"name": "transcript_change_requests_status",
+					"value": "\"transcript_change_requests\".\"status\" IN ('pending', 'approved', 'rejected')"
+				},
+				"transcript_change_requests_cue_index_nonnegative": {
+					"name": "transcript_change_requests_cue_index_nonnegative",
+					"value": "\"transcript_change_requests\".\"cue_index\" >= 0"
+				},
+				"transcript_change_requests_cue_time_valid": {
+					"name": "transcript_change_requests_cue_time_valid",
+					"value": "\"transcript_change_requests\".\"cue_start\" >= 0 AND \"transcript_change_requests\".\"cue_end\" >= \"transcript_change_requests\".\"cue_start\""
+				},
+				"transcript_change_requests_text_nonempty": {
+					"name": "transcript_change_requests_text_nonempty",
+					"value": "length(\"transcript_change_requests\".\"base_text\") > 0 AND length(\"transcript_change_requests\".\"proposed_text\") > 0"
+				},
+				"transcript_change_requests_text_changed": {
+					"name": "transcript_change_requests_text_changed",
+					"value": "\"transcript_change_requests\".\"base_text\" <> \"transcript_change_requests\".\"proposed_text\""
+				},
+				"transcript_change_requests_review_consistent": {
+					"name": "transcript_change_requests_review_consistent",
+					"value": "(\n\t\t\t\t\"transcript_change_requests\".\"status\" = 'pending'\n\t\t\t\tAND \"transcript_change_requests\".\"reviewer_user_id\" IS NULL\n\t\t\t\tAND \"transcript_change_requests\".\"reviewed_at\" IS NULL\n\t\t\t) OR (\n\t\t\t\t\"transcript_change_requests\".\"status\" IN ('approved', 'rejected')\n\t\t\t\tAND \"transcript_change_requests\".\"reviewer_user_id\" IS NOT NULL\n\t\t\t\tAND \"transcript_change_requests\".\"reviewed_at\" IS NOT NULL\n\t\t\t)"
+				}
+			}
+		},
+		"user_watch_history": {
+			"name": "user_watch_history",
+			"columns": {
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"talk_id": {
+					"name": "talk_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"title": {
+					"name": "title",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"thumbnail_url": {
+					"name": "thumbnail_url",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"position_seconds": {
+					"name": "position_seconds",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"duration_seconds": {
+					"name": "duration_seconds",
+					"type": "real",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"last_watched_at": {
+					"name": "last_watched_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"completed": {
+					"name": "completed",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"user_watch_history_recent": {
+					"name": "user_watch_history_recent",
+					"columns": ["user_id", "last_watched_at"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {
+				"user_watch_history_user_id_talk_id_pk": {
+					"columns": ["user_id", "talk_id"],
+					"name": "user_watch_history_user_id_talk_id_pk"
+				}
+			},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"user_watch_history_title_nonempty": {
+					"name": "user_watch_history_title_nonempty",
+					"value": "length(\"user_watch_history\".\"title\") > 0"
+				},
+				"user_watch_history_timestamp_nonempty": {
+					"name": "user_watch_history_timestamp_nonempty",
+					"value": "length(\"user_watch_history\".\"last_watched_at\") > 0"
+				},
+				"user_watch_history_position_nonnegative": {
+					"name": "user_watch_history_position_nonnegative",
+					"value": "\"user_watch_history\".\"position_seconds\" >= 0"
+				},
+				"user_watch_history_duration_positive": {
+					"name": "user_watch_history_duration_positive",
+					"value": "\"user_watch_history\".\"duration_seconds\" IS NULL OR \"user_watch_history\".\"duration_seconds\" > 0"
+				},
+				"user_watch_history_completed_boolean": {
+					"name": "user_watch_history_completed_boolean",
+					"value": "\"user_watch_history\".\"completed\" IN (0, 1)"
+				}
+			}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}

@@ -97,19 +97,72 @@ The same Clerk application serves regular users and administrators. In the Clerk
 Dashboard:
 
 1. Keep **Access mode** open so regular users can sign up.
-2. Set only subtitle administrators' public metadata to
+2. Set only subtitle administrators' private metadata to
    `{ "role": "subtitle_admin" }`.
 
 The `/subtitle-admin` layout rejects users without the `subtitle_admin` role.
-Every future subtitle-management API route and Server Action must repeat the
-role check; protecting the page layout alone does not protect mutations.
+Every subtitle-management API route and Server Action must repeat the role
+check; protecting the page layout alone does not protect mutations. Client UI
+receives only the resulting `isSubtitleAdmin` boolean from the authenticated
+`/api/subtitle-admin/access` endpoint.
+
+### Subtitle corrections
+
+Signed-in users can propose a correction for one SRT cue from the timeline.
+Requests have only three persisted states: `pending`, `approved`, and
+`rejected`. Drive conflicts and external API failures leave a request pending so
+an administrator can retry it.
+
+Approval updates the linked Google Drive SRT in place, then dispatches
+`.github/workflows/generate-talks.yml`. The workflow commits the regenerated
+SRT, talk data, and transcript search documents; the resulting push triggers the
+normal Vercel deployment. Configure these server-side variables in Vercel:
+
+```bash
+GOOGLE_DRIVE_GCP_PROJECT_NUMBER=265711275514
+GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL=gakurin-subtitle-publisher@early-buddhism-499507.iam.gserviceaccount.com
+GOOGLE_DRIVE_WORKLOAD_IDENTITY_POOL_ID=vercel
+GOOGLE_DRIVE_WORKLOAD_IDENTITY_POOL_PROVIDER_ID=vercel
+GITHUB_ACTIONS_TOKEN=github_pat_...
+
+# Optional overrides; these defaults are normally correct.
+GITHUB_REPOSITORY=j-theravada/early-buddhism
+GITHUB_GENERATED_DATA_REF=main
+```
+
+Vercel Team OIDC authenticates the production Function through Google Cloud
+Workload Identity Federation, so no persistent Google private key is stored.
+Grant only these Vercel subjects the Workload Identity User role on the service
+account:
+
+```text
+owner:jtba-digital:project:gakurin:environment:production
+owner:jtba-digital:project:gakurin:environment:development
+```
+
+Add that service account to the shared Drive containing the SRT files as a
+content manager. The GitHub fine-grained token needs Actions write access for
+this repository so it can dispatch the refresh workflow; store it only in
+server-side environment variables.
+
+For local development, link the checkout to the same Vercel project and pull
+the Development environment separately from the Clerk settings in `.env.local`.
+This creates an ignored `.env.development.local` containing a short-lived
+`VERCEL_OIDC_TOKEN`; `@vercel/oidc` refreshes it through the logged-in Vercel CLI
+when necessary.
+
+```bash
+bunx vercel link --project gakurin --scope jtba-digital
+bunx vercel env pull .env.development.local --environment=development
+```
 
 ### Watch history
 
-Signed-in users' watch history is stored by Clerk user ID in the same durable
-libSQL database. Drizzle owns the application schema and watch-history CRUD;
-the search FTS seed remains raw SQL for bulk loading. Generate and commit a
-migration after changing `app/infrastructure/database/schema.ts`:
+Signed-in users' watch history and subtitle-correction requests are stored by
+Clerk user ID in the same durable libSQL database. Drizzle owns these persistent
+application tables; the search FTS seed remains raw SQL for bulk loading.
+Generate and commit a migration after changing
+`app/infrastructure/database/schema.ts`:
 
 ```bash
 bun run db:generate
@@ -127,8 +180,8 @@ Production migrations must remain backward-compatible with the currently live
 deployment because a failed build does not roll back an already-applied schema
 change.
 
-Search refreshes must keep `user_watch_history` and Drizzle's migration table
-intact.
+Search refreshes must keep `user_watch_history`,
+`transcript_change_requests`, and Drizzle's migration table intact.
 
 After sign-in, the client imports the legacy
 `early-buddhism:watch-history:v1` localStorage data once. The server merges by
