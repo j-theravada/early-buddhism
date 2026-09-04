@@ -22,6 +22,7 @@ import {
 
 type Props = {
 	embedUrl: string;
+	initialPlaybackUrl?: string | null;
 	talkId: string;
 	thumbnailUrl?: string | null;
 	title: string;
@@ -67,6 +68,7 @@ function readPlayerEventDetail(event: Event): LoadTalkPlayerEventDetail | null {
 
 export default function LiteYouTubeEmbed({
 	embedUrl,
+	initialPlaybackUrl,
 	talkId,
 	thumbnailUrl,
 	title,
@@ -83,7 +85,9 @@ export default function LiteYouTubeEmbed({
 		() => buildAutoplayUrl(embedUrl, resumeSeconds),
 		[embedUrl, resumeSeconds],
 	);
-	const [playerSrc, setPlayerSrc] = useState<string | null>(null);
+	const [playerSrc, setPlayerSrc] = useState<string | null>(() =>
+		initialPlaybackUrl ? enableYouTubeApi(initialPlaybackUrl) : null,
+	);
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 	const playerRef = useRef<YouTubePlayer | null>(null);
 	const intervalRef = useRef<number | null>(null);

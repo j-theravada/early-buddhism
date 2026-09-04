@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 mock.module("../infrastructure/auth/client", () => ({
+	getSubtitleAdminAccess: async () => false,
 	useIsSignedIn: () => false,
 }));
 
@@ -23,6 +24,9 @@ describe("TranscriptSectionLoader", () => {
 		expect(html).toContain("SSR済み全文");
 		expect(html).toContain('aria-selected="true"');
 		expect(html).not.toContain("文字起こしを読み込み中です");
+		expect(html.replace(/<[^>]+>/g, "")).toContain(
+			"AI文字起こしです。ログインすると修正申請を出すことができます。",
+		);
 	});
 
 	test("cueまたは検索語指定はタイムラインから開始する", () => {

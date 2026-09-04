@@ -4,6 +4,7 @@ import LiteYouTubeEmbed from "./lite-youtube-embed";
 type Props = {
 	children: ReactNode;
 	embedUrl?: string | null;
+	initialPlaybackUrl?: string | null;
 	talkId: string;
 	thumbnailUrl?: string | null;
 	title: string;
@@ -12,6 +13,7 @@ type Props = {
 export default function TalkDetailPlayer({
 	children,
 	embedUrl,
+	initialPlaybackUrl,
 	talkId,
 	thumbnailUrl,
 	title,
@@ -25,6 +27,7 @@ export default function TalkDetailPlayer({
 							<div className="talk-detail-player-media">
 								<LiteYouTubeEmbed
 									embedUrl={embedUrl}
+									initialPlaybackUrl={initialPlaybackUrl}
 									talkId={talkId}
 									thumbnailUrl={thumbnailUrl}
 									title={title}

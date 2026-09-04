@@ -282,14 +282,14 @@ export default function TranscriptSectionLoader({
 							"AI文字起こしです。タイムラインの字幕をクリックすると修正申請できます。"
 						) : (
 							<>
-								AI文字起こしです。修正申請は
+								AI文字起こしです。
 								<a
-									className="mx-0.5 font-medium underline hover:text-amber-700"
+									className="font-medium underline hover:text-amber-700"
 									href={`/login?redirect_url=${encodeURIComponent(`/talks/${talkId}`)}`}
 								>
 									ログイン
 								</a>
-								後に利用できます。
+								すると修正申請を出すことができます。
 							</>
 						)}
 					</p>

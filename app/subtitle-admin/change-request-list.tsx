@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { type MouseEvent, useState } from "react";
+import TalkDetailPlayer from "../components/talk-detail-player";
 
 export type SubtitleAdminChangeRequestItem = {
 	id: string;
+	talkId: string;
 	talkTitle: string;
 	talkHref: string;
 	cueIndex: number;
 	startLabel: string;
+	embedUrl: string | null;
+	thumbnailUrl: string | null;
+	playbackUrl: string | null;
 	baseText: string;
 	proposedText: string;
 	reason: string | null;
@@ -16,6 +21,21 @@ export type SubtitleAdminChangeRequestItem = {
 };
 
 type ReviewDecision = "approve" | "reject";
+
+type PlaybackSelection = {
+	requestId: string;
+	revision: number;
+	initialPlaybackUrl: string | null;
+};
+
+function getInitialPlaybackSelection(
+	requests: SubtitleAdminChangeRequestItem[],
+): PlaybackSelection | null {
+	const request = requests.find((candidate) => candidate.embedUrl !== null);
+	return request
+		? { requestId: request.id, revision: 0, initialPlaybackUrl: null }
+		: null;
+}
 
 function formatCreatedAt(value: string): string {
 	const date = new Date(value);
@@ -63,6 +83,27 @@ export default function SubtitleAdminChangeRequestList({
 	const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [notice, setNotice] = useState<string | null>(null);
+	const [playback, setPlayback] = useState<PlaybackSelection | null>(() =>
+		getInitialPlaybackSelection(initialRequests),
+	);
+	const playbackRequest = playback
+		? (requests.find((request) => request.id === playback.requestId) ??
+			initialRequests.find((request) => request.id === playback.requestId) ??
+			null)
+		: null;
+
+	function playFromRequest(
+		event: MouseEvent<HTMLAnchorElement>,
+		request: SubtitleAdminChangeRequestItem,
+	) {
+		if (!request.embedUrl || !request.playbackUrl) return;
+		event.preventDefault();
+		setPlayback((current) => ({
+			requestId: request.id,
+			revision: (current?.revision ?? 0) + 1,
+			initialPlaybackUrl: request.playbackUrl,
+		}));
+	}
 
 	async function submitReview(
 		request: SubtitleAdminChangeRequestItem,
@@ -77,8 +118,14 @@ export default function SubtitleAdminChangeRequestList({
 				decision,
 				reviewNotes[request.id]?.trim() ?? "",
 			);
-			setRequests((current) =>
-				current.filter((candidate) => candidate.id !== request.id),
+			const remainingRequests = requests.filter(
+				(candidate) => candidate.id !== request.id,
+			);
+			setRequests(remainingRequests);
+			setPlayback((current) =>
+				current?.requestId === request.id
+					? getInitialPlaybackSelection(remainingRequests)
+					: current,
 			);
 			setNotice(
 				decision === "approve"
@@ -94,6 +141,20 @@ export default function SubtitleAdminChangeRequestList({
 
 	return (
 		<div className="grid gap-5">
+			{requests.length > 0 && playback && playbackRequest?.embedUrl && (
+				<div className="mb-3">
+					<TalkDetailPlayer
+						embedUrl={playbackRequest.embedUrl}
+						initialPlaybackUrl={playback.initialPlaybackUrl}
+						key={`${playback.requestId}-${playback.revision}`}
+						talkId={playbackRequest.talkId}
+						thumbnailUrl={playbackRequest.thumbnailUrl}
+						title={playbackRequest.talkTitle}
+					>
+						{null}
+					</TalkDetailPlayer>
+				</div>
+			)}
 			{error && (
 				<p className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
 					{error}
@@ -126,9 +187,20 @@ export default function SubtitleAdminChangeRequestList({
 										{request.talkTitle}
 									</a>
 								</h2>
-								<p className="text-xs text-stone-500">
-									{request.startLabel}・{formatCreatedAt(request.createdAt)}
-								</p>
+								<div className="text-xs text-stone-500">
+									{request.playbackUrl ? (
+										<a
+											className="font-medium text-amber-700 underline transition hover:text-amber-900"
+											href={request.playbackUrl}
+											onClick={(event) => playFromRequest(event, request)}
+										>
+											{request.startLabel}
+										</a>
+									) : (
+										<span>{request.startLabel}</span>
+									)}
+									<span>・{formatCreatedAt(request.createdAt)}</span>
+								</div>
 							</div>
 							<dl className="mt-4 grid gap-3 text-sm">
 								<div>
@@ -181,7 +253,7 @@ export default function SubtitleAdminChangeRequestList({
 									onClick={() => submitReview(request, "approve")}
 									type="button"
 								>
-									{isActive ? "処理中…" : "承認してSRTを更新"}
+									{isActive ? "処理中…" : "承認して字幕を更新"}
 								</button>
 								<button
 									className="rounded-full border border-red-300 bg-white px-5 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-50"

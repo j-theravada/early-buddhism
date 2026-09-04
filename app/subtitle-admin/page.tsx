@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { buildTalkDetailPageData } from "../application/talk/detail";
 import { buildTranscriptCueHref } from "../application/talk/links";
+import { buildCueTimeHref } from "../application/transcript/presentation";
 import SimplePageLayout from "../components/simple-page-layout";
 import { getTalkById } from "../infrastructure/talk/repository";
 import { getTranscriptChangeRequestRepository } from "../infrastructure/transcript/change-request-repository";
@@ -28,12 +30,18 @@ export default async function SubtitleAdminPage() {
 	const requests: SubtitleAdminChangeRequestItem[] = await Promise.all(
 		pending.map(async (request) => {
 			const talk = await getTalkById(request.talkId);
+			const detail = talk ? buildTalkDetailPageData(talk) : null;
+			const startSeconds = Math.max(0, Math.floor(request.cueStart));
 			return {
 				id: request.id,
-				talkTitle: talk?.title || request.talkId,
+				talkId: request.talkId,
+				talkTitle: detail?.talk.title || request.talkId,
 				talkHref: buildTranscriptCueHref(request.talkId, request.cueIndex),
 				cueIndex: request.cueIndex,
-				startLabel: formatSrtTime(request.cueStart),
+				startLabel: formatSrtTime(startSeconds),
+				embedUrl: detail?.talk.embedUrl ?? null,
+				thumbnailUrl: detail?.talk.thumbnailUrl ?? null,
+				playbackUrl: buildCueTimeHref(detail?.embedUrlPrefix, startSeconds),
 				baseText: request.baseText,
 				proposedText: request.proposedText,
 				reason: request.reason,
@@ -49,7 +57,7 @@ export default async function SubtitleAdminPage() {
 				<div>
 					<h2 className="text-lg font-semibold text-[#303030]">審査待ち</h2>
 					<p className="mt-1 text-sm leading-relaxed text-[#666]">
-						承認するとDrive上のSRTを直接更新し、公開用データの再生成を開始します。
+						承認するとDrive上の字幕を直接更新し、公開用データの再生成を開始します。
 					</p>
 				</div>
 				<div>

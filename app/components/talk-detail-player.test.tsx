@@ -1,6 +1,12 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import TalkDetailPlayer from "./talk-detail-player";
+
+mock.module("../infrastructure/auth/client", () => ({
+	getSubtitleAdminAccess: async () => false,
+	useIsSignedIn: () => false,
+}));
+
+const { default: TalkDetailPlayer } = await import("./talk-detail-player");
 
 describe("TalkDetailPlayer", () => {
 	test("初期表示は既存の標準サイズにする", () => {
@@ -35,5 +41,23 @@ describe("TalkDetailPlayer", () => {
 
 		expect(html).not.toContain('aria-label="動画サイズ"');
 		expect(html).toContain("本文");
+	});
+
+	test("指定された時刻の動画をすぐ再生できる", () => {
+		const html = renderToStaticMarkup(
+			<TalkDetailPlayer
+				embedUrl="https://www.youtube.com/embed/example"
+				initialPlaybackUrl="https://www.youtube.com/embed/example?start=10&autoplay=1"
+				talkId="TALK-1"
+				title="テスト動画"
+			>
+				{null}
+			</TalkDetailPlayer>,
+		);
+
+		expect(html).toContain(
+			'src="https://www.youtube.com/embed/example?start=10&amp;autoplay=1&amp;enablejsapi=1"',
+		);
+		expect(html).not.toContain('aria-label="テスト動画を再生"');
 	});
 });
