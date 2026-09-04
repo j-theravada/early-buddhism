@@ -139,23 +139,13 @@ export default async function SubtitleAdminPage() {
 
 	return (
 		<SimplePageLayout title="字幕管理">
-			<div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-				<div>
-					<h2 className="text-lg font-semibold text-[#303030]">
-						管理者向け案内
-					</h2>
-					<p className="mt-1 max-w-3xl text-sm leading-relaxed text-[#666]">
-						時間を押すと上の動画がその位置から再生されます。音声と修正案を確認してください。承認するとDrive上の字幕を更新し、公開用データの再生成を開始します。
-					</p>
-				</div>
-				<div>
-					<Link
-						className="text-sm font-semibold text-[#8a6a38] underline transition hover:text-[#6f552d]"
-						href="/account"
-					>
-						アカウントとセキュリティ設定
-					</Link>
-				</div>
+			<div className="mb-6 text-right">
+				<Link
+					className="text-sm font-semibold text-[#8a6a38] underline transition hover:text-[#6f552d]"
+					href="/account"
+				>
+					アカウントとセキュリティ設定
+				</Link>
 			</div>
 			<SubtitleAdminChangeRequestList
 				currentReviewer={
