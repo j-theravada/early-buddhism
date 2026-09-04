@@ -31,7 +31,7 @@ export default function SimplePageLayout({ title, lead, children }: Props) {
 				</div>
 			</header>
 
-			<main className="mx-auto max-w-4xl px-6 py-10 sm:px-8 flex-1">
+			<main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10 sm:px-8">
 				<div className="space-y-6">{children}</div>
 			</main>
 
