@@ -1,10 +1,13 @@
 import { and, asc, desc, eq, ne } from "drizzle-orm";
-import type { TranscriptChangeRequest } from "../../application/transcript/change-request";
+import type {
+	TranscriptChangeRequest,
+	TranscriptChangeRequestStatus,
+} from "../../application/transcript/change-request";
 import { getDatabase, type Database } from "../database/drizzle";
 import { transcriptChangeRequests } from "../database/schema";
 
 const USER_REQUEST_LIMIT = 100;
-const ADMIN_PENDING_LIMIT = 200;
+const ADMIN_REQUEST_LIMIT = 200;
 const SUPERSEDED_REVIEW_NOTE = "同じ字幕の別の修正が承認されました。";
 
 export function createTranscriptChangeRequestRepository(database: Database) {
@@ -25,13 +28,19 @@ export function createTranscriptChangeRequestRepository(database: Database) {
 			.limit(USER_REQUEST_LIMIT);
 	};
 
-	const listPending = async (): Promise<TranscriptChangeRequest[]> => {
+	const listByStatus = async (
+		status: TranscriptChangeRequestStatus,
+	): Promise<TranscriptChangeRequest[]> => {
 		return database
 			.select()
 			.from(transcriptChangeRequests)
-			.where(eq(transcriptChangeRequests.status, "pending"))
-			.orderBy(asc(transcriptChangeRequests.createdAt))
-			.limit(ADMIN_PENDING_LIMIT);
+			.where(eq(transcriptChangeRequests.status, status))
+			.orderBy(
+				status === "pending"
+					? asc(transcriptChangeRequests.createdAt)
+					: desc(transcriptChangeRequests.reviewedAt),
+			)
+			.limit(ADMIN_REQUEST_LIMIT);
 	};
 
 	const findById = async (
@@ -157,8 +166,8 @@ export function createTranscriptChangeRequestRepository(database: Database) {
 		create,
 		findById,
 		findPendingForUserCue,
+		listByStatus,
 		listForUserTalk,
-		listPending,
 		reject,
 	};
 }

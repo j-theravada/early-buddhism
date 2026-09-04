@@ -1,7 +1,7 @@
 "use client";
 
 import { Show, UserButton, useUser } from "@clerk/nextjs";
-import { History } from "lucide-react";
+import { Captions, History } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSubtitleAdminAccess } from "../infrastructure/auth/client";
@@ -9,6 +9,31 @@ import { getSubtitleAdminAccess } from "../infrastructure/auth/client";
 type Props = {
 	variant: "desktop" | "mobile";
 };
+
+export function SignedInUserMenu({
+	isSubtitleAdmin,
+}: {
+	isSubtitleAdmin: boolean;
+}) {
+	return (
+		<UserButton userProfileMode="navigation" userProfileUrl="/account">
+			<UserButton.MenuItems>
+				{isSubtitleAdmin ? (
+					<UserButton.Link
+						href="/subtitle-admin"
+						label="字幕管理"
+						labelIcon={<Captions aria-hidden className="size-4" />}
+					/>
+				) : null}
+				<UserButton.Link
+					href="/history"
+					label="視聴履歴"
+					labelIcon={<History aria-hidden className="size-4" />}
+				/>
+			</UserButton.MenuItems>
+		</UserButton>
+	);
+}
 
 export default function AuthNav({ variant }: Props) {
 	const { user } = useUser();
@@ -51,22 +76,7 @@ export default function AuthNav({ variant }: Props) {
 				</Link>
 			</Show>
 			<Show when="signed-in">
-				<span className="flex items-center gap-3">
-					{isSubtitleAdmin ? (
-						<Link className={className} href="/subtitle-admin">
-							字幕管理
-						</Link>
-					) : null}
-					<UserButton userProfileMode="navigation" userProfileUrl="/account">
-						<UserButton.MenuItems>
-							<UserButton.Link
-								href="/history"
-								label="視聴履歴"
-								labelIcon={<History aria-hidden className="size-4" />}
-							/>
-						</UserButton.MenuItems>
-					</UserButton>
-				</span>
+				<SignedInUserMenu isSubtitleAdmin={isSubtitleAdmin} />
 			</Show>
 		</>
 	);

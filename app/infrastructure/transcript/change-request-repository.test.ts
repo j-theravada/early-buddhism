@@ -90,4 +90,29 @@ describe("transcript change request repository", () => {
 			status: "pending",
 		});
 	});
+
+	test("管理画面用に審査状態ごとの申請を返す", async () => {
+		const repository = await createRepository();
+		await repository.create(createRequest("a", "user-a", 1));
+		await repository.create(createRequest("b", "user-b", 2));
+		await repository.create(createRequest("c", "user-c", 3));
+
+		await repository.approve("a", "admin", "2026-09-03T01:00:00.000Z", null);
+		await repository.reject(
+			"b",
+			"admin",
+			"2026-09-03T02:00:00.000Z",
+			"聞き取りどおりのため",
+		);
+
+		expect(
+			(await repository.listByStatus("pending")).map(({ id }) => id),
+		).toEqual(["c"]);
+		expect(
+			(await repository.listByStatus("approved")).map(({ id }) => id),
+		).toEqual(["a"]);
+		expect(
+			(await repository.listByStatus("rejected")).map(({ id }) => id),
+		).toEqual(["b"]);
+	});
 });
