@@ -408,7 +408,7 @@
 		"srtLink": "https://drive.google.com/file/d/1auDZoqQAnY7vRZAJlU0g2yFPhBmrcevO/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-050-1-75A53AC08B8C",
+		"id": "TALK-V-050-1-F917CB4556B4",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -421,7 +421,7 @@
 		"recordedOn": "1997/11/22",
 		"recordedOnDate": "1997-11-22T00:00:00.000Z",
 		"duration": "02:19:00",
-		"title": "無明と十二因縁",
+		"title": "無明と十二因縁 (1)",
 		"description": "仏教を学ぶうえで知っておかねばならない「無明」の正体を探る。有の瞬間、無の瞬間/目に見えない真実がある。",
 		"speaker": "アルボムッレ・スマナサーラ",
 		"language": "日本語",
@@ -430,6 +430,30 @@
 		"slideLinks": [],
 		"youtubeLink": "https://youtu.be/ckJEVQpyPAA",
 		"srtLink": "https://drive.google.com/file/d/1fOpU97TNElj1F0cduwq-v7mYJqzsRkC3/view?usp=drivesdk"
+	},
+	{
+		"id": "TALK-V-051-1-ADCE82A83C28",
+		"kind": "talk",
+		"collectionId": "monthly_talk",
+		"collectionLabel": "月例講演会",
+		"seriesId": "",
+		"seriesLabel": "",
+		"dvdId": "V-051",
+		"folder": "",
+		"event": "",
+		"venue": "東京：かやの木会館",
+		"recordedOn": "1997/12/27",
+		"recordedOnDate": "1997-12-27T00:00:00.000Z",
+		"duration": "",
+		"title": "無明と十二因縁 (2)",
+		"description": "",
+		"speaker": "アルボムッレ・スマナサーラ",
+		"language": "日本語",
+		"format": "ISO",
+		"attachmentsLink": null,
+		"slideLinks": [],
+		"youtubeLink": null,
+		"srtLink": null
 	},
 	{
 		"id": "TALK-V-052-1-C6E457F4E2C5",
@@ -1296,7 +1320,7 @@
 		"srtLink": "https://drive.google.com/file/d/1V33azZ10aXO55hi221Tf6bnbVGmBu6on/view?usp=drive_link"
 	},
 	{
-		"id": "TALK-V-118-1-D6463997F78A",
+		"id": "TALK-V-118-1-B63C424EC694",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -1306,8 +1330,8 @@
 		"folder": "",
 		"event": "月例講演会",
 		"venue": "東京：かやの木会館",
-		"recordedOn": "2001/03/23",
-		"recordedOnDate": "2001-03-23T00:00:00.000Z",
+		"recordedOn": "2001/03/24",
+		"recordedOnDate": "2001-03-24T00:00:00.000Z",
 		"duration": "02:22:00",
 		"title": "愚か者から賢者への華麗な変身",
 		"description": "ストレスという自己破壊の原因を吹き飛ばす智慧。為すべきことは為し終えよ/我慢は愚か者の選択",
@@ -5896,7 +5920,7 @@
 		"srtLink": "https://drive.google.com/file/d/1RlKahJyfwHut_HexfGb3J6Y41qYMzCg2/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-183-1-215FA990F4B5",
+		"id": "TALK-V-183-1-81FA34F7CD10",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -5908,7 +5932,7 @@
 		"venue": "東京：かやの木会館",
 		"recordedOn": "2007/12/22",
 		"recordedOnDate": "2007-12-22T00:00:00.000Z",
-		"duration": "02:43:00",
+		"duration": "00:25:18",
 		"title": "「当たり前」こそ大事です\n ～今こそ「基本」に戻りましょう～ 1",
 		"description": "仏教実践では、「基本」「当たり前」というポイントが大変重要です。基本を極限まで追求するブッダ修行心得を学びましょう。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -5923,7 +5947,7 @@
 		"srtLink": "https://drive.google.com/file/d/1p7dsFSNJiwZF60lN2xJDCNBl9LXdT4fk/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-183-2-18D6026EB067",
+		"id": "TALK-V-183-2-F03362733FF1",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -5935,7 +5959,7 @@
 		"venue": "東京：かやの木会館",
 		"recordedOn": "2007/12/22",
 		"recordedOnDate": "2007-12-22T00:00:00.000Z",
-		"duration": "02:43:00",
+		"duration": "00:35:26",
 		"title": "「当たり前」こそ大事です\n ～今こそ「基本」に戻りましょう～ 2",
 		"description": "仏教実践では、「基本」「当たり前」というポイントが大変重要です。基本を極限まで追求するブッダ修行心得を学びましょう。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -5950,7 +5974,7 @@
 		"srtLink": "https://drive.google.com/file/d/1TNBef_jhom39ZLND_L9c7uu2FJeDgKTB/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-183-3-0C4CA4379093",
+		"id": "TALK-V-183-3-3E80C1DAE61E",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -5962,7 +5986,7 @@
 		"venue": "東京：かやの木会館",
 		"recordedOn": "2007/12/22",
 		"recordedOnDate": "2007-12-22T00:00:00.000Z",
-		"duration": "02:43:00",
+		"duration": "00:53:34",
 		"title": "「当たり前」こそ大事です\n ～今こそ「基本」に戻りましょう～ 3",
 		"description": "仏教実践では、「基本」「当たり前」というポイントが大変重要です。基本を極限まで追求するブッダ修行心得を学びましょう。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -5977,7 +6001,7 @@
 		"srtLink": "https://drive.google.com/file/d/1QS6PDEf2pHHhp51BLgK4Cc_7YRco9b12/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-183-4-E2CB783ED0BB",
+		"id": "TALK-V-183-4-9232AF92D7F0",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -5989,7 +6013,7 @@
 		"venue": "東京：かやの木会館",
 		"recordedOn": "2007/12/22",
 		"recordedOnDate": "2007-12-22T00:00:00.000Z",
-		"duration": "02:43:00",
+		"duration": "00:39:21",
 		"title": "「当たり前」こそ大事です\n ～今こそ「基本」に戻りましょう～ 4",
 		"description": "仏教実践では、「基本」「当たり前」というポイントが大変重要です。基本を極限まで追求するブッダ修行心得を学びましょう。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -6004,7 +6028,7 @@
 		"srtLink": "https://drive.google.com/file/d/1993Q8b9e-bdA8fOf_1EBnE9Lda4vOVvo/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-183-5-452D7AF11A97",
+		"id": "TALK-V-183-5-E01691B6837A",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -6016,7 +6040,7 @@
 		"venue": "東京：かやの木会館",
 		"recordedOn": "2007/12/22",
 		"recordedOnDate": "2007-12-22T00:00:00.000Z",
-		"duration": "02:43:00",
+		"duration": "00:09:52",
 		"title": "「当たり前」こそ大事です\n ～今こそ「基本」に戻りましょう～ 5",
 		"description": "仏教実践では、「基本」「当たり前」というポイントが大変重要です。基本を極限まで追求するブッダ修行心得を学びましょう。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -6729,7 +6753,7 @@
 		"srtLink": "https://drive.google.com/file/d/19KeAYayscGfMQ8ZzAjWP98tfMuBG8RP-/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-190-1-E67749DBB721",
+		"id": "TALK-V-190-1-D18FC23E755B",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -6738,10 +6762,10 @@
 		"dvdId": "V-190",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：文京シビックホール",
 		"recordedOn": "2008/07/06",
 		"recordedOnDate": "2008-07-06T00:00:00.000Z",
-		"duration": "04:50:00",
+		"duration": "01:18:40",
 		"title": "★もしあなたが「悩んで」いるなら\n ～二〇〇八年度初期仏教一日体験会～ 1",
 		"description": "法話と質疑応答、慈悲の瞑想とヴィッパサーナ瞑想の指導まで。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -6753,7 +6777,7 @@
 		"srtLink": "https://drive.google.com/file/d/1n5Hn2qGAwTFS9qJYcOw73sgKus_fUKBG/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-190-2-20A4EF5EA7FB",
+		"id": "TALK-V-190-2-9AFC78F0B0C0",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -6762,10 +6786,10 @@
 		"dvdId": "V-190",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：文京シビックホール",
 		"recordedOn": "2008/07/06",
 		"recordedOnDate": "2008-07-06T00:00:00.000Z",
-		"duration": "04:50:00",
+		"duration": "01:10:38",
 		"title": "★もしあなたが「悩んで」いるなら\n ～二〇〇八年度初期仏教一日体験会～ 2",
 		"description": "法話と質疑応答、慈悲の瞑想とヴィッパサーナ瞑想の指導まで。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -6777,7 +6801,7 @@
 		"srtLink": "https://drive.google.com/file/d/1c4NGTjaJzMqElvcnUhGjkOCyKNQWsveu/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-190-3-9519BF644771",
+		"id": "TALK-V-190-3-66B901CBAA76",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -6786,10 +6810,10 @@
 		"dvdId": "V-190",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：文京シビックホール",
 		"recordedOn": "2008/07/06",
 		"recordedOnDate": "2008-07-06T00:00:00.000Z",
-		"duration": "04:50:00",
+		"duration": "00:36:12",
 		"title": "★もしあなたが「悩んで」いるなら\n ～二〇〇八年度初期仏教一日体験会～ 3",
 		"description": "法話と質疑応答、慈悲の瞑想とヴィッパサーナ瞑想の指導まで。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -8111,7 +8135,7 @@
 		"srtLink": "https://drive.google.com/file/d/10Xz1IvhHLqPZ4Rvc1xbukwp7meEyzaMj/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-207-1-3226981AD532",
+		"id": "TALK-V-207-1-069BC1B7CB2D",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -8120,10 +8144,10 @@
 		"dvdId": "V-207",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
-		"recordedOn": "2008/07/21 / 2009/07/20",
+		"venue": "大阪：住吉武道館",
+		"recordedOn": "2008/07/21",
 		"recordedOnDate": "2008-07-21T00:00:00.000Z",
-		"duration": "05:35:00",
+		"duration": "02:28:56",
 		"title": "★道徳・倫理は幸福と成功の秘密の鍵／\n 悩みと縁のない生き方～「日々是好日」経より～",
 		"description": "関西講演会を2枚組でお届け。講演内容には後に『的中する生きかた』『悩みと縁のない生き方』(サンガ)として出版された。",
 		"speaker": "アルボムッレ・スマナサーラ",
@@ -8187,7 +8211,7 @@
 		"srtLink": "https://drive.google.com/file/d/1lSPuSzUkKnM8E00qxPm8wOdOi3Qtnar_/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-210-1-336634C9A540",
+		"id": "TALK-V-210-1-A6F4C8E572BF",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -8196,7 +8220,7 @@
 		"dvdId": "V-210",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：銀座ブロッサム",
 		"recordedOn": "2010/11/06",
 		"recordedOnDate": "2010-11-06T00:00:00.000Z",
 		"duration": "02:41:00",
@@ -8313,7 +8337,7 @@
 		"srtLink": "https://drive.google.com/file/d/1nBLpG-Jmx3ZFhaYpOJKfo1ZQAgi9SZ0C/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-215-1-39F834C9E748",
+		"id": "TALK-V-215-1-401711E8CCB0",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -8322,7 +8346,7 @@
 		"dvdId": "V-215",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：代々木・国立オリンピック記念青少年総合センター",
 		"recordedOn": "2011/09/19",
 		"recordedOnDate": "2011-09-19T00:00:00.000Z",
 		"duration": "03:13:00",
@@ -8365,7 +8389,7 @@
 		"srtLink": "https://drive.google.com/file/d/1N-YiZ-RF7WX1XN_PuroDAQLcRu5Ey7R3/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-217-1-8B9EE8F281CD",
+		"id": "TALK-V-217-1-F51A3F623DB9",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -8374,7 +8398,7 @@
 		"dvdId": "V-217",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：銀座ブロッサム",
 		"recordedOn": "2011/11/06",
 		"recordedOnDate": "2011-11-06T00:00:00.000Z",
 		"duration": "03:24:00",
@@ -8493,7 +8517,7 @@
 		"srtLink": "https://drive.google.com/file/d/1vMO6Lu0LtY_dRnA9skaku3QuWKiFEHZ2/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-222-1-60B9823B3B9B",
+		"id": "TALK-V-222-1-A1CE257963F4",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -8502,7 +8526,7 @@
 		"dvdId": "V-222",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：国立オリンピック記念青少年総合センター",
 		"recordedOn": "2012/06/30",
 		"recordedOnDate": "2012-06-30T00:00:00.000Z",
 		"duration": "03:30:00",
@@ -8569,7 +8593,7 @@
 		"srtLink": "https://drive.google.com/file/d/1ILYl4JkD6mEKAk8mB6vdooZRezeNzn4m/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-225-1-CFE8FB82A5DA",
+		"id": "TALK-V-225-1-D5C416A5577B",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -8578,7 +8602,7 @@
 		"dvdId": "V-225",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：銀座ブロッサム",
 		"recordedOn": "2012/10/07",
 		"recordedOnDate": "2012-10-07T00:00:00.000Z",
 		"duration": "03:33:00",
