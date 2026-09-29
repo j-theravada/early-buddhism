@@ -408,7 +408,7 @@
 		"srtLink": "https://drive.google.com/file/d/1auDZoqQAnY7vRZAJlU0g2yFPhBmrcevO/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-050-1-F917CB4556B4",
+		"id": "TALK-V-050-1-75A53AC08B8C",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -421,7 +421,7 @@
 		"recordedOn": "1997/11/22",
 		"recordedOnDate": "1997-11-22T00:00:00.000Z",
 		"duration": "02:19:00",
-		"title": "無明と十二因縁 (1)",
+		"title": "無明と十二因縁",
 		"description": "仏教を学ぶうえで知っておかねばならない「無明」の正体を探る。有の瞬間、無の瞬間/目に見えない真実がある。",
 		"speaker": "アルボムッレ・スマナサーラ",
 		"language": "日本語",
@@ -430,30 +430,6 @@
 		"slideLinks": [],
 		"youtubeLink": "https://youtu.be/ckJEVQpyPAA",
 		"srtLink": "https://drive.google.com/file/d/1fOpU97TNElj1F0cduwq-v7mYJqzsRkC3/view?usp=drivesdk"
-	},
-	{
-		"id": "TALK-V-051-1-ADCE82A83C28",
-		"kind": "talk",
-		"collectionId": "monthly_talk",
-		"collectionLabel": "月例講演会",
-		"seriesId": "",
-		"seriesLabel": "",
-		"dvdId": "V-051",
-		"folder": "",
-		"event": "",
-		"venue": "東京：かやの木会館",
-		"recordedOn": "1997/12/27",
-		"recordedOnDate": "1997-12-27T00:00:00.000Z",
-		"duration": "",
-		"title": "無明と十二因縁 (2)",
-		"description": "",
-		"speaker": "アルボムッレ・スマナサーラ",
-		"language": "日本語",
-		"format": "ISO",
-		"attachmentsLink": null,
-		"slideLinks": [],
-		"youtubeLink": null,
-		"srtLink": null
 	},
 	{
 		"id": "TALK-V-052-1-C6E457F4E2C5",
@@ -1413,7 +1389,7 @@
 		"attachmentsLink": null,
 		"slideLinks": [],
 		"youtubeLink": "https://youtu.be/965O3-lbXS4",
-		"srtLink": "https://drive.google.com/file/d/1y211Uys8KKgKAN9YQcYobrhOjYMtNhu3/view?usp=drivesdk"
+		"srtLink": "https://drive.google.com/file/d/1uJw-YaaJVcJaxtPszJDzNhbQe6kEa18Q/view?usp=drive_link"
 	},
 	{
 		"id": "TALK-V-122-1-5CB93FF1715E",
@@ -8085,7 +8061,7 @@
 		"srtLink": "https://drive.google.com/file/d/120T8BPU6fXJdfTHl2V7X3MpoxzzH8pJz/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-205-1-9E0BC98574CC",
+		"id": "TALK-V-205-1-7043CD34F9BA",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -8094,7 +8070,7 @@
 		"dvdId": "V-205",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：オリンピック記念青少年総合センター",
 		"recordedOn": "2010/05/08",
 		"recordedOnDate": "2010-05-08T00:00:00.000Z",
 		"duration": "01:59:00",
@@ -8148,7 +8124,7 @@
 		"recordedOn": "2008/07/21",
 		"recordedOnDate": "2008-07-21T00:00:00.000Z",
 		"duration": "02:28:56",
-		"title": "★道徳・倫理は幸福と成功の秘密の鍵／\n 悩みと縁のない生き方～「日々是好日」経より～",
+		"title": "★道徳・倫理は幸福と成功の秘密の鍵／\n 悩みと縁のない生き方～「日々是好日」経より～ 1",
 		"description": "関西講演会を2枚組でお届け。講演内容には後に『的中する生きかた』『悩みと縁のない生き方』(サンガ)として出版された。",
 		"speaker": "アルボムッレ・スマナサーラ",
 		"language": "日本語",
@@ -8157,6 +8133,30 @@
 		"slideLinks": [],
 		"youtubeLink": "https://youtu.be/86FdN4Vp9YE",
 		"srtLink": "https://drive.google.com/file/d/1nBQ7KP1GsxAu3Yf_9TNKda2ApAH2ldqI/view?usp=drivesdk"
+	},
+	{
+		"id": "TALK-V-207-2-868FFFC71B25",
+		"kind": "talk",
+		"collectionId": "monthly_talk",
+		"collectionLabel": "月例講演会",
+		"seriesId": "",
+		"seriesLabel": "",
+		"dvdId": "V-207",
+		"folder": "",
+		"event": "",
+		"venue": "大阪：住吉武道館",
+		"recordedOn": "2009/7/20",
+		"recordedOnDate": "2009-07-20T00:00:00.000Z",
+		"duration": "",
+		"title": "★道徳・倫理は幸福と成功の秘密の鍵／\n 悩みと縁のない生き方～「日々是好日」経より～ 2",
+		"description": "関西講演会を2枚組でお届け。講演内容には後に『的中する生きかた』『悩みと縁のない生き方』(サンガ)として出版された。",
+		"speaker": "アルボムッレ・スマナサーラ",
+		"language": "日本語",
+		"format": "ISO",
+		"attachmentsLink": null,
+		"slideLinks": [],
+		"youtubeLink": null,
+		"srtLink": null
 	},
 	{
 		"id": "TALK-V-208-1-3A1EB9C96F73",
@@ -8747,7 +8747,7 @@
 		"srtLink": "https://drive.google.com/file/d/1aWVEbbBKNUccuIF74kDb2j_42l9040Tb/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-231-1-EEAFCBA06095",
+		"id": "TALK-V-231-1-4B53D862BA67",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -8756,7 +8756,7 @@
 		"dvdId": "V-231",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "東京：かやの木会館",
+		"venue": "東京：渋谷区文化総合センター",
 		"recordedOn": "2012/05/12 / 2013/05/12",
 		"recordedOnDate": "2012-05-12T00:00:00.000Z",
 		"duration": "03:23:13",
@@ -9471,7 +9471,7 @@
 		"srtLink": "https://drive.google.com/file/d/1Tmb6ytaV6FBnRXCGz5sB4vA75AzXwakV/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-V-259-1-C393102B0591",
+		"id": "TALK-V-259-1-7C467FFD065B",
 		"kind": "talk",
 		"collectionId": "monthly_talk",
 		"collectionLabel": "月例講演会",
@@ -9480,7 +9480,7 @@
 		"dvdId": "V-259",
 		"folder": "",
 		"event": "月例講演会",
-		"venue": "なかのZERO 小ホール",
+		"venue": "東京：なかのZERO 小ホール",
 		"recordedOn": "2016/05/15",
 		"recordedOnDate": "2016-05-15T00:00:00.000Z",
 		"duration": "02:14:34",
@@ -12143,7 +12143,7 @@
 		"srtLink": "https://drive.google.com/file/d/1gftBTja4HcVL1OHFUA9fw1EfWYsfKP_C/view?usp=drivesdk"
 	},
 	{
-		"id": "TALK-DD-23-2-6C64FA6C468A",
+		"id": "TALK-DD-23-2-FC633CA45658",
 		"kind": "talk",
 		"collectionId": "scripture_commentary",
 		"collectionLabel": "経典解説",
@@ -12155,7 +12155,7 @@
 		"venue": "東京都：ゴータミー精舎",
 		"recordedOn": "2004年9月11日",
 		"recordedOnDate": "2004-09-11T00:00:00.000Z",
-		"duration": "",
+		"duration": "1:08:19",
 		"title": "あなたはどっち?「信仰」で泣く人、笑う人 2",
 		"description": "心とは何か？――アルボムッレ・スマナサーラ長老のダンマパダ（法句経）講義です。038-039偈（3. Cittavaggvagga　心の章）を解説します。\n\n038.\nAnavaṭṭhitacittassa, saddhammaṃ avijānato;\nPariplavapasādassa, paññā na paripūrati.\n\n心そぞろに落着かず\n正しき教え　会得せず\n浄信動揺する人は\n智慧の円成　遂に見ず\n\n039.\nAnavassutacittassa, ananvāhatacetaso;\nPuññapāpapahīnassa, natthi jāgarato bhayaṃ.\n\n心けがれず乱れなく\n善きも悪しきもすでに捨て\n常にめざめて居る人は\nなにも懼（おそ）るるものぞなき\n\n（参考和訳：江原通子）\n\n※一部お聞き苦しい箇所があります。予めご了承ください。",
 		"speaker": "アルボムッレ・スマナサーラ",
