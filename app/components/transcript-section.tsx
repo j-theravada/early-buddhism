@@ -223,15 +223,18 @@ export default function TranscriptSection({
 											value={proposedText}
 										/>
 									</label>
-									<label className="mt-3 block text-xs font-semibold text-stone-700">
-										理由・補足（任意）
+									<details className="mt-3">
+										<summary className="cursor-pointer text-xs font-semibold text-stone-700">
+											理由・補足（任意）
+										</summary>
 										<textarea
+											aria-label="理由・補足"
 											className="mt-1 min-h-16 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm font-normal leading-6 text-gray-800"
 											maxLength={1000}
 											onChange={(event) => setReason(event.target.value)}
 											value={reason}
 										/>
-									</label>
+									</details>
 									{submitError && (
 										<p className="mt-2 text-xs text-red-700">{submitError}</p>
 									)}
