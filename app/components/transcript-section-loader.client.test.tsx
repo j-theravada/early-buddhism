@@ -16,6 +16,7 @@ import type { Root } from "react-dom/client";
 let isSignedIn = false;
 
 mock.module("../infrastructure/auth/client", () => ({
+	getSubtitleAdminAccess: async () => false,
 	useIsSignedIn: () => isSignedIn,
 }));
 
