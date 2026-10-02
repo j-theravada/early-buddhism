@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 mock.module("../infrastructure/auth/client", () => ({
+	getSubtitleAdminAccess: async () => false,
 	useIsSignedIn: () => false,
 }));
 

@@ -21,6 +21,7 @@ import { LOAD_TALK_PLAYER_EVENT } from "../application/talk/player-events";
 let isSignedIn = true;
 
 mock.module("../infrastructure/auth/client", () => ({
+	getSubtitleAdminAccess: async () => false,
 	useIsSignedIn: () => isSignedIn,
 }));
 
