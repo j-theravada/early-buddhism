@@ -246,7 +246,11 @@ export default function TranscriptSection({
 											}
 											type="submit"
 										>
-											{isSubmitting ? "送信中…" : "修正を申請"}
+											{isSubmitting
+												? "送信中…"
+												: proposedText.trim() === cue.text
+													? "字幕を変更すると申請できます"
+													: "修正を申請"}
 										</button>
 										<button
 											className="rounded-full border border-stone-300 bg-white px-4 py-2 text-xs font-semibold text-stone-600"
