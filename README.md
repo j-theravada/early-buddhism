@@ -106,6 +106,10 @@ check; protecting the page layout alone does not protect mutations. Client UI
 receives only the resulting `isSubtitleAdmin` boolean from the authenticated
 `/api/subtitle-admin/access` endpoint.
 
+Google Form applicants can receive this role automatically through the
+[Apps Script synchronization](docs/subtitle-admin-sync.md) every five minutes,
+including applicants who register with Clerk after submitting the form.
+
 ### Subtitle corrections
 
 Signed-in users can propose a correction for one SRT cue from the timeline.
