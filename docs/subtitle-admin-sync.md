@@ -25,12 +25,14 @@ Clerkで同じメールアドレスを確認済みのユーザーに、
    値にはClerkの **early-buddhism / Production** のSecret Keyを設定する。
    鍵をコード、回答シート、実行ログ、リポジトリには書かない。
 4. `installSubtitleAdminSync` を一度実行し、Googleの認可画面で内容を確認して許可する。
-   既存応募者を同期した後、5分ごとのトリガーを作成する。
-   同じアカウントで再実行してもトリガーは重複しない。
+   既存応募者を同期した後、毎日午前3時台（日本時間）のトリガーを作成する。
+   新しいトリガーの作成後に同じ関数の既存時間トリガーを削除するため、5分同期からの変更や再設置でも1件になる。
 5. 実行結果の `granted`、`awaitingRegistration`、`invalid` を確認する。
-   トリガー画面に `syncSubtitleAdministrators` の時間主導型・5分おきが1件あることを確認する。
+   トリガー画面に `syncSubtitleAdministrators` の時間主導型・日付ベースのタイマーが1件あることを確認する。
+   編集画面で毎日午前3時～4時（GMT+09:00）になっていることを確認する。
 
-応募者は5分ごとの同期で付与される。
+応募者は1日1回の同期で付与される。
+実行は `appsscript.json` の `Asia/Tokyo` を基準に毎日午前3時台で、分はGoogle側が決める。
 応募したメールアドレスでアカウントを作成し、Clerkでそのメールが確認済みになると、次の同期で付与される。
 不正な形式の回答は除外して `invalid` に件数を記録し、他の応募者の同期を続ける。
 `invalid` が0より大きい場合は回答シートのC列を確認し、該当行を訂正する。
@@ -48,13 +50,16 @@ Clerkのprivate metadataから `role` を取り除く。
 - Clerk: `early-buddhism / Production`。専用キー `subtitle-admin-apps-script` は非公開のScript Propertiesに保存。
 - 2026-11-17 18:21 JST: `installSubtitleAdminSync` の実行完了を確認。
   結果は `applicants: 6, granted: 0, awaitingRegistration: 2`。登録済みの4名は付与済み。
-- 同じ設置関数を再実行した後も、`syncSubtitleAdministrators` の時間主導型・5分おきは1件のみ。
+- 日次変更前の再設置時も、`syncSubtitleAdministrators` の時間主導型・5分おきは1件のみだった。
 - 2026-11-17 18:22:13 JST: 更新後の `syncSubtitleAdministrators` が時間主導型で起動し、
   2.168秒で「完了」になったことを実行履歴で確認。
 - 2026-11-17 18:50 JST: 不正な回答だけを除外する修正版を保存し、`installSubtitleAdminSync` の正常終了を確認。
   結果は `applicants: 6, invalid: 0, granted: 0, awaitingRegistration: 2`。
+- 2026-11-17 19:15 JST: 1日1回へ変更したコードで `installSubtitleAdminSync` が正常終了。
+  結果は `applicants: 6, invalid: 0, granted: 0, awaitingRegistration: 2`。
+  トリガーが1件のみで、日付ベース・午前3時～4時（GMT+09:00）に置き換わったことを画面で確認。
 
-読み取り権限を維持するため、運用は5分ごとの同期のみとする。
+読み取り権限を維持するため、運用は1日1回の時間トリガーによる同期のみとする。
 Google側のコードもリポジトリと同じ時間トリガーのみの実装を使用する。
 
 ## 同期とアプリ側の責務
@@ -62,7 +67,7 @@ Google側のコードもリポジトリと同じ時間トリガーのみの実�
 同期の付与条件は
 [`syncSubtitleAdministrators`](../scripts/google-apps-script/subtitle-admin-sync.gs#L48) に集約する。
 [`installSubtitleAdminSync`](../scripts/google-apps-script/subtitle-admin-sync.gs#L115) は
-初回に同じ関数を呼び、同じ関数名の時間トリガーがなければ5分おきを1件作成する。
+初回に同じ関数を呼び、同じ関数名の既存時間トリガーを毎日午前3時台の1件へ置き換える。
 定期トリガーも `syncSubtitleAdministrators` を直接実行するため、初回と定期で付与条件は変わらない。
 
 アプリのロール判定は

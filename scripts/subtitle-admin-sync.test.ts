@@ -23,7 +23,13 @@ function createSync() {
 	let metadata = { note: "keep", role: "" };
 	const requests: { url: string; method: string; payload?: string }[] = [];
 	const logs: string[] = [];
-	const triggers: { handler: string; type: string }[] = [];
+	const triggers: {
+		handler: string;
+		type: string;
+		minutes?: number;
+		hour?: number;
+		days?: number;
+	}[] = [];
 	const scriptServices = {
 		PropertiesService: {
 			getScriptProperties: () => ({
@@ -99,23 +105,35 @@ function createSync() {
 			EventType: { CLOCK: "clock" },
 			getProjectTriggers: () =>
 				triggers.map((trigger) => ({
+					record: trigger,
 					getHandlerFunction: () => trigger.handler,
 					getEventType: () => trigger.type,
 				})),
+			deleteTrigger: (trigger: { record: (typeof triggers)[number] }) => {
+				const index = triggers.indexOf(trigger.record);
+				if (index < 0) throw new Error("Unknown trigger");
+				triggers.splice(index, 1);
+			},
 			newTrigger: (handler: string) => {
 				expect(handler).toBe("syncSubtitleAdministrators");
 				let type = "";
+				let hour = 0;
+				let days = 0;
 				const builder = {
 					timeBased: () => {
 						type = "clock";
 						return builder;
 					},
-					everyMinutes: (minutes: number) => {
-						expect(minutes).toBe(5);
+					atHour: (value: number) => {
+						hour = value;
+						return builder;
+					},
+					everyDays: (value: number) => {
+						days = value;
 						return builder;
 					},
 					create: () => {
-						triggers.push({ handler, type });
+						triggers.push({ handler, type, hour, days });
 					},
 				};
 				return builder;
@@ -263,15 +281,20 @@ test("不正な回答だけを除外して件数を記録し、他の応募者�
 	});
 });
 
-test("空の回答と再設置を扱い、他のトリガーを残して5分ごとの同期を重複させない", () => {
+test("5分同期を毎日午前3時台の1件へ変更し、空の回答・再設置でも他のトリガーを残す", () => {
 	const sync = createSync();
 	sync.setRows([]);
 	sync.triggers.push({ handler: "otherTask", type: "clock" });
+	sync.triggers.push({
+		handler: "syncSubtitleAdministrators",
+		type: "clock",
+		minutes: 5,
+	});
 	sync.installSubtitleAdminSync();
 	sync.installSubtitleAdminSync();
 	expect(sync.requests).toHaveLength(0);
 	expect(sync.triggers).toEqual([
 		{ handler: "otherTask", type: "clock" },
-		{ handler: "syncSubtitleAdministrators", type: "clock" },
+		{ handler: "syncSubtitleAdministrators", type: "clock", hour: 3, days: 1 },
 	]);
 });

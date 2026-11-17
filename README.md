@@ -107,7 +107,7 @@ receives only the resulting `isSubtitleAdmin` boolean from the authenticated
 `/api/subtitle-admin/access` endpoint.
 
 Google Form applicants can receive this role automatically through the
-[Apps Script synchronization](docs/subtitle-admin-sync.md) every five minutes,
+[Apps Script synchronization](docs/subtitle-admin-sync.md) once a day,
 including applicants who register with Clerk after submitting the form.
 
 ### Subtitle corrections

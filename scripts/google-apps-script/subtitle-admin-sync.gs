@@ -115,16 +115,15 @@ function syncSubtitleAdministrators() {
 function installSubtitleAdminSync() {
 	// Validate access and synchronize existing applicants before installing the timer.
 	syncSubtitleAdministrators();
-	if (
-		!ScriptApp.getProjectTriggers().some(
-			(trigger) =>
-				trigger.getHandlerFunction() === "syncSubtitleAdministrators" &&
-				trigger.getEventType() === ScriptApp.EventType.CLOCK,
-		)
-	) {
-		ScriptApp.newTrigger("syncSubtitleAdministrators")
-			.timeBased()
-			.everyMinutes(5)
-			.create();
-	}
+	const previousTimers = ScriptApp.getProjectTriggers().filter(
+		(trigger) =>
+			trigger.getHandlerFunction() === "syncSubtitleAdministrators" &&
+			trigger.getEventType() === ScriptApp.EventType.CLOCK,
+	);
+	ScriptApp.newTrigger("syncSubtitleAdministrators")
+		.timeBased()
+		.atHour(3)
+		.everyDays(1)
+		.create();
+	for (const trigger of previousTimers) ScriptApp.deleteTrigger(trigger);
 }
